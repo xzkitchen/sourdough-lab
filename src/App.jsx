@@ -27,15 +27,15 @@ function App() {
     const ratio = numBreads;
     if (breadType === 'toast') {
       const base = { 
-        flour: 230, allulose: 35, milk: 90, tangzhong: 110, starter: 100, 
-        milkPowder: 10, salt: 5, butterDough: 15, butterFilling: 15 
+        flour: 230, allulose: 20, milk: 95, tangzhong: 110, starter: 100, 
+        milkPowder: 12, salt: 5, butterDough: 15, butterFilling: 15 
       };
       return { 
         flour: base.flour * ratio, allulose: base.allulose * ratio, milk: base.milk * ratio,
         tangzhong: base.tangzhong * ratio, starter: base.starter * ratio,
         milkPowder: base.milkPowder * ratio, salt: base.salt * ratio,
         butterDough: base.butterDough * ratio, butterFilling: base.butterFilling * ratio,
-        totalWeight: (230+35+90+110+100+10+5+15) * ratio, hydration: 70 
+        totalWeight: (230+20+95+110+100+12+5+15+15) * ratio, hydration: 70 
       };
     } else {
       const base = { flour: 400, water: 280, starter: 80, salt: 8, tomato: 40, basil: 3 };
@@ -92,29 +92,29 @@ function App() {
           const rawTotal = 120 * numBreads;
           const neededTotal = 110 * numBreads;
           currentTips = [
-            '【冷锅混合】：先将面粉和牛奶搅拌至无颗粒，再开火',
-            '【全程搅拌】：开小火，需不停搅拌防止糊底',
-            '【离火时机】：液体变稠，搅拌出现明显纹路（约65°C）时立即离火',
-            '【贴面冷却】：保鲜膜贴着面糊表面盖好，防结皮，凉透后用',
-            `【关于损耗】：原料共 ${rawTotal}g，需用 ${neededTotal}g。若不足，补牛奶至 ${neededTotal}g`
+            '【冷锅混合】:先将面粉和牛奶搅拌至无颗粒,再开火',
+            '【全程搅拌】:开小火,需不停搅拌防止糊底',
+            '【离火时机】:液体变稠,搅拌出现明显纹路(约65°C)时立即离火',
+            '【贴面冷却】:保鲜膜贴着面糊表面盖好,防结皮,凉透后用',
+            `【关于损耗】:原料共 ${rawTotal}g,需用 ${neededTotal}g。若不足,补牛奶至 ${neededTotal}g`
           ];
         }
         if (step.id === 'divide') {
           const totalPieces = numBreads * 3;
           const weightPerPiece = Math.round(recipe.totalWeight / totalPieces);
           currentTips = [
-            `【分割】：共 ${totalPieces} 个小面团 (每条吐司 3 峰)`,
-            `【重量】：每个面团约 ${weightPerPiece}g`,
-            '【滚圆】：将每个小面团滚圆',
-            '【松弛】：盖湿布松弛 20 分钟（松弛不到位会回缩）'
+            `【分割】:共 ${totalPieces} 个小面团 (每条吐司 3 峰)`,
+            `【重量】:每个面团约 ${weightPerPiece}g`,
+            '【滚圆】:将每个小面团滚圆',
+            '【松弛】:盖湿布松弛 20 分钟(松弛不到位会回缩)'
           ];
         }
         if (step.id === 'shape') {
           currentTips = [
-            '【一次擀卷】：擀开卷起，松弛10分钟',
-            '【二次擀卷】：再次擀长，压薄底边',
-            '【卷入】：顶端放 5g 冷冻有盐黄油，卷在中心',
-            '【入模】：3 个面团一组，并排放入吐司盒'
+            '【一次擀卷】:擀开卷起,松弛10分钟',
+            '【二次擀卷】:再次擀长,压薄底边',
+            '【卷入】:顶端放 5g 冷冻有盐黄油,卷在中心',
+            '【入模】:3 个面团一组,并排放入吐司盒'
           ];
         }
       }
@@ -240,7 +240,7 @@ function App() {
             {/* Quantity Control */}
             <div className="bg-neutral-900/60 backdrop-blur-sm rounded-3xl p-6 border border-white/5">
               <StepperControl 
-                label={breadType === 'toast' ? '吐司数量 (450g/个)' : '面包数量 (Loaves)'}
+                label={breadType === 'toast' ? '吐司数量 (原料602g/个)' : '面包数量 (Loaves)'}
                 value={numBreads} 
                 onChange={setNumBreads} 
                 min={1} 
@@ -258,11 +258,11 @@ function App() {
                 {breadType === 'toast' ? (
                   <>
                     <IngredientRow name="高筋面粉" weight={recipe.flour} percent={100} note="蛋白质>12.5%" />
-                    <IngredientRow name="阿洛酮糖" weight={recipe.allulose} percent={15} note="代糖" />
-                    <IngredientRow name="牛奶 (冰)" weight={recipe.milk} percent={40} />
+                    <IngredientRow name="阿洛酮糖" weight={recipe.allulose} percent={9} note="代糖" />
+                    <IngredientRow name="牛奶 (冰)" weight={recipe.milk} percent={41} />
                     <IngredientRow name="汤种" weight={recipe.tangzhong} percent={48} note="需提前冷却" accent />
                     <IngredientRow name="鲁邦种" weight={recipe.starter} percent={43} />
-                    <IngredientRow name="奶粉" weight={recipe.milkPowder} percent={4} />
+                    <IngredientRow name="奶粉" weight={recipe.milkPowder} percent={5} />
                     <IngredientRow name="海盐" weight={recipe.salt} percent={2} />
                     <IngredientRow name="无盐黄油" weight={recipe.butterDough} percent={6} note="揉入面团" />
                     <IngredientRow name="有盐黄油" weight={recipe.butterFilling} percent={6} note="整形时卷入 (冷冻)" accent />
@@ -303,8 +303,8 @@ function App() {
                 label="使用旧种数量 (Seed Amount)" 
                 value={seedStarter} 
                 onChange={setSeedStarter} 
-                min={5} 
-                step={5} 
+                min={1} 
+                step={1} 
               />
               <div className="mt-8 pt-6 border-t border-white/5 flex gap-4">
                 <StatusBadge label="配方需求" value={`${feed.needed}g`} type="neutral" />
@@ -328,8 +328,8 @@ function App() {
             
             <div className="p-5 bg-orange-500/10 border border-orange-500/20 rounded-2xl text-xs text-orange-200/80 leading-relaxed backdrop-blur-md">
               <span className="font-bold block mb-1 text-orange-400">喂养提示</span>
-              取 {seedStarter}g 旧种，加入上方显示的粉和水混合。静置发酵至峰值（约 4-6 小时）后，取 {feed.needed}g 用于做面包，
-              <span className="text-white font-bold">剩余约 {feed.buffer}g 作为下次的火种（已包含损耗余量）。</span>
+              取 {seedStarter}g 旧种,加入上方显示的粉和水混合。静置发酵至峰值(约 4-6 小时)后,取 {feed.needed}g 用于做面包,
+              <span className="text-white font-bold">剩余约 {feed.buffer}g 作为下次的火种(已包含损耗余量)。</span>
             </div>
           </div>
         )}
@@ -347,7 +347,7 @@ function App() {
                 {progress.completed > 0 && (
                   <button 
                     onClick={() => { 
-                      if(window.confirm('重置所有进度？')) { 
+                      if(window.confirm('重置所有进度?')) { 
                         setCompletedSteps({}); 
                         setColdStartTimeStr(null); 
                       }
