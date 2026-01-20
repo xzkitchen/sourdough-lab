@@ -375,3 +375,288 @@ input[type="checkbox"]:hover {
    推荐: 方式1最简单，直接复制粘贴即可
    
    ======================================== */
+/* =============================================
+   紧急修复CSS - 日式吐司界面优化
+   文件名: 紧急修复-CSS.css
+   用途: 隐藏undefined + 美化排版 + 修复适配
+   使用方法: 复制到 src/index.css 或 src/App.css 最后
+   ============================================= */
+
+/* ===== 1. 强制隐藏 undefined 显示 ===== */
+
+/* 隐藏空的div元素 */
+div:empty {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 隐藏只包含空白的元素 */
+div:blank {
+  display: none !important;
+}
+
+/* 暴力方案：隐藏可能显示undefined的位置 */
+/* 如果步骤标题后面有两个空div，直接隐藏 */
+.step-card > div > div:nth-of-type(2):empty,
+.step-card > div > div:nth-of-type(3):empty {
+  display: none !important;
+}
+
+/* 隐藏包含"undefined"文本的元素 */
+*:not(script):not(style) {
+  visibility: visible;
+}
+
+*:not(script):not(style):empty {
+  display: none !important;
+}
+
+/* ===== 2. 修复左边竖线颜色 ===== */
+
+/* 将灰色竖线改为橙色渐变 */
+.border-l,
+.border-l-2,
+.border-l-4,
+[class*="border-l"] {
+  border-left-color: rgba(251, 146, 60, 0.4) !important;
+}
+
+/* 如果竖线在步骤卡片上 */
+.step-card {
+  border-left: 2px solid rgba(251, 146, 60, 0.35) !important;
+}
+
+/* ===== 3. 统一排版和间距 ===== */
+
+/* 步骤卡片基础样式 */
+.step-card,
+[class*="StepCard"],
+div[class*="step"] {
+  padding: 1.25rem !important;
+  margin-bottom: 1rem !important;
+  border-radius: 1rem !important;
+  background: rgba(23, 23, 23, 0.6) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* 步骤标题 */
+.step-card h3,
+.step-card h4,
+[class*="step"] h3,
+[class*="step"] h4 {
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  color: white !important;
+  margin-bottom: 1rem !important;
+  line-height: 1.4 !important;
+}
+
+/* 步骤时长标签 */
+.step-card span[class*="text"],
+[class*="duration"] {
+  font-size: 0.75rem !important;
+  color: rgba(251, 191, 36, 1) !important;
+  background: rgba(251, 146, 60, 0.15) !important;
+  padding: 0.25rem 0.625rem !important;
+  border-radius: 0.375rem !important;
+  border: 1px solid rgba(251, 146, 60, 0.3) !important;
+}
+
+/* ===== 4. 配料卡片优化 ===== */
+
+/* 配料容器 - 确保两列布局 */
+.step-card > div:first-of-type,
+[class*="ingredients"] {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.75rem !important;
+  margin: 1rem 0 !important;
+}
+
+/* 单个配料卡片 */
+.step-card > div:first-of-type > div,
+[class*="ingredient-"] {
+  background: rgba(38, 38, 38, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.625rem 0.875rem !important;
+  font-size: 0.875rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* ===== 5. Tips列表美化 ===== */
+
+/* Tips列表容器 */
+.step-card ul,
+[class*="tips"] ul,
+.step-card > ul {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin: 1rem 0 !important;
+}
+
+/* 单个tip */
+.step-card ul li,
+[class*="tips"] ul li,
+.step-card > ul > li {
+  padding: 0.5rem 0 0.5rem 1.5rem !important;
+  margin-bottom: 0.5rem !important;
+  position: relative !important;
+  line-height: 1.6 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.875rem !important;
+}
+
+/* Tips前面的橙色圆点 */
+.step-card ul li::before,
+[class*="tips"] ul li::before,
+.step-card > ul > li::before {
+  content: "•" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0.5rem !important;
+  color: rgba(251, 146, 60, 0.9) !important;
+  font-size: 1.25rem !important;
+  font-weight: bold !important;
+}
+
+/* ===== 6. 移动端适配修复 ===== */
+
+@media (max-width: 640px) {
+  /* 配料单列显示 */
+  .step-card > div:first-of-type,
+  [class*="ingredients"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* 减小卡片padding */
+  .step-card,
+  [class*="StepCard"] {
+    padding: 1rem !important;
+  }
+  
+  /* 调整字体 */
+  .step-card h3,
+  .step-card h4 {
+    font-size: 1rem !important;
+  }
+  
+  .step-card ul li,
+  [class*="tips"] li {
+    font-size: 0.8125rem !important;
+    padding-left: 1.25rem !important;
+  }
+}
+
+/* ===== 7. 平板适配 ===== */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .step-card {
+    padding: 1.25rem !important;
+  }
+  
+  .step-card > div:first-of-type {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ===== 8. 步骤间距统一 ===== */
+
+.space-y-4 > * + * {
+  margin-top: 1rem !important;
+}
+
+/* 步骤容器 */
+div[class*="space-y"] {
+  gap: 1rem !important;
+}
+
+/* ===== 9. 修复可能的布局问题 ===== */
+
+/* 确保flexbox和grid正确工作 */
+.step-card * {
+  box-sizing: border-box !important;
+}
+
+/* 防止文本溢出 */
+.step-card {
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* ===== 10. 复选框美化 ===== */
+
+.step-card input[type="checkbox"],
+input[type="checkbox"] {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  border: 2px solid rgba(251, 146, 60, 0.5) !important;
+  border-radius: 0.25rem !important;
+  cursor: pointer !important;
+}
+
+.step-card input[type="checkbox"]:checked,
+input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, #fb923c, #fbbf24) !important;
+  border-color: #fb923c !important;
+}
+
+/* ===== 11. hover效果 ===== */
+
+.step-card:hover {
+  border-left-color: rgba(251, 146, 60, 0.6) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+  transform: translateY(-1px);
+  transition: all 0.2s ease !important;
+}
+
+/* ===== 12. 确保文字可读性 ===== */
+
+.step-card,
+.step-card * {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* ===== 13. 修复可能的z-index问题 ===== */
+
+.step-card {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* ===== 14. 打印支持 ===== */
+
+@media print {
+  .step-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+/* ===== 15. 减少动画（辅助功能） ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  .step-card,
+  .step-card * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* =============================================
+   使用说明：
+   
+   1. 复制本文件全部内容
+   2. 粘贴到 src/index.css 或 src/App.css 的最后
+   3. 保存并提交
+   4. Vercel会自动部署
+   5. 强制刷新浏览器 (Ctrl+Shift+R)
+   
+   如果还有问题，截图发给我！
+   ============================================= */
