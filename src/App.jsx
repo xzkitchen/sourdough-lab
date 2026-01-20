@@ -28,14 +28,16 @@ function App() {
     const ratio = numBreads;
     if (breadType === 'japanese') {
       const base = {
-        flourTangzhong: 25, milkTangzhong: 125,
-        flour: 250, allulose: 18, salt: 5, yeast: 4,
+        flourTangzhong: 30, milkTangzhong: 150,  // 增加原料，预留损耗
+        flourMain: 250, allulose: 18, salt: 5, yeast: 4,
         egg: 50, milk: 85, milkPowder: 15, butter: 20
       };
+      const tangzhongNeeded = 150;  // 实际需要的汤种量
       return {
         flourTangzhong: base.flourTangzhong * ratio,
         milkTangzhong: base.milkTangzhong * ratio,
-        flour: base.flour * ratio,
+        tangzhongNeeded: tangzhongNeeded * ratio,
+        flour: base.flourMain * ratio,
         allulose: base.allulose * ratio,
         salt: base.salt * ratio,
         yeast: base.yeast * ratio,
@@ -43,7 +45,7 @@ function App() {
         milk: base.milk * ratio,
         milkPowder: base.milkPowder * ratio,
         butter: base.butter * ratio,
-        totalWeight: (25+125+250+18+5+4+50+85+15+20) * ratio,
+        totalWeight: (250+18+5+4+50+85+15+20+150) * ratio,  // 使用汤种成品重量
         hydration: 74
       };
     } else if (breadType === 'toast') {
@@ -96,7 +98,7 @@ function App() {
       let ingredients = [];
       if (breadType === 'japanese') {
         if (step.id === 'tangzhong') ingredients = [{ name: '高筋粉', value: recipe.flourTangzhong }, { name: '牛奶', value: recipe.milkTangzhong }];
-        else if (step.id === 'mix') ingredients = [{ name: '高筋粉', value: recipe.flour }, { name: '阿洛酮糖', value: recipe.allulose }, { name: '海盐', value: recipe.salt }, { name: '干酵母', value: recipe.yeast }, { name: '全蛋液', value: recipe.egg }, { name: '冰牛奶', value: recipe.milk }, { name: '汤种', value: recipe.flourTangzhong + recipe.milkTangzhong, unit: 'g (全部)' }, { name: '奶粉', value: recipe.milkPowder }];
+        else if (step.id === 'mix') ingredients = [{ name: '高筋粉', value: recipe.flour }, { name: '阿洛酮糖', value: recipe.allulose }, { name: '海盐', value: recipe.salt }, { name: '干酵母', value: recipe.yeast }, { name: '全蛋液', value: recipe.egg }, { name: '冰牛奶', value: recipe.milk }, { name: '汤种', value: recipe.tangzhongNeeded, unit: 'g (凉透)' }, { name: '奶粉', value: recipe.milkPowder }];
         else if (step.id === 'knead') ingredients = [{ name: '软化黄油', value: recipe.butter }];
         else if (step.id === 'divide') ingredients = [{ name: '每份', value: Math.round(recipe.totalWeight / (numBreads * 3)), unit: 'g' }];
       } else if (breadType === 'toast') {
@@ -148,20 +150,24 @@ function App() {
       if (breadType === 'japanese') {
         if (step.id === 'tangzhong') {
           const rawTotal = recipe.flourTangzhong + recipe.milkTangzhong;
+          const neededTotal = recipe.tangzhongNeeded;
           currentTips = [
             '【冷锅混合】:先将面粉和牛奶搅拌至无颗粒,再开火',
             '【全程搅拌】:开小火,不停搅拌防止糊底',
             '【离火时机】:液体变稠,搅拌出现明显纹路(约65°C)时立即离火',
             '【贴面冷却】:保鲜膜贴着面糊表面盖好,防结皮',
-            `【冷藏过夜】:原料共 ${rawTotal}g,冷藏4-24小时后使用,汤种必须完全凉透`
+            `【关于损耗】:原料共 ${rawTotal}g,需用 ${neededTotal}g。若不足,补牛奶至 ${neededTotal}g`,
+            '【冷藏过夜】:冷藏4-24小时后使用,汤种必须完全凉透'
           ];
         }
         if (step.id === 'mix') {
           currentTips = [
-            '【注意顺序】:除黄油外所有材料入厨师机',
-            '【汤种温度】:汤种必须是冷藏状态,温热会杀死酵母',
+            '【材料顺序】:液体在下(牛奶、蛋、汤种),粉类在上',
+            '【酵母位置】:干酵母不要直接接触盐和糖',
+            '【汤种温度】:汤种必须是冷藏状态(4-10°C),温热会杀死酵母',
             '【慢速混合】:先慢速3分钟,搅拌至无干粉',
-            '【快速揉面】:转快速5-7分钟,至粗膜阶段'
+            '【快速揉面】:转快速5-7分钟,至粗膜阶段',
+            '【检查状态】:面团能拉出粗膜,破口有锯齿'
           ];
         }
         if (step.id === 'knead') {
@@ -193,10 +199,11 @@ function App() {
         if (step.id === 'shape') {
           currentTips = [
             '【三次擀卷法】:这是撕拉纹理的秘密',
-            '【第一次】:擀成牛舌状卷起,松弛10分钟',
-            '【第二次】:再次擀长约25cm,从上往下卷紧',
-            '【注意】:卷的时候保持松弛感,不要太紧',
-            '【入模】:3个面团并排放入吐司盒,收口朝下'
+            '【第一次擀卷】:擀成牛舌状(宽约8cm),自上而下卷起,松弛10分钟',
+            '【第二次擀卷】:擀成椭圆形(长约25cm),底边压薄,自上而下卷紧',
+            '【卷的方向】:两次擀卷方向一致,卷起圈数约2.5-3圈',
+            '【收口处理】:收口捏紧,收口朝下放入模具',
+            '【入模】:3个面团并排放入吐司盒,间距均匀'
           ];
         }
         if (step.id === 'proof') {
@@ -210,11 +217,13 @@ function App() {
         }
         if (step.id === 'bake') {
           currentTips = [
-            '【预热温度】:上火180°C / 下火200°C',
+            '【预热】:上火180°C / 下火200°C,预热15分钟',
             '【烘烤时间】:30-35分钟',
-            '【15分钟时】:观察上色,金黄后盖锡纸',
-            '【判断熟度】:敲侧面听到空洞声,或中心温度90-93°C',
-            '【立即脱模】:出炉震模排气,立即脱模侧放散热'
+            '【10分钟】:开始膨胀上色',
+            '【15分钟】:顶部金黄,盖锡纸防止过度上色',
+            '【25分钟】:用手拍吐司侧面,听到空洞声',
+            '【判断熟度】:中心温度90-93°C,或用牙签插入无湿面糊',
+            '【出炉处理】:立即震模排气,脱模侧放散热,不要平放'
           ];
         }
       }
@@ -371,8 +380,8 @@ function App() {
               <div className="divide-y divide-white/5">
                 {breadType === 'japanese' ? (
                   <>
-                    <IngredientRow name="【汤种】高筋粉" weight={recipe.flourTangzhong} percent={10} note="提前煮好冷藏" accent />
-                    <IngredientRow name="【汤种】牛奶" weight={recipe.milkTangzhong} percent={50} note="提前煮好冷藏" accent />
+                    <IngredientRow name="【汤种】高筋粉" weight={recipe.flourTangzhong} percent={12} note="多做预留损耗" accent />
+                    <IngredientRow name="【汤种】牛奶" weight={recipe.milkTangzhong} percent={60} note="多做预留损耗" accent />
                     <IngredientRow name="高筋面粉" weight={recipe.flour} percent={100} note="蛋白质>12.5%" />
                     <IngredientRow name="阿洛酮糖" weight={recipe.allulose} percent={7} note="健康代糖" />
                     <IngredientRow name="海盐" weight={recipe.salt} percent={2} />
