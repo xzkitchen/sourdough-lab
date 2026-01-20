@@ -30,7 +30,8 @@ function App() {
       const base = {
         flourTangzhong: 28, milkTangzhong: 140,  // 原料168g，使用150g，预留18g
         flourMain: 250, allulose: 18, salt: 5, yeast: 4,
-        egg: 50, milk: 85, milkPowder: 15, butter: 20
+        egg: 50, milk: 85, milkPowder: 15, butter: 20,
+        starter: 0  // 日式吐司用商业酵母，无需鲁邦种
       };
       const tangzhongNeeded = 150;  // 实际需要的汤种量
       return {
@@ -45,6 +46,7 @@ function App() {
         milk: base.milk * ratio,
         milkPowder: base.milkPowder * ratio,
         butter: base.butter * ratio,
+        starter: base.starter * ratio,  // 添加starter字段
         totalWeight: (250+18+5+4+50+85+15+20+150) * ratio,  // 使用汤种成品重量
         hydration: 74
       };
@@ -165,9 +167,9 @@ function App() {
             '【材料顺序】:液体在下(牛奶、蛋、汤种),粉类在上',
             '【酵母位置】:干酵母不要直接接触盐和糖',
             '【汤种温度】:汤种必须是冷藏状态(4-10°C),温热会杀死酵母',
-            '【混合至无干粉】:低速搅拌至看不到干粉即可',
-            '【揉至粗膜】:中高速揉至能拉出厚膜,破口呈锯齿状',
-            '【厨师机参考】:低速3分钟→中高速5-7分钟',
+            '【混合至无干粉】:1-2档慢速3-4分钟,搅拌至看不到干粉',
+            '【揉至粗膜】:3-4档中速5-7分钟,能拉出厚膜,破口呈锯齿状',
+            '【大宇大白象】:1档3分钟→3档5-7分钟',
             '【手揉参考】:混合5分钟→揉面15-20分钟'
           ];
         }
@@ -177,7 +179,7 @@ function App() {
             '【加入方式】:分2-3次加入,每次完全吃进再加下一次',
             '【判断标准】:能拉出透明薄膜(手套膜),破口边缘光滑',
             '【避免过度】:过度揉面会断筋,面团发粘',
-            '【厨师机参考】:中高速8-10分钟至手套膜',
+            '【大宇大白象】:3-4档中速8-12分钟至手套膜',
             '【手揉参考】:摔打+揉压15-20分钟至手套膜'
           ];
         }
