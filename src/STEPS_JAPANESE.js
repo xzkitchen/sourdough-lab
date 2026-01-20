@@ -3,6 +3,8 @@ export const STEPS_JAPANESE = [
   {
     id: 'tangzhong',
     title: '汤种制作',
+    subtitle: '',
+    description: '',
     duration: '10分钟 + 冷藏过夜',
     tips: [
       '【冷锅混合】:先将面粉和牛奶搅拌至无颗粒,再开火',
@@ -16,6 +18,8 @@ export const STEPS_JAPANESE = [
   {
     id: 'mix',
     title: '混合面团',
+    subtitle: '',
+    description: '',
     duration: '10-15分钟',
     tips: [
       '【材料顺序】:液体在下(牛奶、蛋、汤种),粉类在上',
@@ -30,6 +34,8 @@ export const STEPS_JAPANESE = [
   {
     id: 'knead',
     title: '加黄油揉面',
+    subtitle: '',
+    description: '',
     duration: '10-15分钟',
     tips: [
       '【黄油状态】:室温软化至手指能轻松按下',
@@ -43,6 +49,8 @@ export const STEPS_JAPANESE = [
   {
     id: 'bulk',
     title: '一次发酵',
+    subtitle: '',
+    description: '',
     duration: '50-70分钟',
     tips: [
       '【温湿度】:28°C / 75%湿度',
@@ -54,6 +62,8 @@ export const STEPS_JAPANESE = [
   {
     id: 'divide',
     title: '分割滚圆',
+    subtitle: '',
+    description: '',
     duration: '5分钟',
     tips: [
       '【分割】:共 N 个小面团 (每条吐司 3 峰)',
@@ -65,6 +75,8 @@ export const STEPS_JAPANESE = [
   {
     id: 'shape',
     title: '整形入模',
+    subtitle: '',
+    description: '',
     duration: '15分钟',
     tips: [
       '【三次擀卷法】:这是撕拉纹理的秘密',
@@ -78,6 +90,8 @@ export const STEPS_JAPANESE = [
   {
     id: 'proof',
     title: '二次发酵',
+    subtitle: '',
+    description: '',
     duration: '40-60分钟',
     tips: [
       '【温湿度】:35°C / 80%湿度',
@@ -90,6 +104,8 @@ export const STEPS_JAPANESE = [
   {
     id: 'bake',
     title: '烘烤',
+    subtitle: '',
+    description: '',
     duration: '30-35分钟',
     tips: [
       '【预热】:上火180°C / 下火200°C,预热15分钟',
