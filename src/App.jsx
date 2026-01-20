@@ -232,7 +232,13 @@ function App() {
           ];
         }
       }
-      return { ...step, ingredients, tips: currentTips };
+      return { 
+        ...step, 
+        ingredients, 
+        tips: currentTips,
+        subtitle: null,      // 明确设置为null，避免undefined显示
+        description: null    // 明确设置为null，避免undefined显示
+      };
     });
   }, [feed, recipe, numBreads, flavorType, breadType]);
 
