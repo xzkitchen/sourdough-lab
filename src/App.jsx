@@ -28,7 +28,7 @@ function App() {
     const ratio = numBreads;
     if (breadType === 'japanese') {
       const base = {
-        flourTangzhong: 30, milkTangzhong: 150,  // 增加原料，预留损耗
+        flourTangzhong: 28, milkTangzhong: 140,  // 原料168g，使用150g，预留18g
         flourMain: 250, allulose: 18, salt: 5, yeast: 4,
         egg: 50, milk: 85, milkPowder: 15, butter: 20
       };
@@ -165,17 +165,20 @@ function App() {
             '【材料顺序】:液体在下(牛奶、蛋、汤种),粉类在上',
             '【酵母位置】:干酵母不要直接接触盐和糖',
             '【汤种温度】:汤种必须是冷藏状态(4-10°C),温热会杀死酵母',
-            '【慢速混合】:先慢速3分钟,搅拌至无干粉',
-            '【快速揉面】:转快速5-7分钟,至粗膜阶段',
-            '【检查状态】:面团能拉出粗膜,破口有锯齿'
+            '【混合至无干粉】:低速搅拌至看不到干粉即可',
+            '【揉至粗膜】:中高速揉至能拉出厚膜,破口呈锯齿状',
+            '【厨师机参考】:低速3分钟→中高速5-7分钟',
+            '【手揉参考】:混合5分钟→揉面15-20分钟'
           ];
         }
         if (step.id === 'knead') {
           currentTips = [
-            '【黄油状态】:黄油需软化(手指能轻松按出印)',
-            '【分次加入】:黄油分2-3次加入,每次揉匀再加下一次',
-            '【完全扩展】:快速揉8-10分钟,至完全扩展阶段',
-            '【手套膜】:能拉出薄膜,破口光滑,这是撕拉的关键'
+            '【黄油状态】:室温软化至手指能轻松按下',
+            '【加入方式】:分2-3次加入,每次完全吃进再加下一次',
+            '【判断标准】:能拉出透明薄膜(手套膜),破口边缘光滑',
+            '【避免过度】:过度揉面会断筋,面团发粘',
+            '【厨师机参考】:中高速8-10分钟至手套膜',
+            '【手揉参考】:摔打+揉压15-20分钟至手套膜'
           ];
         }
         if (step.id === 'bulk') {
@@ -380,8 +383,8 @@ function App() {
               <div className="divide-y divide-white/5">
                 {breadType === 'japanese' ? (
                   <>
-                    <IngredientRow name="【汤种】高筋粉" weight={recipe.flourTangzhong} percent={12} note="多做预留损耗" accent />
-                    <IngredientRow name="【汤种】牛奶" weight={recipe.milkTangzhong} percent={60} note="多做预留损耗" accent />
+                    <IngredientRow name="【汤种】高筋粉" weight={recipe.flourTangzhong} percent={11} note="预留损耗" accent />
+                    <IngredientRow name="【汤种】牛奶" weight={recipe.milkTangzhong} percent={56} note="预留损耗" accent />
                     <IngredientRow name="高筋面粉" weight={recipe.flour} percent={100} note="蛋白质>12.5%" />
                     <IngredientRow name="阿洛酮糖" weight={recipe.allulose} percent={7} note="健康代糖" />
                     <IngredientRow name="海盐" weight={recipe.salt} percent={2} />
