@@ -38,3 +38,340 @@
     overscroll-behavior-y: none;
   }
 }
+/* ========================================
+   日式吐司步骤UI优化 - 完整CSS样式
+   文件名: step-card-optimization.css
+   用途: 修复undefined显示 + 美化步骤卡片
+   ======================================== */
+
+/* 1. 移除或优化左边竖线颜色 */
+.step-card,
+[class*="StepCard"] {
+  border-left: 2px solid rgba(251, 146, 60, 0.3) !important; /* 橙色半透明竖线 */
+  /* 如果不想要竖线，改为: border-left: none !important; */
+}
+
+/* 2. 强制隐藏subtitle和description区域（双重保险） */
+.step-subtitle,
+.step-description,
+[class*="subtitle"],
+[class*="description"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 3. 步骤卡片整体美化 */
+.step-card,
+[class*="StepCard"] {
+  background: rgba(23, 23, 23, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 1.5rem !important;
+  padding: 1.5rem !important;
+  margin-bottom: 1rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.step-card:hover,
+[class*="StepCard"]:hover {
+  border-color: rgba(251, 146, 60, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(-2px);
+}
+
+/* 4. 步骤标题优化 */
+.step-title,
+[class*="step"] h3,
+[class*="Step"] h3 {
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  color: white !important;
+  margin-bottom: 1rem !important;
+  letter-spacing: 0.025em !important;
+}
+
+/* 5. 配料卡片容器优化 */
+.ingredients-container,
+[class*="ingredients"],
+.step-card > div:first-of-type {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.75rem !important;
+  margin: 1.25rem 0 !important;
+}
+
+/* 单个配料卡片 */
+.ingredient-badge,
+[class*="ingredient"] {
+  background: rgba(38, 38, 38, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.625rem 1rem !important;
+  font-size: 0.875rem !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* 配料数值高亮 */
+.ingredient-badge strong,
+[class*="ingredient"] strong {
+  color: rgba(251, 191, 36, 1) !important;
+  font-weight: 600 !important;
+}
+
+/* 6. Tips列表统一格式化 */
+.step-tips,
+.step-card ul,
+[class*="tips"] ul {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 1.25rem 0 0 0 !important;
+}
+
+.step-tips li,
+.step-card ul li,
+[class*="tips"] ul li {
+  padding: 0.5rem 0 0.5rem 1.5rem !important;
+  margin: 0 0 0.5rem 0 !important;
+  position: relative !important;
+  line-height: 1.7 !important;
+  color: rgba(255, 255, 255, 0.87) !important;
+  font-size: 0.875rem !important;
+}
+
+/* Tips装饰圆点（橙色） */
+.step-tips li::before,
+.step-card ul li::before,
+[class*="tips"] ul li::before {
+  content: "•" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0.5rem !important;
+  color: rgba(251, 146, 60, 0.85) !important;
+  font-size: 1.25rem !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+}
+
+/* Tips中的【标签】高亮 */
+.step-tips li::first-line,
+.step-card ul li::first-line {
+  color: rgba(251, 191, 36, 0.95) !important;
+  font-weight: 600 !important;
+}
+
+/* 7. Duration时长标签美化 */
+.step-duration,
+[class*="duration"] {
+  display: inline-block !important;
+  background: rgba(251, 146, 60, 0.15) !important;
+  border: 1px solid rgba(251, 146, 60, 0.35) !important;
+  border-radius: 0.5rem !important;
+  padding: 0.375rem 0.875rem !important;
+  font-size: 0.75rem !important;
+  color: rgba(251, 191, 36, 1) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.025em !important;
+  margin-left: 0.5rem !important;
+}
+
+/* 8. 步骤完成复选框优化 */
+.step-checkbox,
+input[type="checkbox"] {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  border: 2px solid rgba(251, 146, 60, 0.5) !important;
+  border-radius: 0.375rem !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.step-checkbox:checked,
+input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, #fb923c 0%, #fbbf24 100%) !important;
+  border-color: #fb923c !important;
+}
+
+.step-checkbox:hover,
+input[type="checkbox"]:hover {
+  border-color: rgba(251, 146, 60, 0.8) !important;
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1) !important;
+}
+
+/* 9. 步骤展开/收起动画优化 */
+.step-card[data-expanded="true"],
+.step-card.expanded {
+  max-height: none !important;
+}
+
+.step-card[data-expanded="false"],
+.step-card.collapsed {
+  max-height: 120px !important;
+  overflow: hidden !important;
+}
+
+/* 10. 步骤间间距统一 */
+.space-y-4 > * + *,
+.steps-container > * + * {
+  margin-top: 1rem !important;
+}
+
+/* 11. 移动端响应式优化 */
+@media (max-width: 640px) {
+  /* 配料卡片单列显示 */
+  .ingredients-container,
+  [class*="ingredients"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* 减小步骤卡片内边距 */
+  .step-card,
+  [class*="StepCard"] {
+    padding: 1.25rem !important;
+  }
+  
+  /* 调整字体大小 */
+  .step-title,
+  [class*="step"] h3 {
+    font-size: 1rem !important;
+  }
+  
+  .step-tips li,
+  .step-card ul li {
+    font-size: 0.8125rem !important;
+    padding-left: 1.25rem !important;
+  }
+  
+  /* Duration标签缩小 */
+  .step-duration,
+  [class*="duration"] {
+    font-size: 0.6875rem !important;
+    padding: 0.25rem 0.625rem !important;
+  }
+}
+
+/* 12. 平板端优化 */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .step-card,
+  [class*="StepCard"] {
+    padding: 1.5rem !important;
+  }
+  
+  .ingredients-container,
+  [class*="ingredients"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* 13. 滚动平滑优化 */
+.steps-container,
+[class*="steps"] {
+  scroll-behavior: smooth !important;
+}
+
+/* 14. 加载动画（可选） */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-card,
+[class*="StepCard"] {
+  animation: fadeInUp 0.5s ease-out !important;
+}
+
+/* 15. 防止文字选择造成的视觉混乱 */
+.step-card *::selection {
+  background-color: rgba(251, 146, 60, 0.3) !important;
+  color: white !important;
+}
+
+/* 16. 特殊状态优化 */
+.step-card.completed,
+.step-card[data-completed="true"] {
+  opacity: 0.7 !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
+.step-card.completed .step-checkbox,
+.step-card[data-completed="true"] .step-checkbox {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  border-color: #22c55e !important;
+}
+
+/* 17. 打印样式优化 */
+@media print {
+  .step-card,
+  [class*="StepCard"] {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .step-card:hover,
+  [class*="StepCard"]:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 18. 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .step-card,
+  [class*="StepCard"] {
+    border-width: 2px !important;
+    border-color: rgba(251, 146, 60, 0.6) !important;
+  }
+  
+  .step-tips li,
+  .step-card ul li {
+    color: white !important;
+  }
+}
+
+/* 19. 减少动画（辅助功能） */
+@media (prefers-reduced-motion: reduce) {
+  .step-card,
+  [class*="StepCard"],
+  .step-checkbox,
+  input[type="checkbox"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 20. 深色模式强化（虽然已经是深色主题） */
+@media (prefers-color-scheme: dark) {
+  .step-card,
+  [class*="StepCard"] {
+    background: rgba(15, 15, 15, 0.8) !important;
+  }
+  
+  .ingredient-badge,
+  [class*="ingredient"] {
+    background: rgba(28, 28, 28, 0.9) !important;
+  }
+}
+
+/* ========================================
+   使用说明
+   ======================================== 
+   
+   方式1: 直接在src/index.css末尾添加此文件全部内容
+   方式2: 创建独立的CSS文件并在App.js中导入
+   方式3: 使用CSS Modules或Styled Components
+   
+   推荐: 方式1最简单，直接复制粘贴即可
+   
+   ======================================== */
