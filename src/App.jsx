@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Icons } from './utils/icons';
 import { useStickyState } from './hooks/useStickyState';
 import { STEPS_SOURDOUGH, STEPS_TOAST } from './data/steps';
+import { STEPS_JAPANESE } from './STEPS_JAPANESE';
 import { ColdRetardTracker } from './components/ColdRetardTracker';
 import { StepCard } from './components/StepCard';
 import { IngredientRow, StepperControl, StatusBadge, FeedCard } from './components';
@@ -25,7 +26,27 @@ function App() {
 
   const recipe = useMemo(() => {
     const ratio = numBreads;
-    if (breadType === 'toast') {
+    if (breadType === 'japanese') {
+      const base = {
+        flourTangzhong: 25, milkTangzhong: 125,
+        flour: 250, allulose: 18, salt: 5, yeast: 4,
+        egg: 50, milk: 85, milkPowder: 15, butter: 20
+      };
+      return {
+        flourTangzhong: base.flourTangzhong * ratio,
+        milkTangzhong: base.milkTangzhong * ratio,
+        flour: base.flour * ratio,
+        allulose: base.allulose * ratio,
+        salt: base.salt * ratio,
+        yeast: base.yeast * ratio,
+        egg: base.egg * ratio,
+        milk: base.milk * ratio,
+        milkPowder: base.milkPowder * ratio,
+        butter: base.butter * ratio,
+        totalWeight: (25+125+250+18+5+4+50+85+15+20) * ratio,
+        hydration: 74
+      };
+    } else if (breadType === 'toast') {
       const base = { 
         flour: 230, allulose: 20, milk: 95, tangzhong: 110, starter: 100, 
         milkPowder: 12, salt: 5, butterDough: 15, butterFilling: 15 
@@ -69,10 +90,16 @@ function App() {
   }, [seedStarter, recipe.starter]);
 
   const steps = useMemo(() => {
-    const currentSteps = breadType === 'toast' ? STEPS_TOAST : STEPS_SOURDOUGH;
+    const currentSteps = breadType === 'japanese' ? STEPS_JAPANESE : 
+                         breadType === 'toast' ? STEPS_TOAST : STEPS_SOURDOUGH;
     return currentSteps.map(step => {
       let ingredients = [];
-      if (breadType === 'toast') {
+      if (breadType === 'japanese') {
+        if (step.id === 'tangzhong') ingredients = [{ name: '高筋粉', value: recipe.flourTangzhong }, { name: '牛奶', value: recipe.milkTangzhong }];
+        else if (step.id === 'mix') ingredients = [{ name: '高筋粉', value: recipe.flour }, { name: '阿洛酮糖', value: recipe.allulose }, { name: '海盐', value: recipe.salt }, { name: '干酵母', value: recipe.yeast }, { name: '全蛋液', value: recipe.egg }, { name: '冰牛奶', value: recipe.milk }, { name: '汤种', value: recipe.flourTangzhong + recipe.milkTangzhong, unit: 'g (全部)' }, { name: '奶粉', value: recipe.milkPowder }];
+        else if (step.id === 'knead') ingredients = [{ name: '软化黄油', value: recipe.butter }];
+        else if (step.id === 'divide') ingredients = [{ name: '每份', value: Math.round(recipe.totalWeight / (numBreads * 3)), unit: 'g' }];
+      } else if (breadType === 'toast') {
         if (step.id === 'tangzhong') ingredients = [{ name: '高筋粉', value: 20 * numBreads }, { name: '牛奶', value: 100 * numBreads }];
         else if (step.id === 'feed') ingredients = [{ name: '旧种', value: feed.seed }, { name: '高粉', value: feed.flour }, { name: '水', value: feed.water }];
         else if (step.id === 'mix') ingredients = [{ name: '高筋粉', value: recipe.flour }, { name: '阿洛酮糖', value: recipe.allulose }, { name: '冰牛奶', value: recipe.milk }, { name: '汤种', value: recipe.tangzhong }, { name: '奶粉', value: recipe.milkPowder }, { name: '鲁邦种', value: recipe.starter }];
@@ -115,6 +142,79 @@ function App() {
             '【二次擀卷】:再次擀长,压薄底边',
             '【卷入】:顶端放 5g 冷冻有盐黄油,卷在中心',
             '【入模】:3 个面团一组,并排放入吐司盒'
+          ];
+        }
+      }
+      if (breadType === 'japanese') {
+        if (step.id === 'tangzhong') {
+          const rawTotal = recipe.flourTangzhong + recipe.milkTangzhong;
+          currentTips = [
+            '【冷锅混合】:先将面粉和牛奶搅拌至无颗粒,再开火',
+            '【全程搅拌】:开小火,不停搅拌防止糊底',
+            '【离火时机】:液体变稠,搅拌出现明显纹路(约65°C)时立即离火',
+            '【贴面冷却】:保鲜膜贴着面糊表面盖好,防结皮',
+            `【冷藏过夜】:原料共 ${rawTotal}g,冷藏4-24小时后使用,汤种必须完全凉透`
+          ];
+        }
+        if (step.id === 'mix') {
+          currentTips = [
+            '【注意顺序】:除黄油外所有材料入厨师机',
+            '【汤种温度】:汤种必须是冷藏状态,温热会杀死酵母',
+            '【慢速混合】:先慢速3分钟,搅拌至无干粉',
+            '【快速揉面】:转快速5-7分钟,至粗膜阶段'
+          ];
+        }
+        if (step.id === 'knead') {
+          currentTips = [
+            '【黄油状态】:黄油需软化(手指能轻松按出印)',
+            '【分次加入】:黄油分2-3次加入,每次揉匀再加下一次',
+            '【完全扩展】:快速揉8-10分钟,至完全扩展阶段',
+            '【手套膜】:能拉出薄膜,破口光滑,这是撕拉的关键'
+          ];
+        }
+        if (step.id === 'bulk') {
+          currentTips = [
+            '【温湿度】:28°C / 75%湿度',
+            '【发酵时间】:50-70分钟(室温22-25°C需90分钟)',
+            '【判断标准】:面团膨胀至2倍大',
+            '【戳洞测试】:手指沾粉戳洞,不回弹、不塌陷即可'
+          ];
+        }
+        if (step.id === 'divide') {
+          const totalPieces = numBreads * 3;
+          const weightPerPiece = Math.round(recipe.totalWeight / totalPieces);
+          currentTips = [
+            `【分割】:共 ${totalPieces} 个小面团 (每条吐司 3 峰)`,
+            `【重量】:每个面团约 ${weightPerPiece}g`,
+            '【滚圆】:轻轻滚圆,不要过度排气',
+            '【松弛】:盖保鲜膜松弛15-20分钟,松弛不足会回缩'
+          ];
+        }
+        if (step.id === 'shape') {
+          currentTips = [
+            '【三次擀卷法】:这是撕拉纹理的秘密',
+            '【第一次】:擀成牛舌状卷起,松弛10分钟',
+            '【第二次】:再次擀长约25cm,从上往下卷紧',
+            '【注意】:卷的时候保持松弛感,不要太紧',
+            '【入模】:3个面团并排放入吐司盒,收口朝下'
+          ];
+        }
+        if (step.id === 'proof') {
+          currentTips = [
+            '【温湿度】:35°C / 80%湿度',
+            '【发酵时间】:40-60分钟(室温需90-120分钟)',
+            '【判断标准】:面团发至9分满模',
+            '【回弹测试】:手指轻按,缓慢回弹即可',
+            '【不要过发】:过发会导致组织粗糙,无法撕拉'
+          ];
+        }
+        if (step.id === 'bake') {
+          currentTips = [
+            '【预热温度】:上火180°C / 下火200°C',
+            '【烘烤时间】:30-35分钟',
+            '【15分钟时】:观察上色,金黄后盖锡纸',
+            '【判断熟度】:敲侧面听到空洞声,或中心温度90-93°C',
+            '【立即脱模】:出炉震模排气,立即脱模侧放散热'
           ];
         }
       }
@@ -183,34 +283,48 @@ function App() {
         {activeTab === 'recipe' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
             {/* Bread Type Switcher */}
-            <div className="grid grid-cols-2 gap-3 mb-2">
+            <div className="grid grid-cols-3 gap-2 mb-2">
               <button 
                 onClick={() => handleSwitchBreadType('sourdough')}
-                className={`p-4 rounded-2xl border text-left transition-all ${
+                className={`p-3 rounded-2xl border text-left transition-all ${
                   breadType === 'sourdough' 
                     ? 'bg-neutral-800 border-orange-500/50 shadow-lg' 
                     : 'bg-neutral-900/40 border-white/5 hover:bg-neutral-800'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-2 text-orange-200">
-                  <Icons.Bread className="w-6 h-6" />
+                <div className="flex items-center gap-2 mb-1 text-orange-200">
+                  <Icons.Bread className="w-5 h-5" />
                 </div>
-                <div className="font-bold text-sm text-white">乡村酸种包</div>
-                <div className="text-[10px] text-neutral-500 mt-1">Classic Sourdough</div>
+                <div className="font-bold text-xs text-white">乡村酸种</div>
+                <div className="text-[9px] text-neutral-500 mt-0.5">Sourdough</div>
               </button>
               <button 
                 onClick={() => handleSwitchBreadType('toast')}
-                className={`p-4 rounded-2xl border text-left transition-all ${
+                className={`p-3 rounded-2xl border text-left transition-all ${
                   breadType === 'toast' 
                     ? 'bg-neutral-800 border-orange-500/50 shadow-lg' 
                     : 'bg-neutral-900/40 border-white/5 hover:bg-neutral-800'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-2 text-orange-200">
-                  <Icons.Toast className="w-6 h-6" />
+                <div className="flex items-center gap-2 mb-1 text-orange-200">
+                  <Icons.Toast className="w-5 h-5" />
                 </div>
-                <div className="font-bold text-sm text-white">奶盐吐司</div>
-                <div className="text-[10px] text-neutral-500 mt-1">Light Milk Salt</div>
+                <div className="font-bold text-xs text-white">奶盐吐司</div>
+                <div className="text-[9px] text-neutral-500 mt-0.5">Levain</div>
+              </button>
+              <button 
+                onClick={() => handleSwitchBreadType('japanese')}
+                className={`p-3 rounded-2xl border text-left transition-all ${
+                  breadType === 'japanese' 
+                    ? 'bg-neutral-800 border-orange-500/50 shadow-lg' 
+                    : 'bg-neutral-900/40 border-white/5 hover:bg-neutral-800'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1 text-orange-200">
+                  <Icons.Toast className="w-5 h-5" />
+                </div>
+                <div className="font-bold text-xs text-white">日式吐司</div>
+                <div className="text-[9px] text-neutral-500 mt-0.5">Shokupan</div>
               </button>
             </div>
 
@@ -240,7 +354,7 @@ function App() {
             {/* Quantity Control */}
             <div className="bg-neutral-900/60 backdrop-blur-sm rounded-3xl p-6 border border-white/5">
               <StepperControl 
-                label={breadType === 'toast' ? '吐司数量 (原料602g/个)' : '面包数量 (Loaves)'}
+                label={breadType === 'japanese' ? '吐司数量 (原料597g/个)' : breadType === 'toast' ? '吐司数量 (原料602g/个)' : '面包数量 (Loaves)'}
                 value={numBreads} 
                 onChange={setNumBreads} 
                 min={1} 
@@ -255,7 +369,20 @@ function App() {
                 <span className="text-[10px] font-bold text-neutral-400 bg-white/5 border border-white/5 px-2 py-1 rounded">Hydration {recipe.hydration}%</span>
               </div>
               <div className="divide-y divide-white/5">
-                {breadType === 'toast' ? (
+                {breadType === 'japanese' ? (
+                  <>
+                    <IngredientRow name="【汤种】高筋粉" weight={recipe.flourTangzhong} percent={10} note="提前煮好冷藏" accent />
+                    <IngredientRow name="【汤种】牛奶" weight={recipe.milkTangzhong} percent={50} note="提前煮好冷藏" accent />
+                    <IngredientRow name="高筋面粉" weight={recipe.flour} percent={100} note="蛋白质>12.5%" />
+                    <IngredientRow name="阿洛酮糖" weight={recipe.allulose} percent={7} note="健康代糖" />
+                    <IngredientRow name="海盐" weight={recipe.salt} percent={2} />
+                    <IngredientRow name="即发干酵母" weight={recipe.yeast} percent={1.6} note="商业酵母" />
+                    <IngredientRow name="全蛋液" weight={recipe.egg} percent={20} note="撕拉关键" accent />
+                    <IngredientRow name="冰牛奶" weight={recipe.milk} percent={34} />
+                    <IngredientRow name="奶粉" weight={recipe.milkPowder} percent={6} />
+                    <IngredientRow name="无盐黄油" weight={recipe.butter} percent={8} note="软化后加" />
+                  </>
+                ) : breadType === 'toast' ? (
                   <>
                     <IngredientRow name="高筋面粉" weight={recipe.flour} percent={100} note="蛋白质>12.5%" />
                     <IngredientRow name="阿洛酮糖" weight={recipe.allulose} percent={9} note="代糖" />
@@ -295,42 +422,59 @@ function App() {
         {/* TAB: Feed */}
         {activeTab === 'feed' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
-            <div className="border border-white/10 rounded-3xl p-6 bg-neutral-900/60 backdrop-blur-sm">
-              <h3 className="font-bold text-white mb-6 flex items-center gap-2 text-sm tracking-wide">
-                <Icons.Wheat className="w-4 h-4 text-orange-400"/> 喂养计算
-              </h3>
-              <StepperControl 
-                label="使用旧种数量 (Seed Amount)" 
-                value={seedStarter} 
-                onChange={setSeedStarter} 
-                min={1} 
-                step={1} 
-              />
-              <div className="mt-8 pt-6 border-t border-white/5 flex gap-4">
-                <StatusBadge label="配方需求" value={`${feed.needed}g`} type="neutral" />
-                <StatusBadge label="喂养总量" value={`${feed.total}g`} type="success" />
+            {breadType === 'japanese' ? (
+              <div className="border border-white/10 rounded-3xl p-8 bg-neutral-900/60 backdrop-blur-sm text-center">
+                <div className="text-6xl mb-4">🧑‍🍳</div>
+                <h3 className="font-bold text-white text-lg mb-2">无需喂养</h3>
+                <p className="text-neutral-400 text-sm">
+                  日式吐司使用<span className="text-orange-400 font-bold">商业酵母</span>，无需提前喂养鲁邦种
+                </p>
+                <div className="mt-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                  <p className="text-xs text-orange-200/80">
+                    💡 直接使用即发干酵母，省时省力，发酵更快速稳定
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="border border-white/10 rounded-3xl p-6 bg-neutral-900/60 backdrop-blur-sm">
+                  <h3 className="font-bold text-white mb-6 flex items-center gap-2 text-sm tracking-wide">
+                    <Icons.Wheat className="w-4 h-4 text-orange-400"/> 喂养计算
+                  </h3>
+                  <StepperControl 
+                    label="使用旧种数量 (Seed Amount)" 
+                    value={seedStarter} 
+                    onChange={setSeedStarter} 
+                    min={1} 
+                    step={1} 
+                  />
+                  <div className="mt-8 pt-6 border-t border-white/5 flex gap-4">
+                    <StatusBadge label="配方需求" value={`${feed.needed}g`} type="neutral" />
+                    <StatusBadge label="喂养总量" value={`${feed.total}g`} type="success" />
+                  </div>
+                </div>
 
-            <div>
-              <div className="text-center text-[10px] text-neutral-500 mb-4 uppercase tracking-widest font-bold">1:1 喂养方案</div>
-              <div className="grid grid-cols-2 gap-4">
-                <FeedCard label="加 T65" value={feed.flour} />
-                <FeedCard label="加 水" value={feed.water} />
-              </div>
-              <div className="mt-4 bg-neutral-900/80 border border-white/10 rounded-3xl p-6 flex items-center justify-between px-8 shadow-lg">
-                <span className="text-xs text-neutral-500 font-bold uppercase tracking-wider">喂养后总量</span>
-                <span className="font-mono text-3xl font-bold text-white">
-                  {feed.total}<span className="text-sm ml-1 text-neutral-500 font-medium">g</span>
-                </span>
-              </div>
-            </div>
-            
-            <div className="p-5 bg-orange-500/10 border border-orange-500/20 rounded-2xl text-xs text-orange-200/80 leading-relaxed backdrop-blur-md">
-              <span className="font-bold block mb-1 text-orange-400">喂养提示</span>
-              取 {seedStarter}g 旧种,加入上方显示的粉和水混合。静置发酵至峰值(约 4-6 小时)后,取 {feed.needed}g 用于做面包,
-              <span className="text-white font-bold">剩余约 {feed.buffer}g 作为下次的火种(已包含损耗余量)。</span>
-            </div>
+                <div>
+                  <div className="text-center text-[10px] text-neutral-500 mb-4 uppercase tracking-widest font-bold">1:1 喂养方案</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FeedCard label="加 T65" value={feed.flour} />
+                    <FeedCard label="加 水" value={feed.water} />
+                  </div>
+                  <div className="mt-4 bg-neutral-900/80 border border-white/10 rounded-3xl p-6 flex items-center justify-between px-8 shadow-lg">
+                    <span className="text-xs text-neutral-500 font-bold uppercase tracking-wider">喂养后总量</span>
+                    <span className="font-mono text-3xl font-bold text-white">
+                      {feed.total}<span className="text-sm ml-1 text-neutral-500 font-medium">g</span>
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="p-5 bg-orange-500/10 border border-orange-500/20 rounded-2xl text-xs text-orange-200/80 leading-relaxed backdrop-blur-md">
+                  <span className="font-bold block mb-1 text-orange-400">喂养提示</span>
+                  取 {seedStarter}g 旧种,加入上方显示的粉和水混合。静置发酵至峰值(约 4-6 小时)后,取 {feed.needed}g 用于做面包,
+                  <span className="text-white font-bold">剩余约 {feed.buffer}g 作为下次的火种(已包含损耗余量)。</span>
+                </div>
+              </>
+            )}
           </div>
         )}
 
