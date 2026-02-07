@@ -54,7 +54,7 @@ function App() {
         milkPowder: base.milkPowder * ratio,
         butter: base.butter * ratio,
         starter: 0, // 日式吐司用商业酵母，无需鲁邦种
-        totalWeight: (250 + 18 + 5 + 4 + 50 + 85 + 15 + 20 + 150) * ratio,
+        totalWeight: (base.flour + base.allulose + base.salt + base.yeast + base.egg + base.milk + base.milkPowder + base.butter + tangzhongNeeded) * ratio,
         hydration: 74
       };
     } else {
@@ -123,6 +123,11 @@ function App() {
             { name: '阿洛酮糖', value: recipe.allulose },
             { name: '海盐', value: recipe.salt }
           ];
+          currentTips = [
+            `【投料顺序】①冰牛奶 ${recipe.milk}g → ②全蛋液 ${recipe.egg}g → ③汤种(冷藏态) ${recipe.tangzhongNeeded}g → ④高筋粉 ${recipe.flour}g → ⑤干酵母(撒面粉上) ${recipe.yeast}g → ⑥奶粉 ${recipe.milkPowder}g → ⑦阿洛酮糖 ${recipe.allulose}g → ⑧海盐(撒最边上) ${recipe.salt}g`,
+            '汤种必须是冷藏状态（4-10°C），温热会杀死酵母',
+            '1档混合3分钟至无干粉，转3档揉5-7分钟至粗膜'
+          ];
         }
         else if (step.id === 'knead') {
           ingredients = [{ name: '软化黄油', value: recipe.butter }];
@@ -153,11 +158,23 @@ function App() {
             { name: '水', value: recipe.autolyseWater },
             { name: '鲁邦种', value: recipe.starter }
           ];
+          currentTips = [
+            `T65 ${recipe.flour}g + 水 ${recipe.autolyseWater}g + 鲁邦种 ${recipe.starter}g 放入搅拌缸`,
+            '开启厨师机低速混合，只要看不见干粉即可停止',
+            '千万不要过度搅拌，只需混合均匀',
+            '盖上保鲜膜，静置 45 分钟，让面筋自然形成'
+          ];
         }
         else if (step.id === 'salt') {
           ingredients = [
             { name: '盐', value: recipe.salt },
             { name: '预留水', value: recipe.reservedWater }
+          ];
+          currentTips = [
+            `预留的 ${recipe.reservedWater}g 水分需分 2-3 次缓慢加入`,
+            '每次加水后等待面团完全吸收再加下一次',
+            `最后加入 ${recipe.salt}g 盐，低速搅拌至完全溶解`,
+            '此时面团变烂属正常现象，不用慌张'
           ];
         }
         else if (step.id === 'fold_2' && flavorType === 'tomato') {
@@ -165,24 +182,47 @@ function App() {
             { name: '番茄', value: recipe.tomato },
             { name: '罗勒', value: recipe.basil }
           ];
+          currentTips = [
+            '重复之前的拉伸折叠动作 (Stretch & Fold)',
+            '将面团轻轻摊开',
+            `均匀铺上风干番茄 ${recipe.tomato}g 和罗勒碎 ${recipe.basil}g`,
+            '像叠被子一样折叠包裹馅料'
+          ];
         }
         else if (step.id === 'preshape') {
           ingredients = [{ name: '每份', value: recipe.perLoaf, unit: 'g' }];
         }
       }
       
+      // 酸种烘烤：多面包时显示总时间
+      if (step.id === 'bake' && breadType === 'sourdough' && numBreads > 1) {
+        const totalMin = numBreads * 38;
+        const hours = Math.floor(totalMin / 60);
+        const mins = totalMin % 60;
+        const timeStr = hours > 0 ? `${hours}小时${mins > 0 ? mins + '分钟' : ''}` : `${totalMin}分钟`;
+        currentTips = [
+          ...currentTips,
+          `【总用时】${numBreads} 个面包逐个烤，预计总共约 ${timeStr}`
+        ];
+      }
+
       return { ...step, ingredients, tips: currentTips };
     });
   }, [feed, recipe, numBreads, flavorType, breadType]);
 
   const progress = useMemo(() => {
-    const c = Object.values(completedSteps).filter(Boolean).length;
+    const validIds = new Set(steps.map(s => s.id));
+    const c = Object.entries(completedSteps).filter(([id, done]) => done && validIds.has(id)).length;
     return { completed: c, total: steps.length, percent: Math.round((c / steps.length) * 100) };
-  }, [completedSteps, steps.length]);
+  }, [completedSteps, steps]);
 
   const toggleStep = useCallback((id) => {
     setCompletedSteps(p => ({ ...p, [id]: !p[id] }));
   }, [setCompletedSteps]);
+
+  const currentStepId = useMemo(() => {
+    return steps.find(s => !completedSteps[s.id])?.id || null;
+  }, [steps, completedSteps]);
 
   return (
     <div className="min-h-screen relative overflow-hidden pb-20">
@@ -439,18 +479,36 @@ function App() {
               </div>
             </div>
 
+            {/* ColdRetardTracker - 步骤完成后独立显示，不被折叠 */}
+            {breadType === 'sourdough' && completedSteps['cold'] && coldStartTimeStr && (
+              <ColdRetardTracker
+                savedTime={coldStartTimeStr}
+                savedDuration={coldDuration}
+                onSetTime={(e) => {
+                  e.stopPropagation();
+                  setColdStartTimeStr(new Date().toISOString());
+                }}
+                onSetDuration={(d) => setColdDuration(d)}
+                onReset={(e) => {
+                  e.stopPropagation();
+                  setColdStartTimeStr(null);
+                }}
+              />
+            )}
+
             {/* Step Cards */}
             <div className="space-y-4">
               {steps.map(step => (
-                <StepCard 
-                  key={step.id} 
-                  step={step} 
-                  isDone={completedSteps[step.id]} 
+                <StepCard
+                  key={step.id}
+                  step={step}
+                  isDone={completedSteps[step.id]}
+                  isCurrent={step.id === currentStepId}
                   onToggle={() => toggleStep(step.id)}
                 >
-                  {step.id === 'cold' && breadType === 'sourdough' && (
-                    <ColdRetardTracker 
-                      savedTime={coldStartTimeStr} 
+                  {step.id === 'cold' && breadType === 'sourdough' && !completedSteps['cold'] && (
+                    <ColdRetardTracker
+                      savedTime={coldStartTimeStr}
                       savedDuration={coldDuration}
                       onSetTime={(e) => {
                         e.stopPropagation();

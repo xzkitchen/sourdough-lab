@@ -2,28 +2,32 @@ import React from 'react';
 import { Icons } from '../utils/icons';
 import { Badge, MixerStage } from './index';
 
-export function StepCard({ step, isDone, onToggle, children }) {
-  const accents = {
-    prep: 'from-amber-400 to-orange-500',
-    mix: 'from-orange-400 to-rose-500',
-    bulk: 'from-rose-400 to-pink-600',
-    shape: 'from-fuchsia-500 to-purple-600',
-    cold: 'from-sky-500 to-blue-600',
-    bake: 'from-red-500 to-orange-600',
-  }[step.phase] || 'from-neutral-400 to-neutral-600';
+const PHASE_ACCENTS = {
+  prep: 'from-amber-400 to-orange-500',
+  mix: 'from-orange-400 to-rose-500',
+  bulk: 'from-rose-400 to-pink-600',
+  shape: 'from-fuchsia-500 to-purple-600',
+  cold: 'from-sky-500 to-blue-600',
+  bake: 'from-red-500 to-orange-600',
+};
+
+export function StepCard({ step, isDone, isCurrent, onToggle, children }) {
+  const accents = PHASE_ACCENTS[step.phase] || 'from-neutral-400 to-neutral-600';
 
   return (
-    <div 
+    <div
       onClick={onToggle}
       className={`relative rounded-3xl overflow-hidden transition-all duration-500 cursor-pointer group
-        ${isDone 
-          ? 'opacity-40 grayscale bg-neutral-900/30 border border-white/5' 
-          : 'bg-neutral-900/60 backdrop-blur-md border border-white/10 hover:border-white/20 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)]'
+        ${isDone
+          ? 'opacity-40 grayscale bg-neutral-900/30 border border-white/5'
+          : isCurrent
+            ? 'bg-neutral-900/60 backdrop-blur-md border border-orange-500/40 shadow-[0_0_30px_-5px_rgba(249,115,22,0.15)]'
+            : 'bg-neutral-900/60 backdrop-blur-md border border-white/10 hover:border-white/20 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)]'
         }
       `}
     >
       {!isDone && (
-        <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${accents}`} />
+        <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${accents} ${isCurrent ? 'animate-pulse' : ''}`} />
       )}
       {!isDone && (
         <div className={`absolute -left-10 top-1/2 -translate-y-1/2 w-20 h-full opacity-10 bg-gradient-to-r ${accents} blur-xl group-hover:opacity-20 transition-opacity`} />
@@ -32,9 +36,16 @@ export function StepCard({ step, isDone, onToggle, children }) {
       <div className="p-6 pl-8 relative z-10">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex-1 min-w-0">
-            <h3 className={`font-bold text-lg tracking-tight ${isDone ? 'text-neutral-600 line-through' : 'text-white group-hover:text-orange-100 transition-colors'}`}>
-              {step.title}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className={`font-bold text-lg tracking-tight ${isDone ? 'text-neutral-600 line-through' : 'text-white group-hover:text-orange-100 transition-colors'}`}>
+                {step.title}
+              </h3>
+              {isCurrent && (
+                <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                  当前
+                </span>
+              )}
+            </div>
             <div className="text-sm text-neutral-500 font-medium mt-0.5">{step.subtitle}</div>
           </div>
           

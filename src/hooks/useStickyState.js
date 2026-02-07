@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function useStickyState(defaultValue, key) {
   const [value, setValue] = useState(() => {
@@ -6,7 +6,6 @@ export function useStickyState(defaultValue, key) {
       const stickyValue = localStorage.getItem(key);
       return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
     } catch (error) {
-      console.error(`Error loading ${key} from localStorage:`, error);
       return defaultValue;
     }
   });
@@ -14,10 +13,10 @@ export function useStickyState(defaultValue, key) {
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.error(`Error saving ${key} to localStorage:`, error);
-    }
+    } catch (error) {}
   }, [key, value]);
 
-  return [value, setValue];
+  const setSticky = useCallback((val) => setValue(val), []);
+
+  return [value, setSticky];
 }
