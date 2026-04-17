@@ -211,7 +211,7 @@ function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
         onApply={onApplyFlavor}
       />
 
-      <section className="space-y-2.5">
+      <section className="space-y-4">
         <SectionHeader title="配方清单" latin="Formula" />
         <Card variant="surface" padding="md">
           <IngredientTable

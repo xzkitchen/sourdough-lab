@@ -53,16 +53,7 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
     <section className={cn('space-y-4', className)}>
       <GrainFilter />
 
-      <SectionHeader
-        title="创意预设"
-        latin="Chef's picks"
-        right={
-          <div className="text-[10px] text-faint font-body tracking-wider tabular-nums">
-            {flavors.length} 种 ·&nbsp;
-            <span className="text-muted">← 滑动 →</span>
-          </div>
-        }
-      />
+      <SectionHeader title="创意预设" latin="Chef's picks" />
 
       {/*
         横向 feed：
@@ -113,11 +104,11 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
   );
 }
 
-/** Section header —— 单行内联（中文 · LATIN）*/
+/** Section header —— 居中单行（中文 · LATIN），可选右侧浮动按钮 */
 export function SectionHeader({ title, latin, right }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 px-0.5">
-      <div className="flex items-baseline gap-2 min-w-0">
+    <div className="relative flex items-baseline justify-center px-0.5">
+      <div className="flex items-baseline gap-2">
         <span className="font-display text-[16px] text-ink tracking-tight leading-none">
           {title}
         </span>
@@ -130,7 +121,11 @@ export function SectionHeader({ title, latin, right }) {
           </>
         )}
       </div>
-      {right && <div className="shrink-0">{right}</div>}
+      {right && (
+        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+          {right}
+        </div>
+      )}
     </div>
   );
 }
