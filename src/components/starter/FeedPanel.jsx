@@ -26,10 +26,9 @@ export function FeedPanel({
 
   return (
     <div className={cn('space-y-4', className)}>
-      <SectionHeader title="养种计算" latin="Levain" />
-
-      {/* 输入 Card —— 数量 + 水合度（上） / 旧种（下） */}
+      {/* 输入 Card —— 标题 + 数量 + 水合度（上） / 旧种（下） */}
       <Card variant="surface" padding="md" className="space-y-5">
+        <SectionHeader title="养种计算" latin="Levain" />
         <div className="flex items-stretch gap-5">
           <div className="flex-1">
             <NumberField

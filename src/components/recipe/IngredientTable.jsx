@@ -50,7 +50,7 @@ export function IngredientTable({
 function Row({ ing, showBakersPct, accent }) {
   return (
     <li
-      className="grid items-center py-4 gap-3"
+      className="grid items-center h-12 gap-3"
       style={{ gridTemplateColumns: '6px 1fr 44px 64px' }}
     >
       {/* dot 位 —— 始终存在，accent 时显示麦色点 */}

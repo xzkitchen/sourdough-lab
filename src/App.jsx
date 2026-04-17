@@ -211,15 +211,13 @@ function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
         onApply={onApplyFlavor}
       />
 
-      <section className="space-y-4">
+      <Card variant="surface" padding="md" className="space-y-4">
         <SectionHeader title="配方清单" latin="Formula" />
-        <Card variant="surface" padding="md">
-          <IngredientTable
-            ingredients={calculated.ingredients}
-            totalWeight={calculated.totalWeight}
-          />
-        </Card>
-      </section>
+        <IngredientTable
+          ingredients={calculated.ingredients}
+          totalWeight={calculated.totalWeight}
+        />
+      </Card>
 
       <WarningList warnings={calculated.warnings} notes={calculated.notes} />
     </div>
