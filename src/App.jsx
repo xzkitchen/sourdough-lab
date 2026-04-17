@@ -107,7 +107,7 @@ function App() {
 
   return (
     <div className="min-h-screen relative">
-      <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-12 relative z-10 space-y-6 sm:space-y-10">
+      <div className="max-w-2xl mx-auto px-5 py-7 sm:px-8 sm:py-12 relative z-10 space-y-7 sm:space-y-10">
 
         {/* ── Header ── */}
         <header>
@@ -228,7 +228,7 @@ function FormulaTab({
   onReset,
 }) {
   return (
-    <div className="space-y-7">
+    <div className="space-y-8">
       {/* Chef's picks */}
       <FlavorPresets
         base={base}
@@ -245,28 +245,26 @@ function FormulaTab({
         calculated={calculated}
       />
 
-      {/* Ingredient table —— 提前到 modifier 托盘之前，让用户先看到结果 */}
-      <Card variant="surface" padding="md" className="sm:p-6">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="font-display text-lg sm:text-xl text-ink tracking-tight">
-            配方清单
-          </h2>
-          <span className="text-[10px] uppercase tracking-widest text-faint font-body">
+      {/* Ingredient table */}
+      <section className="space-y-3">
+        <div className="flex items-baseline gap-2 px-0.5">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-faint font-body">
             Formula
           </span>
+          <span className="font-display text-base text-ink">配方清单</span>
         </div>
-        <IngredientTable
-          ingredients={calculated.ingredients}
-          totalWeight={calculated.totalWeight}
-        />
-      </Card>
+        <Card variant="surface" padding="md">
+          <IngredientTable
+            ingredients={calculated.ingredients}
+            totalWeight={calculated.totalWeight}
+          />
+        </Card>
+      </section>
 
       {/* Warnings + notes */}
       <WarningList warnings={calculated.warnings} notes={calculated.notes} />
 
-      <Divider />
-
-      {/* 自定义 modifier —— 折叠（默认收起，除非有选中） */}
+      {/* 自定义 modifier */}
       <ModifierTray
         title="色粉"
         sub="Colorants"

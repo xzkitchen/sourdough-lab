@@ -32,18 +32,16 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
       {/* 共享 SVG filter：所有色球用同一个 grain 滤镜 */}
       <GrainFilter />
 
-      <div className="flex items-baseline justify-between px-1">
+      <div className="flex items-baseline gap-2 px-0.5">
         <div className="text-[10px] uppercase tracking-[0.2em] text-faint font-body">
           Chef's picks
         </div>
-        <div className="text-[10px] uppercase tracking-widest text-faint font-body">
-          创意配方
-        </div>
+        <span className="font-display text-base text-ink">创意预设</span>
       </div>
 
-      {/* 横向滚动 feed */}
+      {/* 横向滚动 feed — 带左右呼吸 padding */}
       <div
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-6 px-6 pb-3"
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-5 px-5 pb-3 sm:-mx-8 sm:px-8"
         style={{ scrollbarWidth: 'thin' }}
       >
         {flavors.map((f) => {
@@ -57,7 +55,7 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
               onClick={() => onApply(f)}
               aria-pressed={active}
               className={cn(
-                'snap-start shrink-0 w-[200px] text-left',
+                'snap-start shrink-0 w-[160px] text-left',
                 'rounded-md border bg-surface overflow-hidden relative',
                 'transition-colors ease-editorial duration-fast',
                 active
@@ -66,8 +64,8 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
               )}
             >
               {/* 色球区域 */}
-              <div className="relative pt-6 pb-4 flex items-center justify-center">
-                <ColorOrb background={gradientBg} size={96} />
+              <div className="relative pt-4 pb-3 flex items-center justify-center">
+                <ColorOrb background={gradientBg} size={72} />
 
                 {/* 选中 check，角标式 */}
                 {active && (
@@ -78,31 +76,27 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
               </div>
 
               {/* 文字 */}
-              <div className="px-4 pb-4">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-faint font-body mb-1">
+              <div className="px-3 pb-3">
+                <div className="text-[9px] uppercase tracking-[0.16em] text-faint font-body mb-0.5">
                   {f.nameLatin}
                 </div>
                 <div
                   className={cn(
-                    'font-display text-base leading-tight mb-2',
+                    'font-display text-sm leading-tight mb-1.5',
                     active ? 'text-accent-ink' : 'text-ink'
                   )}
                 >
                   {f.name}
                 </div>
-                <div className="text-xs text-muted font-body leading-relaxed line-clamp-2 mb-3 min-h-[32px]">
-                  {f.description}
-                </div>
-
-                <div className="flex items-center gap-1.5 text-[10px] text-faint font-body uppercase tracking-widest">
+                <div className="flex items-center gap-1 text-[9px] text-faint font-body uppercase tracking-wider">
                   {f.modifiers.length === 0 ? (
-                    <span>No modifiers</span>
+                    <span>Base</span>
                   ) : (
                     <>
                       <span className="tabular-nums font-mono text-accent-ink">
                         {f.modifiers.length}
                       </span>
-                      <span>modifiers</span>
+                      <span>mods</span>
                     </>
                   )}
                 </div>

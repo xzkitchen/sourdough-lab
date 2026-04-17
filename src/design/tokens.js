@@ -42,12 +42,19 @@ export const spacing = {
   4: '16px',
   5: '20px',
   6: '24px',
+  7: '28px',
   8: '32px',
   10: '40px',
   12: '48px',
   16: '64px',
   20: '80px',
   24: '96px',
+
+  // 语义间距 tier（手机优先节奏）
+  tight:  '8px',    // 同一卡片内相邻元素
+  normal: '16px',   // 相关段落之间
+  group:  '28px',   // 大分组之间
+  section:'40px',   // Tab 内 section 之间（桌面加大）
 };
 
 export const radii = {

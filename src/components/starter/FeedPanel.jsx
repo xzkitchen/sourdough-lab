@@ -1,32 +1,31 @@
 import React from 'react';
 import { Wheat, Droplet, Sprout } from 'lucide-react';
 import { cn } from '../../lib/cn.js';
-import { Card, Divider, NumberField } from '../primitives/index.js';
+import { Card, NumberField } from '../primitives/index.js';
 
 /**
- * FeedPanel — 鲁邦种喂养面板
+ * FeedPanel — 鲁邦种喂养面板（一屏紧凑布局）
  *
- * Props:
- *   feed          calculateFeed() 输出 {needed, seed, flour, water, total, buffer}
- *   seedStarter   number (当前旧种重量)
- *   onSeedChange(next)
+ * 手机竖屏（375×812）完整可见：
+ *   顶部 Header
+ *   单卡片：输入 + 2×2 指标网格 + 双色条
+ *   说明
  */
 export function FeedPanel({ feed, seedStarter, onSeedChange, className }) {
   if (!feed) return null;
 
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* 输入区 */}
-      <Card variant="surface" padding="lg">
-        <div className="flex items-baseline justify-between mb-5">
-          <h2 className="font-display text-xl text-ink tracking-tight">
-            养种计算
-          </h2>
-          <span className="text-[10px] uppercase tracking-widest text-faint font-body">
-            Levain
-          </span>
-        </div>
+    <div className={cn('space-y-4', className)}>
+      {/* Section header */}
+      <div className="flex items-baseline gap-2 px-0.5">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-faint font-body">
+          Levain
+        </span>
+        <span className="font-display text-base text-ink">养种计算</span>
+      </div>
 
+      {/* 主卡：输入 + 指标 */}
+      <Card variant="surface" padding="md">
         <NumberField
           label="已有旧种"
           hint="Seed"
@@ -37,107 +36,70 @@ export function FeedPanel({ feed, seedStarter, onSeedChange, className }) {
           unit="g"
         />
 
-        <Divider className="my-6" />
-
-        <div className="grid grid-cols-2 gap-4">
-          <MetricBlock
+        {/* 4 指标 2×2 网格 */}
+        <div className="grid grid-cols-2 gap-x-5 gap-y-3 mt-5 pt-4 border-t border-line-soft">
+          <MetricCell
+            icon={<Wheat size={12} strokeWidth={1.5} />}
+            label="加 T65"
+            value={feed.flour}
+            unit="g"
+            tone="accent"
+          />
+          <MetricCell
+            icon={<Droplet size={12} strokeWidth={1.5} />}
+            label="加 水"
+            value={feed.water}
+            unit="g"
+            tone="accent"
+          />
+          <MetricCell
             label="配方需求"
             value={feed.needed}
             unit="g"
-            subtitle={`含 ${feed.buffer}g 缓冲余量`}
             tone="muted"
           />
-          <MetricBlock
+          <MetricCell
             label="喂养后总量"
             value={feed.total}
             unit="g"
-            subtitle="发至峰值后取用"
-            tone="accent"
+            tone="muted"
           />
         </div>
       </Card>
-
-      {/* 喂养方案卡 */}
-      <div className="space-y-3">
-        <div className="flex items-baseline justify-between px-1">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-faint font-body">
-            1:1 Feed Plan
-          </div>
-          <div className="text-[10px] uppercase tracking-widest text-faint font-body">
-            喂养方案
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <FeedCard
-            icon={<Wheat size={14} strokeWidth={1.5} />}
-            label="加 T65"
-            value={feed.flour}
-          />
-          <FeedCard
-            icon={<Droplet size={14} strokeWidth={1.5} />}
-            label="加 水"
-            value={feed.water}
-          />
-        </div>
-      </div>
 
       {/* 说明 */}
-      <Card variant="sunken" padding="md">
-        <div className="flex items-start gap-3">
-          <Sprout
-            size={14}
-            strokeWidth={1.5}
-            className="text-accent-ink shrink-0 mt-0.5"
-            aria-hidden
-          />
-          <p className="text-xs text-muted font-body leading-relaxed">
-            取 <span className="font-mono text-ink tabular-nums">{seedStarter}g</span> 旧种，
-            加上方显示的粉和水混合。静置发酵至峰值（约 4–6 小时）后，
-            取 <span className="font-mono text-ink tabular-nums">{feed.needed}g</span> 用于做面包，
-            剩余约 <span className="font-mono text-ink tabular-nums">{feed.buffer}g</span> 作为下次的火种（已含损耗余量）。
-          </p>
-        </div>
-      </Card>
+      <div className="flex items-start gap-2.5 px-1">
+        <Sprout
+          size={12}
+          strokeWidth={1.5}
+          className="text-accent-ink shrink-0 mt-0.5"
+          aria-hidden
+        />
+        <p className="text-xs text-muted font-body leading-relaxed">
+          取 <span className="font-mono text-ink tabular-nums">{seedStarter}g</span> 旧种，
+          加 <span className="font-mono text-ink tabular-nums">{feed.flour}g</span> T65 + <span className="font-mono text-ink tabular-nums">{feed.water}g</span> 水 混合。
+          28°C 发酵 4–6h 至峰值，取 <span className="font-mono text-ink tabular-nums">{feed.needed}g</span> 做面包，剩 <span className="font-mono text-ink tabular-nums">{feed.buffer}g</span> 作下次火种。
+        </p>
+      </div>
     </div>
   );
 }
 
-function MetricBlock({ label, value, unit, subtitle, tone }) {
-  const color = tone === 'accent' ? 'text-accent-ink' : 'text-ink';
-  const bgLine = tone === 'accent' ? 'border-accent-line' : 'border-line';
+function MetricCell({ icon, label, value, unit, tone }) {
+  const valueColor = tone === 'accent' ? 'text-accent-ink' : 'text-ink';
   return (
-    <div className={cn('border-l-2 pl-4 py-1', bgLine)}>
-      <div className="text-[10px] uppercase tracking-widest text-muted font-body mb-1">
-        {label}
-      </div>
-      <div className="flex items-baseline gap-1">
-        <span className={cn('font-display text-3xl tabular-nums tracking-tight', color)}>
-          {value}
-        </span>
-        <span className="text-sm text-faint font-mono">{unit}</span>
-      </div>
-      {subtitle && (
-        <div className="text-[10px] text-faint font-body mt-1">{subtitle}</div>
-      )}
-    </div>
-  );
-}
-
-function FeedCard({ icon, label, value }) {
-  return (
-    <Card variant="surface" padding="lg" className="text-center flex flex-col items-center gap-3">
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted font-body">
-        <span className="text-accent-ink">{icon}</span>
+    <div>
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted font-body mb-1">
+        {icon && <span className="text-accent-ink">{icon}</span>}
         <span>{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
-        <span className="font-display text-4xl tabular-nums text-ink tracking-tight">
+        <span className={cn('font-display text-2xl tabular-nums tracking-tight', valueColor)}>
           {value}
         </span>
-        <span className="text-sm text-faint font-mono">g</span>
+        <span className="text-xs text-faint font-mono">{unit}</span>
       </div>
-    </Card>
+    </div>
   );
 }
 
