@@ -4,7 +4,7 @@ import { cn } from './lib/cn.js';
 import { useStickyState } from './hooks/useStickyState.js';
 
 import { DEFAULT_BASE } from './domain/base-recipes/index.js';
-import { COLORANTS, ADDINS, FLAVORS } from './domain/modifiers/index.js';
+import { FLAVORS } from './domain/modifiers/index.js';
 import {
   calculateRecipe,
   calculateFeed,
@@ -15,15 +15,11 @@ import { getProcessSteps } from './domain/process/index.js';
 import {
   Card,
   Divider,
-  Button,
-  NumberField,
 } from './components/primitives/index.js';
 
 import {
   FlavorPresets,
-  ModifierTray,
   IngredientTable,
-  HydrationBadge,
   WarningList,
   SectionHeader,
 } from './components/recipe/index.js';
@@ -72,23 +68,9 @@ function App() {
 
   const completedIds = useMemo(() => new Set(completedList), [completedList]);
 
-  const toggleModifier = useCallback((id) => {
-    setSelected((prev) => {
-      const exists = prev.find((s) => s.id === id);
-      if (exists) return prev.filter((s) => s.id !== id);
-      return [...prev, { id }];
-    });
-  }, [setSelected]);
-
-  const changeDose = useCallback((id, dose) => {
-    setSelected((prev) => prev.map((s) => (s.id === id ? { ...s, dose } : s)));
-  }, [setSelected]);
-
   const applyFlavor = useCallback((flavor) => {
     setSelected(flavor.modifiers.map((m) => ({ id: m.id, dose: m.dose })));
   }, [setSelected]);
-
-  const resetSelected = useCallback(() => setSelected([]), [setSelected]);
 
   const toggleStep = useCallback((stepId) => {
     setCompletedList((prev) =>
@@ -111,7 +93,7 @@ function App() {
     <div className="min-h-screen relative">
       <div className="max-w-2xl mx-auto px-5 py-7 sm:px-8 sm:py-12 relative z-10 space-y-7 sm:space-y-10">
 
-        {/* ── Header —— 极简克制 ── */}
+        {/* ── Header ── */}
         <header className="space-y-2">
           <h1 className="font-display text-[26px] sm:text-[32px] text-ink leading-[1.1] tracking-tight">
             Sourdough Lab
@@ -121,7 +103,7 @@ function App() {
           </p>
         </header>
 
-        {/* ── Tab nav —— 中英并排 + flex-1 均分 ── */}
+        {/* ── Tab nav ── */}
         <nav
           className="flex border-b border-line"
           role="tablist"
@@ -152,7 +134,6 @@ function App() {
           })}
         </nav>
 
-        {/* ── Tab contents ── */}
         <AnimatePresence mode="wait">
           <motion.section
             key={tab}
@@ -165,14 +146,9 @@ function App() {
             {tab === 'formula' && (
               <FormulaTab
                 base={base}
-                numUnits={numUnits}
-                onNumUnitsChange={setNumUnits}
                 selected={selected}
                 calculated={calculated}
-                onToggle={toggleModifier}
-                onDose={changeDose}
                 onApplyFlavor={applyFlavor}
-                onReset={resetSelected}
               />
             )}
 
@@ -181,6 +157,10 @@ function App() {
                 feed={feed}
                 seedStarter={seedStarter}
                 onSeedChange={setSeedStarter}
+                base={base}
+                numUnits={numUnits}
+                onNumUnitsChange={setNumUnits}
+                calculated={calculated}
               />
             )}
 
@@ -220,21 +200,10 @@ function App() {
   );
 }
 
-// ── Formula Tab — 紧凑布局 ──────────────────────
-function FormulaTab({
-  base,
-  numUnits,
-  onNumUnitsChange,
-  selected,
-  calculated,
-  onToggle,
-  onDose,
-  onApplyFlavor,
-  onReset,
-}) {
+// ── Formula Tab — 只两块：创意预设 + 配方清单 ──────────────────
+function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
   return (
     <div className="space-y-8">
-      {/* Chef's picks */}
       <FlavorPresets
         base={base}
         flavors={FLAVORS}
@@ -242,15 +211,6 @@ function FormulaTab({
         onApply={onApplyFlavor}
       />
 
-      {/* 数量 + 水合度紧凑 row */}
-      <QuantityHydrationRow
-        base={base}
-        numUnits={numUnits}
-        onNumUnitsChange={onNumUnitsChange}
-        calculated={calculated}
-      />
-
-      {/* Ingredient table */}
       <section className="space-y-3">
         <SectionHeader title="配方清单" latin="Formula" />
         <Card variant="surface" padding="md">
@@ -261,71 +221,8 @@ function FormulaTab({
         </Card>
       </section>
 
-      {/* Warnings + notes */}
       <WarningList warnings={calculated.warnings} notes={calculated.notes} />
-
-      {/* 自定义 modifier */}
-      <section className="space-y-3">
-        <SectionHeader title="色粉" latin="Colorants" />
-        <ModifierTray
-          modifiers={COLORANTS}
-          selected={selected.filter((s) => COLORANTS.some((c) => c.id === s.id))}
-          onToggle={onToggle}
-          onDoseChange={onDose}
-          initialVisible={4}
-          hideHeader
-        />
-      </section>
-
-      <section className="space-y-3">
-        <SectionHeader title="混入料" latin="Add-ins" />
-        <ModifierTray
-          modifiers={ADDINS}
-          selected={selected.filter((s) => ADDINS.some((a) => a.id === s.id))}
-          onToggle={onToggle}
-          onDoseChange={onDose}
-          initialVisible={4}
-          hideHeader
-        />
-      </section>
-
-      {selected.length > 0 && (
-        <div className="flex justify-end">
-          <Button variant="text" size="sm" onClick={onReset}>
-            清空 modifier
-          </Button>
-        </div>
-      )}
     </div>
-  );
-}
-
-function QuantityHydrationRow({ base, numUnits, onNumUnitsChange, calculated }) {
-  return (
-    <Card variant="surface" padding="md" className="flex items-stretch gap-5">
-      <div className="flex-1 min-w-0">
-        <NumberField
-          label="数量"
-          hint="Loaves"
-          value={numUnits}
-          onChange={onNumUnitsChange}
-          min={1}
-          max={10}
-        />
-      </div>
-
-      <div className="w-px bg-line-soft" aria-hidden />
-
-      <div className="flex flex-col justify-center items-start gap-2 shrink-0">
-        <div className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
-          水合度
-        </div>
-        <HydrationBadge
-          value={calculated.actualHydration}
-          base={base.hydration}
-        />
-      </div>
-    </Card>
   );
 }
 
