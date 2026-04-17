@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from './lib/cn.js';
 import { useStickyState } from './hooks/useStickyState.js';
 
 import { DEFAULT_BASE } from './domain/base-recipes/index.js';
@@ -24,6 +25,7 @@ import {
   IngredientTable,
   HydrationBadge,
   WarningList,
+  SectionHeader,
 } from './components/recipe/index.js';
 
 import { FeedPanel } from './components/starter/index.js';
@@ -109,19 +111,19 @@ function App() {
     <div className="min-h-screen relative">
       <div className="max-w-2xl mx-auto px-5 py-7 sm:px-8 sm:py-12 relative z-10 space-y-7 sm:space-y-10">
 
-        {/* ── Header ── */}
-        <header>
-          <h1 className="font-display text-[28px] sm:text-4xl text-ink leading-none tracking-tight">
-            Sourdough <span className="italic">Lab.</span>
+        {/* ── Header —— 极简克制 ── */}
+        <header className="space-y-2">
+          <h1 className="font-display text-[26px] sm:text-[32px] text-ink leading-[1.1] tracking-tight">
+            Sourdough Lab
           </h1>
-          <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-muted font-body uppercase tracking-[0.22em]">
-            A lab for creative sourdough
+          <p className="text-xs text-muted font-body">
+            手作酸面包实验室 · Artisan sourdough, modular
           </p>
         </header>
 
-        {/* ── Tab nav ── */}
+        {/* ── Tab nav —— 中英并排 + flex-1 均分 ── */}
         <nav
-          className="flex items-baseline gap-5 sm:gap-6 border-b border-line"
+          className="flex border-b border-line"
           role="tablist"
           aria-label="页面切换"
         >
@@ -134,12 +136,15 @@ function App() {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(t.id)}
-                className={`pb-2.5 sm:pb-3 -mb-px border-b-[1.5px] transition-colors ease-editorial duration-fast flex items-baseline gap-1.5
-                  ${active ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink'}
-                `}
+                className={cn(
+                  'flex-1 pb-3 -mb-px border-b-[1.5px] transition-colors ease-editorial duration-fast flex flex-col items-center gap-0.5',
+                  active
+                    ? 'border-accent text-ink'
+                    : 'border-transparent text-muted hover:text-ink'
+                )}
               >
-                <span className="font-display text-base sm:text-lg">{t.label}</span>
-                <span className="hidden sm:inline font-body text-xs tracking-widest text-faint uppercase">
+                <span className="font-display text-[17px] leading-none">{t.label}</span>
+                <span className="font-body text-[10px] tracking-[0.2em] text-faint uppercase">
                   {t.zh}
                 </span>
               </button>
@@ -247,12 +252,7 @@ function FormulaTab({
 
       {/* Ingredient table */}
       <section className="space-y-3">
-        <div className="flex items-baseline gap-2 px-0.5">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-faint font-body">
-            Formula
-          </span>
-          <span className="font-display text-base text-ink">配方清单</span>
-        </div>
+        <SectionHeader title="配方清单" latin="Formula" />
         <Card variant="surface" padding="md">
           <IngredientTable
             ingredients={calculated.ingredients}
@@ -265,25 +265,29 @@ function FormulaTab({
       <WarningList warnings={calculated.warnings} notes={calculated.notes} />
 
       {/* 自定义 modifier */}
-      <ModifierTray
-        title="色粉"
-        sub="Colorants"
-        modifiers={COLORANTS}
-        selected={selected.filter((s) => COLORANTS.some((c) => c.id === s.id))}
-        onToggle={onToggle}
-        onDoseChange={onDose}
-        initialVisible={4}
-      />
+      <section className="space-y-3">
+        <SectionHeader title="色粉" latin="Colorants" />
+        <ModifierTray
+          modifiers={COLORANTS}
+          selected={selected.filter((s) => COLORANTS.some((c) => c.id === s.id))}
+          onToggle={onToggle}
+          onDoseChange={onDose}
+          initialVisible={4}
+          hideHeader
+        />
+      </section>
 
-      <ModifierTray
-        title="混入料"
-        sub="Add-ins"
-        modifiers={ADDINS}
-        selected={selected.filter((s) => ADDINS.some((a) => a.id === s.id))}
-        onToggle={onToggle}
-        onDoseChange={onDose}
-        initialVisible={4}
-      />
+      <section className="space-y-3">
+        <SectionHeader title="混入料" latin="Add-ins" />
+        <ModifierTray
+          modifiers={ADDINS}
+          selected={selected.filter((s) => ADDINS.some((a) => a.id === s.id))}
+          onToggle={onToggle}
+          onDoseChange={onDose}
+          initialVisible={4}
+          hideHeader
+        />
+      </section>
 
       {selected.length > 0 && (
         <div className="flex justify-end">
@@ -298,8 +302,7 @@ function FormulaTab({
 
 function QuantityHydrationRow({ base, numUnits, onNumUnitsChange, calculated }) {
   return (
-    <Card variant="surface" padding="md" className="flex items-stretch gap-4 sm:gap-6">
-      {/* 数量（左） */}
+    <Card variant="surface" padding="md" className="flex items-stretch gap-5">
       <div className="flex-1 min-w-0">
         <NumberField
           label="数量"
@@ -311,21 +314,16 @@ function QuantityHydrationRow({ base, numUnits, onNumUnitsChange, calculated }) 
         />
       </div>
 
-      {/* 分割线 */}
       <div className="w-px bg-line-soft" aria-hidden />
 
-      {/* 水合度（右） */}
-      <div className="flex flex-col justify-between shrink-0">
-        <div className="text-[10px] uppercase tracking-widest text-muted font-body mb-2">
+      <div className="flex flex-col justify-center items-start gap-2 shrink-0 w-[96px]">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
           水合度
         </div>
         <HydrationBadge
           value={calculated.actualHydration}
           base={base.hydration}
         />
-        <div className="text-[10px] text-faint font-body mt-2">
-          base {Math.round(base.hydration * 100)}%
-        </div>
       </div>
     </Card>
   );

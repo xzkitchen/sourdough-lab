@@ -89,20 +89,13 @@
     border-color: #EFEADF;
   }
 
-  /* ─── Hide scrollbar on WebKit while keeping it usable ─── */
+  /* ─── Hide scrollbar 完全（保持可滚但不显示 bar） ─── */
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    display: none;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #E5DED0;
-    border-radius: 2px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #B08968;
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   /* ─── 禁止 iOS 橡皮筋 ─── */

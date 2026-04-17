@@ -17,6 +17,7 @@ export function ModifierTray({
   onToggle,
   onDoseChange,
   initialVisible = 4,
+  hideHeader = false,
   className,
 }) {
   const [showAll, setShowAll] = useState(false);
@@ -34,18 +35,23 @@ export function ModifierTray({
 
   return (
     <div className={cn('space-y-3', className)}>
-      {/* 标题行 */}
-      <div className="flex items-baseline gap-2 px-0.5">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-faint font-body">
-          {sub}
-        </span>
-        <span className="font-display text-base text-ink">{title}</span>
-        {selectedIds.size > 0 && (
-          <span className="ml-auto text-[10px] font-mono text-accent-ink tabular-nums">
-            {selectedIds.size} selected
+      {!hideHeader && (
+        <div className="flex items-baseline gap-2 px-0.5">
+          <span className="font-display text-[15px] text-ink tracking-tight">
+            {title}
           </span>
-        )}
-      </div>
+          {sub && (
+            <span className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
+              {sub}
+            </span>
+          )}
+          {selectedIds.size > 0 && (
+            <span className="ml-auto text-[10px] font-mono text-accent-ink tabular-nums">
+              {selectedIds.size}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {visible.map((m) => (
@@ -61,19 +67,19 @@ export function ModifierTray({
       </div>
 
       {hiddenCount > 0 && !showAll && (
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-start pt-1">
           <Button
             variant="text"
             size="sm"
             onClick={() => setShowAll(true)}
             iconRight={<ChevronDown size={12} strokeWidth={1.5} />}
           >
-            查看全部 {sorted.length} 种
+            更多 {hiddenCount}
           </Button>
         </div>
       )}
       {showAll && sorted.length > initialVisible && (
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-start pt-1">
           <Button variant="text" size="sm" onClick={() => setShowAll(false)}>
             收起
           </Button>

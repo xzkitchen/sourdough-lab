@@ -185,11 +185,44 @@ export function calculateRecipe(input) {
     );
   }
 
-  // 6. 更新水的 weight（基础食材里的 'water' 行）
+  // 6. 水的显示 —— 如果 base 声明了 waterReservedRatio，把水拆成 autolyse + reserved 两行
+  const reservedRatio = base.defaults?.waterReservedRatio || 0;
   const ingredients = [...baseIngredients, ...modifierIngredients];
-  const waterRow = ingredients.find((i) => i.id === 'water');
-  if (waterRow) {
-    waterRow.weight = round(water);
+  const waterIdx = ingredients.findIndex((i) => i.id === 'water');
+  if (waterIdx >= 0) {
+    const totalWater = round(water);
+    if (reservedRatio > 0) {
+      const reservedWater = round(flour * reservedRatio);
+      const autolyseWater = totalWater - reservedWater;
+      ingredients.splice(
+        waterIdx,
+        1,
+        {
+          id: 'water-autolyse',
+          name: '水',
+          role: 'liquid',
+          weight: autolyseWater,
+          bakersPct: autolyseWater / flour,
+          isHydration: true,
+          addStage: 'autolyse',
+          note: null,
+          source: 'base',
+        },
+        {
+          id: 'water-reserved',
+          name: '预留水（后加）',
+          role: 'liquid',
+          weight: reservedWater,
+          bakersPct: reservedRatio,
+          isHydration: true,
+          addStage: 'salt',
+          note: null,
+          source: 'base',
+        }
+      );
+    } else {
+      ingredients[waterIdx].weight = totalWater;
+    }
   }
 
   // 7. 总重

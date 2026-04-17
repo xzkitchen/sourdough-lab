@@ -11,7 +11,9 @@ describe('calculateRecipe — base only', () => {
 
     const byId = Object.fromEntries(r.ingredients.map((i) => [i.id, i]));
     expect(byId.flour.weight).toBe(400);
-    expect(byId.water.weight).toBe(280);
+    // 水按 reservedRatio 0.10 拆成 autolyse + reserved
+    expect(byId['water-autolyse'].weight).toBe(240);  // 280 - 40
+    expect(byId['water-reserved'].weight).toBe(40);   // 400 × 0.10
     expect(byId.starter.weight).toBe(80);
     expect(byId.salt.weight).toBeCloseTo(8, 0);
 
