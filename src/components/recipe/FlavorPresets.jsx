@@ -53,12 +53,26 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
     <section className={cn('space-y-4', className)}>
       <GrainFilter />
 
-      <SectionHeader title="创意预设" latin="Chef's picks" />
+      <SectionHeader
+        title="创意预设"
+        latin="Chef's picks"
+        right={
+          <div className="text-[10px] text-faint font-body tracking-wider tabular-nums">
+            {flavors.length} 种 ·&nbsp;
+            <span className="text-muted">← 滑动 →</span>
+          </div>
+        }
+      />
 
-      {/* 横向 feed —— container 内正常 padding，不再 bleed */}
+      {/*
+        横向 feed：
+          - 左 px-5 正常起始留白
+          - 右 pr-10 让最后一张卡"被截一半"露出 peek 暗示还有更多
+          - 点击后自动滑到下一张居中
+      */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-5 px-5 sm:-mx-8 sm:px-8 pb-1"
+        className="flex gap-5 overflow-x-auto snap-x snap-mandatory -mx-5 pl-5 pr-10 sm:-mx-8 sm:pl-8 sm:pr-14 pb-1"
       >
         {flavors.map((f, i) => {
           const active = f.id === activeFlavorId;
@@ -71,19 +85,18 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
               type="button"
               onClick={() => handleClick(f, i)}
               aria-pressed={active}
-              className="snap-center shrink-0 flex flex-col items-center gap-2.5 py-1 w-[84px] group"
+              className="snap-center shrink-0 flex flex-col items-center gap-3 py-1 w-[88px] group"
             >
-              <ColorOrb background={gradientBg} size={72} active={active} />
-              <div className="flex flex-col items-center gap-1">
+              <ColorOrb background={gradientBg} size={76} active={active} />
+              <div className="flex flex-col items-center gap-1.5">
                 <span
                   className={cn(
-                    'font-body text-[12px] leading-tight text-center',
+                    'font-body text-[12px] leading-tight text-center whitespace-nowrap',
                     active ? 'text-accent-ink font-medium' : 'text-ink'
                   )}
                 >
                   {f.name}
                 </span>
-                {/* 选中 dot —— 极克制 */}
                 <span
                   className={cn(
                     'w-1 h-1 rounded-full transition-colors ease-editorial duration-fast',

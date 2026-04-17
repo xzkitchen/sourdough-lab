@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Play, RotateCcw } from 'lucide-react';
 import { cn } from '../../lib/cn.js';
 import { Button } from '../primitives/index.js';
@@ -28,6 +28,23 @@ export function StepList({
     const current = steps.find((s) => !completedIds.has(s.id))?.id || null;
     return { completedCount: done.length, percent: pct, currentId: current };
   }, [steps, completedIds]);
+
+  // 完成步骤后，自动把新的 current step 滚到视图顶部
+  const stepRefs = useRef({});
+  const prevCurrentRef = useRef(currentId);
+  useEffect(() => {
+    const prev = prevCurrentRef.current;
+    if (currentId && currentId !== prev && prev !== null) {
+      const el = stepRefs.current[currentId];
+      if (el) {
+        // 延迟到 DOM 完成 state 切换后
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+    prevCurrentRef.current = currentId;
+  }, [currentId]);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -86,8 +103,12 @@ export function StepList({
               : 'pending';
 
           return (
-            <StepCard
+            <div
               key={step.id}
+              ref={(el) => { stepRefs.current[step.id] = el; }}
+              style={{ scrollMarginTop: '16px' }}
+            >
+            <StepCard
               step={step}
               state={state}
               index={idx + 1}
@@ -103,6 +124,7 @@ export function StepList({
                 />
               )}
             </StepCard>
+            </div>
           );
         })}
       </div>
