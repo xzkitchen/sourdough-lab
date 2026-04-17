@@ -47,7 +47,7 @@ export function IngredientTable({
 
 function Row({ ing, showBakersPct, accent }) {
   return (
-    <li className="flex items-baseline py-2 gap-3">
+    <li className="flex items-baseline py-2.5 gap-3">
       <span
         className={cn(
           'flex-1 font-body text-[13px] min-w-0 truncate',

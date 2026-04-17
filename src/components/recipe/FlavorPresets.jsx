@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { cn } from '../../lib/cn.js';
 import { predictBreadColor } from '../../domain/breadColor.js';
 import { buildGradientBackground } from '../../design/gradient.js';
 
 /**
- * FlavorPresets — 创意预设网格
+ * FlavorPresets — 横向滚动色球 feed
  *
- * 3 列网格，每单元：色球 + 中文名字 + 小 Latin。
- * 默认显示前 6 个，"更多 N" 按钮展开剩余。
+ * 点击卡片：
+ *   - 应用该 flavor
+ *   - 自动平滑滚动到下一张（鼓励继续探索）
+ *
+ * 选中态：
+ *   - 无描边
+ *   - 色球保持
+ *   - 下方名字转 accent-ink + font-medium
+ *   - 色球下加 1 个 2px accent dot
  */
 export function FlavorPresets({ base, flavors, selected, onApply, className }) {
-  const [expanded, setExpanded] = useState(false);
+  const scrollRef = useRef(null);
+  const itemRefs = useRef({});
 
   const activeFlavorId = flavors.find((f) => {
     if (f.modifiers.length !== selected.length) return false;
@@ -21,64 +29,68 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
     });
   })?.id;
 
-  const initialCount = 6;
-  const visible = expanded ? flavors : flavors.slice(0, initialCount);
-  const hiddenCount = flavors.length - visible.length;
+  const handleClick = useCallback(
+    (flavor, index) => {
+      onApply(flavor);
+      // 200ms 后把下一张卡平滑滚入视野
+      const nextIndex = Math.min(index + 1, flavors.length - 1);
+      const nextFlavor = flavors[nextIndex];
+      const nextEl = itemRefs.current[nextFlavor?.id];
+      if (nextEl && nextEl !== itemRefs.current[flavor.id]) {
+        setTimeout(() => {
+          nextEl.scrollIntoView({
+            behavior: 'smooth',
+            inline: 'center',
+            block: 'nearest',
+          });
+        }, 180);
+      }
+    },
+    [flavors, onApply]
+  );
 
   return (
-    <section className={cn('space-y-3', className)}>
+    <section className={cn('space-y-4', className)}>
       <GrainFilter />
 
-      <SectionHeader
-        title="创意预设"
-        latin="Chef's picks"
-        right={
-          hiddenCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="text-[11px] text-muted hover:text-ink font-body transition-colors"
-            >
-              更多 {hiddenCount}
-            </button>
-          ) : expanded ? (
-            <button
-              type="button"
-              onClick={() => setExpanded(false)}
-              className="text-[11px] text-muted hover:text-ink font-body transition-colors"
-            >
-              收起
-            </button>
-          ) : null
-        }
-      />
+      <SectionHeader title="创意预设" latin="Chef's picks" />
 
-      <div className="grid grid-cols-3 gap-3">
-        {visible.map((f) => {
+      {/* 横向 feed —— container 内正常 padding，不再 bleed */}
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-5 px-5 sm:-mx-8 sm:px-8 pb-1"
+      >
+        {flavors.map((f, i) => {
           const active = f.id === activeFlavorId;
           const prediction = predictBreadColor(base, f.modifiers);
           const gradientBg = buildGradientBackground(prediction, f.modifiers);
           return (
             <button
               key={f.id}
+              ref={(el) => { itemRefs.current[f.id] = el; }}
               type="button"
-              onClick={() => onApply(f)}
+              onClick={() => handleClick(f, i)}
               aria-pressed={active}
-              className={cn(
-                'group flex flex-col items-center gap-2 py-3 rounded-md transition-colors ease-editorial duration-fast',
-                active ? 'bg-surface' : 'hover:bg-surface/60'
-              )}
+              className="snap-center shrink-0 flex flex-col items-center gap-2.5 py-1 w-[84px] group"
             >
-              <ColorOrb background={gradientBg} size={60} active={active} />
-              <div className="text-center leading-tight px-1">
-                <div
+              <ColorOrb background={gradientBg} size={72} active={active} />
+              <div className="flex flex-col items-center gap-1">
+                <span
                   className={cn(
-                    'font-body text-xs',
+                    'font-body text-[12px] leading-tight text-center',
                     active ? 'text-accent-ink font-medium' : 'text-ink'
                   )}
                 >
                   {f.name}
-                </div>
+                </span>
+                {/* 选中 dot —— 极克制 */}
+                <span
+                  className={cn(
+                    'w-1 h-1 rounded-full transition-colors ease-editorial duration-fast',
+                    active ? 'bg-accent' : 'bg-transparent'
+                  )}
+                  aria-hidden
+                />
               </div>
             </button>
           );
@@ -88,21 +100,21 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
   );
 }
 
-/** Section header — 极简双语 */
+/** Section header —— 堆叠式（eyebrow 上 / title 下） */
 export function SectionHeader({ title, latin, right }) {
   return (
-    <div className="flex items-baseline justify-between px-0.5">
-      <div className="flex items-baseline gap-2.5">
-        <span className="font-display text-[15px] text-ink tracking-tight">
-          {title}
-        </span>
+    <div className="flex items-end justify-between gap-3 px-0.5">
+      <div className="space-y-0.5">
         {latin && (
-          <span className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
+          <div className="text-[10px] uppercase tracking-[0.22em] text-faint font-body">
             {latin}
-          </span>
+          </div>
         )}
+        <div className="font-display text-[17px] text-ink tracking-tight leading-none">
+          {title}
+        </div>
       </div>
-      {right}
+      {right && <div className="shrink-0">{right}</div>}
     </div>
   );
 }
@@ -113,7 +125,7 @@ function ColorOrb({ background, size, active }) {
     <div
       className={cn(
         'relative transition-transform ease-editorial duration-base',
-        active && 'scale-[1.04]'
+        active && 'scale-[1.06]'
       )}
       style={{ width: size, height: size }}
     >
@@ -129,7 +141,7 @@ function ColorOrb({ background, size, active }) {
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
           boxShadow: active
-            ? 'inset 0 0 0 1.5px #B08968, 0 2px 8px rgba(176,137,104,0.18)'
+            ? 'inset 0 0 0 0.5px rgba(26,24,21,0.08), 0 3px 10px rgba(176,137,104,0.20)'
             : 'inset 0 0 0 0.5px rgba(26,24,21,0.06)',
         }}
       />

@@ -316,7 +316,7 @@ function QuantityHydrationRow({ base, numUnits, onNumUnitsChange, calculated }) 
 
       <div className="w-px bg-line-soft" aria-hidden />
 
-      <div className="flex flex-col justify-center items-start gap-2 shrink-0 w-[96px]">
+      <div className="flex flex-col justify-center items-start gap-2 shrink-0">
         <div className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
           水合度
         </div>
