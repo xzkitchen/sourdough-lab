@@ -28,8 +28,8 @@ export function Card({
   const paddings = {
     none: '',
     sm:   'p-3',
-    md:   'p-5',
-    lg:   'p-8',
+    md:   'p-4 sm:p-5',
+    lg:   'p-5 sm:p-8',
   };
 
   return (

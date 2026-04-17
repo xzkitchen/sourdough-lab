@@ -9,7 +9,6 @@ import {
   calculateFeed,
   enhanceSteps,
 } from './domain/calculator.js';
-import { predictBreadColor } from './domain/breadColor.js';
 import { getProcessSteps } from './domain/process/index.js';
 
 import {
@@ -24,7 +23,6 @@ import {
   ModifierTray,
   IngredientTable,
   HydrationBadge,
-  BreadPreview,
   WarningList,
 } from './components/recipe/index.js';
 
@@ -44,15 +42,11 @@ function App() {
   const [numUnits, setNumUnits] = useStickyState(3, 'sdl_num_units');
   const [selected, setSelected] = useStickyState([], 'sdl_selected_modifiers');
 
-  // Starter
   const [seedStarter, setSeedStarter] = useStickyState(60, 'sdl_seed_starter');
-
-  // Bake / Process
   const [completedList, setCompletedList] = useStickyState([], 'sdl_completed_steps');
   const [coldStartTime, setColdStartTime] = useStickyState(null, 'sdl_cold_start');
   const [coldDuration, setColdDuration] = useStickyState(16, 'sdl_cold_duration');
 
-  // Cook Mode
   const [cookOpen, setCookOpen] = useState(false);
   const [cookCursor, setCookCursor] = useState(0);
 
@@ -61,11 +55,6 @@ function App() {
   const calculated = useMemo(
     () => calculateRecipe({ base, numUnits, selectedModifiers: selected }),
     [base, numUnits, selected]
-  );
-
-  const prediction = useMemo(
-    () => predictBreadColor(base, selected),
-    [base, selected]
   );
 
   const feed = useMemo(
@@ -79,12 +68,8 @@ function App() {
     [baseSteps, calculated]
   );
 
-  const completedIds = useMemo(
-    () => new Set(completedList),
-    [completedList]
-  );
+  const completedIds = useMemo(() => new Set(completedList), [completedList]);
 
-  // ── Handlers ──
   const toggleModifier = useCallback((id) => {
     setSelected((prev) => {
       const exists = prev.find((s) => s.id === id);
@@ -104,10 +89,9 @@ function App() {
   const resetSelected = useCallback(() => setSelected([]), [setSelected]);
 
   const toggleStep = useCallback((stepId) => {
-    setCompletedList((prev) => {
-      if (prev.includes(stepId)) return prev.filter((id) => id !== stepId);
-      return [...prev, stepId];
-    });
+    setCompletedList((prev) =>
+      prev.includes(stepId) ? prev.filter((id) => id !== stepId) : [...prev, stepId]
+    );
   }, [setCompletedList]);
 
   const resetProgress = useCallback(() => {
@@ -116,7 +100,6 @@ function App() {
   }, [setCompletedList, setColdStartTime]);
 
   const openCookMode = useCallback(() => {
-    // 跳到当前步骤
     const currentIdx = steps.findIndex((s) => !completedIds.has(s.id));
     setCookCursor(currentIdx === -1 ? 0 : currentIdx);
     setCookOpen(true);
@@ -124,21 +107,21 @@ function App() {
 
   return (
     <div className="min-h-screen relative">
-      <div className="max-w-2xl mx-auto px-6 py-12 relative z-10 space-y-10">
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-12 relative z-10 space-y-6 sm:space-y-10">
 
         {/* ── Header ── */}
         <header>
-          <h1 className="font-display text-4xl text-ink leading-none tracking-tight">
+          <h1 className="font-display text-[28px] sm:text-4xl text-ink leading-none tracking-tight">
             Sourdough <span className="italic">Lab.</span>
           </h1>
-          <p className="mt-2 text-xs text-muted font-body uppercase tracking-[0.22em]">
+          <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-muted font-body uppercase tracking-[0.22em]">
             A lab for creative sourdough
           </p>
         </header>
 
         {/* ── Tab nav ── */}
         <nav
-          className="flex items-baseline gap-6 border-b border-line pt-2"
+          className="flex items-baseline gap-5 sm:gap-6 border-b border-line"
           role="tablist"
           aria-label="页面切换"
         >
@@ -151,14 +134,14 @@ function App() {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(t.id)}
-                className={`pb-3 -mb-px border-b-[1.5px] transition-colors ease-editorial duration-fast flex items-baseline gap-2
-                  ${active
-                    ? 'border-accent text-ink'
-                    : 'border-transparent text-muted hover:text-ink'}
+                className={`pb-2.5 sm:pb-3 -mb-px border-b-[1.5px] transition-colors ease-editorial duration-fast flex items-baseline gap-1.5
+                  ${active ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink'}
                 `}
               >
-                <span className="font-display text-lg">{t.label}</span>
-                <span className="font-body text-xs tracking-widest text-faint uppercase">{t.zh}</span>
+                <span className="font-display text-base sm:text-lg">{t.label}</span>
+                <span className="hidden sm:inline font-body text-xs tracking-widest text-faint uppercase">
+                  {t.zh}
+                </span>
               </button>
             );
           })}
@@ -168,9 +151,9 @@ function App() {
         <AnimatePresence mode="wait">
           <motion.section
             key={tab}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            exit={{ opacity: 0, y: -6 }}
             transition={motionTransition}
             role="tabpanel"
           >
@@ -181,7 +164,6 @@ function App() {
                 onNumUnitsChange={setNumUnits}
                 selected={selected}
                 calculated={calculated}
-                prediction={prediction}
                 onToggle={toggleModifier}
                 onDose={changeDose}
                 onApplyFlavor={applyFlavor}
@@ -215,12 +197,11 @@ function App() {
         </AnimatePresence>
 
         <Divider />
-        <footer className="py-4 text-center text-[11px] text-faint font-body">
-          Sourdough Lab · 2026 Warm Editorial
+        <footer className="py-3 text-center text-[10px] text-faint font-body">
+          Sourdough Lab · 2026
         </footer>
       </div>
 
-      {/* Cook Mode 全屏覆盖 */}
       <CookMode
         open={cookOpen}
         steps={steps}
@@ -234,21 +215,20 @@ function App() {
   );
 }
 
-// ── Formula Tab ──────────────────────────────────────────────
+// ── Formula Tab — 紧凑布局 ──────────────────────
 function FormulaTab({
   base,
   numUnits,
   onNumUnitsChange,
   selected,
   calculated,
-  prediction,
   onToggle,
   onDose,
   onApplyFlavor,
   onReset,
 }) {
   return (
-    <div className="space-y-10">
+    <div className="space-y-7">
       {/* Chef's picks */}
       <FlavorPresets
         base={base}
@@ -257,52 +237,39 @@ function FormulaTab({
         onApply={onApplyFlavor}
       />
 
-      {/* Quantity + Hydration */}
-      <section className="grid grid-cols-2 gap-4 items-stretch">
-        <Card variant="surface">
-          <NumberField
-            label="面包数量"
-            hint="Loaves"
-            value={numUnits}
-            onChange={onNumUnitsChange}
-            min={1}
-            max={10}
-          />
-        </Card>
-        <Card variant="surface" padding="md" className="flex flex-col justify-between">
-          <div>
-            <div className="text-[10px] uppercase tracking-widest text-muted font-body mb-2">
-              水合度
-            </div>
-            <HydrationBadge
-              value={calculated.actualHydration}
-              base={base.hydration}
-            />
-          </div>
-          <div className="text-[10px] text-faint font-body mt-2">
-            Base {Math.round(base.hydration * 100)}%
-          </div>
-        </Card>
-      </section>
+      {/* 数量 + 水合度紧凑 row */}
+      <QuantityHydrationRow
+        base={base}
+        numUnits={numUnits}
+        onNumUnitsChange={onNumUnitsChange}
+        calculated={calculated}
+      />
 
-      {/* Bread preview */}
-      <section className="flex flex-col items-center py-4">
-        <BreadPreview
-          prediction={prediction}
-          size="md"
-          caption={
-            selected.length === 0
-              ? '基础配方 · 挑一个创意预设或自定义 modifier'
-              : `${selected.length} 种 modifier 已叠加`
-          }
+      {/* Ingredient table —— 提前到 modifier 托盘之前，让用户先看到结果 */}
+      <Card variant="surface" padding="md" className="sm:p-6">
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="font-display text-lg sm:text-xl text-ink tracking-tight">
+            配方清单
+          </h2>
+          <span className="text-[10px] uppercase tracking-widest text-faint font-body">
+            Formula
+          </span>
+        </div>
+        <IngredientTable
+          ingredients={calculated.ingredients}
+          totalWeight={calculated.totalWeight}
         />
-      </section>
+      </Card>
+
+      {/* Warnings + notes */}
+      <WarningList warnings={calculated.warnings} notes={calculated.notes} />
 
       <Divider />
 
-      {/* Modifier trays */}
+      {/* 自定义 modifier —— 折叠（默认收起，除非有选中） */}
       <ModifierTray
-        title="色粉 / Colorants"
+        title="色粉"
+        sub="Colorants"
         modifiers={COLORANTS}
         selected={selected.filter((s) => COLORANTS.some((c) => c.id === s.id))}
         onToggle={onToggle}
@@ -311,7 +278,8 @@ function FormulaTab({
       />
 
       <ModifierTray
-        title="混入料 / Add-ins"
+        title="混入料"
+        sub="Add-ins"
         modifiers={ADDINS}
         selected={selected.filter((s) => ADDINS.some((a) => a.id === s.id))}
         onToggle={onToggle}
@@ -326,28 +294,42 @@ function FormulaTab({
           </Button>
         </div>
       )}
-
-      {/* Ingredient table */}
-      <Card variant="surface" padding="lg">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="font-display text-xl text-ink tracking-tight">
-            配方清单
-          </h2>
-          <span className="text-[10px] uppercase tracking-widest text-faint font-body">
-            Formula
-          </span>
-        </div>
-        <IngredientTable
-          ingredients={calculated.ingredients}
-          totalWeight={calculated.totalWeight}
-        />
-      </Card>
-
-      <WarningList
-        warnings={calculated.warnings}
-        notes={calculated.notes}
-      />
     </div>
+  );
+}
+
+function QuantityHydrationRow({ base, numUnits, onNumUnitsChange, calculated }) {
+  return (
+    <Card variant="surface" padding="md" className="flex items-stretch gap-4 sm:gap-6">
+      {/* 数量（左） */}
+      <div className="flex-1 min-w-0">
+        <NumberField
+          label="数量"
+          hint="Loaves"
+          value={numUnits}
+          onChange={onNumUnitsChange}
+          min={1}
+          max={10}
+        />
+      </div>
+
+      {/* 分割线 */}
+      <div className="w-px bg-line-soft" aria-hidden />
+
+      {/* 水合度（右） */}
+      <div className="flex flex-col justify-between shrink-0">
+        <div className="text-[10px] uppercase tracking-widest text-muted font-body mb-2">
+          水合度
+        </div>
+        <HydrationBadge
+          value={calculated.actualHydration}
+          base={base.hydration}
+        />
+        <div className="text-[10px] text-faint font-body mt-2">
+          base {Math.round(base.hydration * 100)}%
+        </div>
+      </div>
+    </Card>
   );
 }
 

@@ -42,7 +42,7 @@ export function StepCard({ step, state, index, onToggle, children }) {
         aria-hidden
       />
 
-      <div className="pl-6 pr-5 py-5">
+      <div className="pl-5 pr-4 py-4 sm:pl-6 sm:pr-5 sm:py-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="min-w-0 flex-1">
@@ -62,7 +62,7 @@ export function StepCard({ step, state, index, onToggle, children }) {
             </div>
             <h3
               className={cn(
-                'font-display text-xl tracking-tight leading-tight',
+                'font-display text-lg sm:text-xl tracking-tight leading-tight',
                 isDone ? 'text-muted line-through' : isCurrent ? 'text-accent-ink' : 'text-ink'
               )}
             >
