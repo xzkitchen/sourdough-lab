@@ -1,0 +1,84 @@
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '../../lib/cn.js';
+import { Divider, Button } from '../primitives/index.js';
+import { ModifierCard } from './ModifierCard.jsx';
+
+/**
+ * ModifierTray — 色粉或混入料 托盘
+ *
+ * Props:
+ *   title          "色粉 / Colorants"
+ *   modifiers      Array
+ *   selected       [{id, dose}]
+ *   onToggle(id)
+ *   onDoseChange(id, dose)
+ *   initialVisible 默认展开几个 (默认 4)
+ */
+export function ModifierTray({
+  title,
+  modifiers,
+  selected,
+  onToggle,
+  onDoseChange,
+  initialVisible = 4,
+  className,
+}) {
+  const [showAll, setShowAll] = useState(false);
+
+  // 把已选的排到前面，未选的按顺序
+  const selectedIds = new Set(selected.map((s) => s.id));
+  const sorted = [
+    ...modifiers.filter((m) => selectedIds.has(m.id)),
+    ...modifiers.filter((m) => !selectedIds.has(m.id)),
+  ];
+
+  const visibleCount = Math.max(initialVisible, selectedIds.size);
+  const visible = showAll ? sorted : sorted.slice(0, visibleCount);
+  const hiddenCount = sorted.length - visible.length;
+
+  const doseFor = (id) => selected.find((s) => s.id === id)?.dose;
+
+  return (
+    <div className={cn('space-y-4', className)}>
+      <Divider label={title} variant="dashed" tone="soft" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {visible.map((m) => (
+          <ModifierCard
+            key={m.id}
+            modifier={m}
+            selected={selectedIds.has(m.id)}
+            dose={doseFor(m.id)}
+            onToggle={() => onToggle(m.id)}
+            onDoseChange={(d) => onDoseChange(m.id, d)}
+          />
+        ))}
+      </div>
+      {hiddenCount > 0 && !showAll && (
+        <div className="flex justify-center">
+          <Button
+            variant="text"
+            size="sm"
+            onClick={() => setShowAll(true)}
+            iconRight={<ChevronDown size={12} strokeWidth={1.5} />}
+          >
+            查看全部 {sorted.length} 种
+          </Button>
+        </div>
+      )}
+      {showAll && sorted.length > initialVisible && (
+        <div className="flex justify-center">
+          <Button
+            variant="text"
+            size="sm"
+            onClick={() => setShowAll(false)}
+          >
+            收起
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default ModifierTray;

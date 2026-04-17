@@ -1,40 +1,117 @@
+@import './design/fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────
+ * Sourdough Lab — 2026 Warm Editorial
+ * 底色：暖米纸 #F5F1EA   强调：麦色 #B08968
+ * ───────────────────────────────────────────── */
+
 @layer base {
-  body {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    background-color: #0c0a09;
-    color: #e7e5e4;
-    -webkit-tap-highlight-color: transparent;
+  html {
+    -webkit-text-size-adjust: 100%;
   }
-  
-  .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+
+  body {
+    font-family: var(--font-body);
+    font-feature-settings: 'ss01';
+    background-color: #F5F1EA;
+    color: #1A1815;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+  }
+
+  /* Display 标题默认使用 Fraunces */
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    font-variation-settings: 'opsz' 28, 'SOFT' 50;
+    font-feature-settings: 'ss01', 'ss02';
+  }
+
+  /* 等宽数字 */
+  .font-mono, [class*='font-mono'] {
+    font-feature-settings: 'ss01';
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* focus-visible 统一麦色细线 */
+  *:focus {
+    outline: none;
+  }
+  *:focus-visible {
+    outline: 1.5px solid #B08968;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* 选中文本 */
+  ::selection {
+    background-color: #D9C3A8;
+    color: #1A1815;
   }
 }
 
 @layer utilities {
-  ::-webkit-scrollbar {
-    width: 6px;
+  /* ─── 纸纹 overlay：全局铺在 body 上，opacity 0.04 ─── */
+  .paper-grain {
+    position: relative;
   }
-  
+  .paper-grain::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url('/src/design/textureOverlay.svg');
+    background-size: 240px 240px;
+    background-repeat: repeat;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+  }
+
+  /* ─── Leader dots（日式表格虚线填充） ─── */
+  .leader-dots {
+    flex: 1;
+    border-bottom: 1px dotted #A39A8E;
+    margin: 0 8px 4px;
+    opacity: 0.5;
+  }
+
+  /* ─── 1px hairline 分隔 ─── */
+  .hairline {
+    border-color: #E5DED0;
+  }
+  .hairline-soft {
+    border-color: #EFEADF;
+  }
+
+  /* ─── Hide scrollbar on WebKit while keeping it usable ─── */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-  
   ::-webkit-scrollbar-thumb {
-    background: #44403c;
-    border-radius: 3px;
+    background: #E5DED0;
+    border-radius: 2px;
   }
-  
   ::-webkit-scrollbar-thumb:hover {
-    background: #57534e;
+    background: #B08968;
   }
 
-  /* 防止iOS橡皮筋效果 */
+  /* ─── 禁止 iOS 橡皮筋 ─── */
   body {
     overscroll-behavior-y: none;
+  }
+
+  /* ─── Motion 工具类 ─── */
+  .ease-editorial {
+    transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 }
