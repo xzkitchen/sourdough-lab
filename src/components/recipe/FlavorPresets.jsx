@@ -113,19 +113,22 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
   );
 }
 
-/** Section header —— 堆叠式（eyebrow 上 / title 下） */
+/** Section header —— 单行内联（中文 · LATIN）*/
 export function SectionHeader({ title, latin, right }) {
   return (
-    <div className="flex items-end justify-between gap-3 px-0.5">
-      <div className="space-y-0.5">
-        {latin && (
-          <div className="text-[10px] uppercase tracking-[0.22em] text-faint font-body">
-            {latin}
-          </div>
-        )}
-        <div className="font-display text-[17px] text-ink tracking-tight leading-none">
+    <div className="flex items-baseline justify-between gap-3 px-0.5">
+      <div className="flex items-baseline gap-2 min-w-0">
+        <span className="font-display text-[16px] text-ink tracking-tight leading-none">
           {title}
-        </div>
+        </span>
+        {latin && (
+          <>
+            <span className="text-faint text-[10px]" aria-hidden>·</span>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
+              {latin}
+            </span>
+          </>
+        )}
       </div>
       {right && <div className="shrink-0">{right}</div>}
     </div>

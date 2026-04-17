@@ -2,10 +2,10 @@ import React from 'react';
 import { cn } from '../../lib/cn.js';
 
 /**
- * IngredientTable — 宽松优雅的配方表
+ * IngredientTable — 严格等高行的配方表
  *
- * 基础食材 + Modifier 食材用虚线分隔，不加小标签。
- * Modifier 行左侧 1px accent dot 做视觉识别。
+ * 所有行共享同一 grid 模板：[dot] [name · note] [bp%] [weight g]
+ * base 行 dot 不可见但占位，保证行高与 modifier 行完全一致。
  */
 export function IngredientTable({
   ingredients,
@@ -15,28 +15,26 @@ export function IngredientTable({
 }) {
   const baseRows = ingredients.filter((i) => i.source !== 'modifier');
   const modRows = ingredients.filter((i) => i.source === 'modifier');
+  const hasMod = modRows.length > 0;
 
   return (
-    <div className={cn('space-y-5', className)}>
+    <div className={cn('space-y-4', className)}>
       <ul className="divide-y divide-line-soft">
         {baseRows.map((ing) => (
           <Row key={ing.id} ing={ing} showBakersPct={showBakersPct} />
         ))}
-      </ul>
-
-      {modRows.length > 0 && (
-        <>
-          <div className="border-t border-dashed border-line" aria-hidden />
-          <ul className="divide-y divide-line-soft">
+        {hasMod && (
+          <>
+            {/* modifier 分组 —— 紧接 base 行，共用 divide-y */}
             {modRows.map((ing) => (
               <Row key={ing.id} ing={ing} showBakersPct={showBakersPct} accent />
             ))}
-          </ul>
-        </>
-      )}
+          </>
+        )}
+      </ul>
 
-      <div className="flex items-baseline justify-between pt-5 border-t border-line">
-        <span className="text-xs text-muted font-body uppercase tracking-[0.18em]">
+      <div className="flex items-baseline justify-between pt-4 border-t border-line">
+        <span className="text-[10px] text-muted font-body uppercase tracking-[0.18em]">
           总重 · Total
         </span>
         <span className="font-display text-2xl tabular-nums text-ink tracking-tight">
@@ -48,18 +46,25 @@ export function IngredientTable({
   );
 }
 
+/** 统一行结构：grid [14px dot] [1fr name] [44px bp] [64px weight] */
 function Row({ ing, showBakersPct, accent }) {
   return (
-    <li className="flex items-baseline py-4 gap-3">
-      {accent && (
-        <span
-          className="w-1 h-1 rounded-full bg-accent shrink-0 translate-y-[-2px]"
-          aria-hidden
-        />
-      )}
+    <li
+      className="grid items-center py-4 gap-3"
+      style={{ gridTemplateColumns: '6px 1fr 44px 64px' }}
+    >
+      {/* dot 位 —— 始终存在，accent 时显示麦色点 */}
       <span
         className={cn(
-          'flex-1 font-body text-sm min-w-0 truncate',
+          'w-1 h-1 rounded-full',
+          accent ? 'bg-accent' : 'bg-transparent'
+        )}
+        aria-hidden
+      />
+
+      <span
+        className={cn(
+          'font-body text-sm min-w-0 truncate',
           accent ? 'text-accent-ink' : 'text-ink'
         )}
       >
@@ -69,13 +74,13 @@ function Row({ ing, showBakersPct, accent }) {
         )}
       </span>
 
-      {showBakersPct && ing.bakersPct !== undefined && (
-        <span className="font-mono text-[11px] text-faint tabular-nums shrink-0 w-12 text-right">
-          {Math.round(ing.bakersPct * 1000) / 10}%
-        </span>
-      )}
+      <span className="font-mono text-[11px] text-faint tabular-nums text-right">
+        {showBakersPct && ing.bakersPct !== undefined
+          ? `${Math.round(ing.bakersPct * 1000) / 10}%`
+          : ''}
+      </span>
 
-      <span className="font-mono text-sm tabular-nums text-ink shrink-0 w-16 text-right">
+      <span className="font-mono text-sm tabular-nums text-ink text-right">
         {formatWeight(ing.weight)}
         <span className="text-[11px] text-faint ml-0.5">g</span>
       </span>

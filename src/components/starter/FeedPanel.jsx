@@ -1,21 +1,20 @@
 import React from 'react';
-import { Wheat, Droplet, Sprout } from 'lucide-react';
+import { Minus, Plus, Wheat, Droplet, Sprout } from 'lucide-react';
 import { cn } from '../../lib/cn.js';
 import { Card, NumberField } from '../primitives/index.js';
 import { SectionHeader, HydrationBadge } from '../recipe/index.js';
 
 /**
- * FeedPanel — 养种 + 数量 + 水合度
+ * FeedPanel — 全局参数 + 养种计算
  *
- * 顶部：数量 + 水合度 —— 影响整个配方的全局参数
- * 中部：养种输入 + 喂养方案（加 T65 / 加水）
+ * 顶部 Global：数量 / 水合度（紧凑一行，不占大卡片）
+ * 中部 Levain：旧种输入 + 加 T65 / 加水（step=1）
  * 底部：次要指标 + 说明
  */
 export function FeedPanel({
   feed,
   seedStarter,
   onSeedChange,
-  // 全局配方参数
   base,
   numUnits,
   onNumUnitsChange,
@@ -25,23 +24,20 @@ export function FeedPanel({
   if (!feed) return null;
 
   return (
-    <div className={cn('space-y-7', className)}>
-      {/* ── 全局：数量 + 水合度 ── */}
-      <section className="space-y-3">
+    <div className={cn('space-y-6', className)}>
+      {/* ── Global —— 紧凑行 ── */}
+      <section className="space-y-2.5">
         <SectionHeader title="全局参数" latin="Global" />
-        <Card variant="surface" padding="md" className="flex items-stretch gap-5">
-          <div className="flex-1 min-w-0">
-            <NumberField
-              label="数量"
-              hint="Loaves"
-              value={numUnits}
-              onChange={onNumUnitsChange}
-              min={1}
-              max={10}
-            />
-          </div>
-          <div className="w-px bg-line-soft" aria-hidden />
-          <div className="flex flex-col justify-center items-start gap-2 shrink-0">
+        <div className="flex items-stretch gap-3">
+          <GlobalCell
+            label="数量"
+            value={numUnits}
+            unit="条"
+            onChange={onNumUnitsChange}
+            min={1}
+            max={10}
+          />
+          <div className="flex-1 rounded-md border border-line bg-surface px-3 py-2.5 flex flex-col justify-center gap-1.5">
             <div className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
               水合度
             </div>
@@ -50,10 +46,10 @@ export function FeedPanel({
               base={base.hydration}
             />
           </div>
-        </Card>
+        </div>
       </section>
 
-      {/* ── 养种 ── */}
+      {/* ── Levain ── */}
       <section className="space-y-3">
         <SectionHeader title="养种计算" latin="Levain" />
 
@@ -64,12 +60,12 @@ export function FeedPanel({
             value={seedStarter}
             onChange={onSeedChange}
             min={1}
-            step={5}
+            step={1}
             unit="g"
           />
         </Card>
 
-        <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="grid grid-cols-2 gap-3">
           <BigMetric
             icon={<Wheat size={14} strokeWidth={1.5} />}
             label="加 T65"
@@ -82,12 +78,12 @@ export function FeedPanel({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-2 gap-3 pt-1">
           <SmallMetric label="配方需求" value={feed.needed} />
           <SmallMetric label="喂养后总量" value={feed.total} />
         </div>
 
-        <div className="flex items-start gap-2.5 pt-4 px-1">
+        <div className="flex items-start gap-2.5 pt-3 px-1">
           <Sprout
             size={12}
             strokeWidth={1.5}
@@ -102,6 +98,45 @@ export function FeedPanel({
           </p>
         </div>
       </section>
+    </div>
+  );
+}
+
+/** GlobalCell —— 紧凑数字 stepper */
+function GlobalCell({ label, value, unit, onChange, min = 0, max = Infinity }) {
+  const dec = () => onChange(Math.max(min, value - 1));
+  const inc = () => onChange(Math.min(max, value + 1));
+  return (
+    <div className="flex-1 rounded-md border border-line bg-surface px-3 py-2.5 flex flex-col gap-1.5">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
+        {label}
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={dec}
+          disabled={value <= min}
+          aria-label="减少"
+          className="w-7 h-7 flex items-center justify-center rounded-sm text-muted hover:text-ink hover:bg-sunken disabled:opacity-30 transition-colors ease-editorial duration-fast"
+        >
+          <Minus size={12} strokeWidth={1.5} />
+        </button>
+        <div className="flex-1 flex items-baseline justify-center gap-1">
+          <span className="font-display text-xl tabular-nums text-ink leading-none">
+            {value}
+          </span>
+          {unit && <span className="text-[10px] text-faint font-body">{unit}</span>}
+        </div>
+        <button
+          type="button"
+          onClick={inc}
+          disabled={value >= max}
+          aria-label="增加"
+          className="w-7 h-7 flex items-center justify-center rounded-sm text-muted hover:text-ink hover:bg-sunken disabled:opacity-30 transition-colors ease-editorial duration-fast"
+        >
+          <Plus size={12} strokeWidth={1.5} />
+        </button>
+      </div>
     </div>
   );
 }

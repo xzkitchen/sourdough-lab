@@ -203,7 +203,7 @@ function App() {
 // ── Formula Tab — 只两块：创意预设 + 配方清单 ──────────────────
 function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <FlavorPresets
         base={base}
         flavors={FLAVORS}
@@ -211,7 +211,7 @@ function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
         onApply={onApplyFlavor}
       />
 
-      <section className="space-y-3">
+      <section className="space-y-2.5">
         <SectionHeader title="配方清单" latin="Formula" />
         <Card variant="surface" padding="md">
           <IngredientTable
