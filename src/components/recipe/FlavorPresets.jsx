@@ -30,15 +30,13 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
   })?.id;
 
   const handleClick = useCallback(
-    (flavor, index) => {
+    (flavor) => {
       onApply(flavor);
-      // 200ms 后把下一张卡平滑滚入视野
-      const nextIndex = Math.min(index + 1, flavors.length - 1);
-      const nextFlavor = flavors[nextIndex];
-      const nextEl = itemRefs.current[nextFlavor?.id];
-      if (nextEl && nextEl !== itemRefs.current[flavor.id]) {
+      // 把被点击的卡自己居中 —— 双向生效，不依赖方向
+      const el = itemRefs.current[flavor.id];
+      if (el) {
         setTimeout(() => {
-          nextEl.scrollIntoView({
+          el.scrollIntoView({
             behavior: 'smooth',
             inline: 'center',
             block: 'nearest',
@@ -46,7 +44,7 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
         }, 180);
       }
     },
-    [flavors, onApply]
+    [onApply]
   );
 
   return (
@@ -77,7 +75,7 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
               key={f.id}
               ref={(el) => { itemRefs.current[f.id] = el; }}
               type="button"
-              onClick={() => handleClick(f, i)}
+              onClick={() => handleClick(f)}
               aria-pressed={active}
               className="snap-center shrink-0 flex flex-col items-center gap-3 py-1 w-[88px] group"
             >

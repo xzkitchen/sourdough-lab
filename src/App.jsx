@@ -103,9 +103,9 @@ function App() {
           </p>
         </header>
 
-        {/* ── Tab nav ── */}
+        {/* ── Tab nav —— sticky 磁吸置顶 ── */}
         <nav
-          className="flex border-b border-line"
+          className="flex border-b border-line sticky top-0 z-20 bg-bg/92 backdrop-blur-md -mx-5 px-5 sm:-mx-8 sm:px-8 pt-2"
           role="tablist"
           aria-label="页面切换"
         >

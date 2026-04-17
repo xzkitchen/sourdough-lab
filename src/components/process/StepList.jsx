@@ -29,15 +29,32 @@ export function StepList({
     return { completedCount: done.length, percent: pct, currentId: current };
   }, [steps, completedIds]);
 
-  // 完成步骤后，自动把新的 current step 滚到视图顶部
+  // 完成步骤后 / mount 时，把当前 step 滚到视图顶部
   const stepRefs = useRef({});
-  const prevCurrentRef = useRef(currentId);
+  const prevCurrentRef = useRef(null);
+  const mountedRef = useRef(false);
+
+  // Mount 时：立即滚到 current，无动画（避免感知到"滚动"）
   useEffect(() => {
-    const prev = prevCurrentRef.current;
-    if (currentId && currentId !== prev && prev !== null) {
+    if (!mountedRef.current && currentId) {
       const el = stepRefs.current[currentId];
       if (el) {
-        // 延迟到 DOM 完成 state 切换后
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }, 50);
+      }
+      mountedRef.current = true;
+      prevCurrentRef.current = currentId;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // currentId 改变时（完成一步）：平滑滚到新 current
+  useEffect(() => {
+    const prev = prevCurrentRef.current;
+    if (mountedRef.current && currentId && currentId !== prev && prev !== null) {
+      const el = stepRefs.current[currentId];
+      if (el) {
         setTimeout(() => {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);

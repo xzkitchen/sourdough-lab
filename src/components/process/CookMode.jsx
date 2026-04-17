@@ -87,7 +87,7 @@ export function CookMode({
             />
           </div>
 
-          {/* 主内容 */}
+          {/* 主内容 —— 支持左右拖动翻页 */}
           <div className="absolute inset-0 pt-20 pb-24 px-8 flex items-center justify-center overflow-y-auto">
             <AnimatePresence mode="wait">
               <motion.div
@@ -96,7 +96,18 @@ export function CookMode({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
-                className="max-w-2xl w-full space-y-8"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.25}
+                onDragEnd={(_, info) => {
+                  const { offset, velocity } = info;
+                  if ((offset.x < -80 || velocity.x < -400) && canNext) {
+                    next();
+                  } else if ((offset.x > 80 || velocity.x > 400) && canPrev) {
+                    prev();
+                  }
+                }}
+                className="max-w-2xl w-full space-y-8 cursor-grab active:cursor-grabbing"
               >
                 <header className="space-y-3 text-center">
                   <div className="text-[11px] uppercase tracking-[0.25em] text-accent-ink font-body">
