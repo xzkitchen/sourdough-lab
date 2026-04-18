@@ -61,13 +61,13 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
 
       {/*
         横向 feed：
-          - 左 px-5 正常起始留白
-          - 右 pr-10 让最后一张卡"被截一半"露出 peek 暗示还有更多
-          - 点击后自动滑到下一张居中
+          - 左 pl-5 正常起始留白
+          - 右 pr-[50vw] 超大留白 —— 让最后一张卡也能真正 scroll 到居中
+            （否则 clamped 到 maxScroll，点倒数 1/2 张视觉上没滑动）
       */}
       <div
         ref={scrollRef}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory -mx-5 pl-5 pr-10 sm:-mx-8 sm:pl-8 sm:pr-14 pb-1"
+        className="flex gap-5 overflow-x-auto snap-x snap-mandatory -mx-5 pl-5 pr-[50vw] sm:-mx-8 sm:pl-8 pb-1"
       >
         {flavors.map((f, i) => {
           const active = f.id === activeFlavorId;

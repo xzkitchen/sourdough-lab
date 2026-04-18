@@ -21,33 +21,41 @@ export function ScheduleHeader({
 }) {
   const [editing, setEditing] = useState(!targetBakeTime);
 
-  const handleSubmit = (e) => {
-    const v = e.target.value;
-    if (v) {
-      onSetTarget(new Date(v).toISOString());
-      setEditing(false);
-    }
+  // 默认建议：明天下午 3 点
+  const initialDefault = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(15, 0, 0, 0);
+    return d;
+  };
+
+  const initial = targetBakeTime ? new Date(targetBakeTime) : initialDefault();
+  const pad = (n) => String(n).padStart(2, '0');
+  const initDateStr = `${initial.getFullYear()}-${pad(initial.getMonth() + 1)}-${pad(initial.getDate())}`;
+  const initTimeStr = `${pad(initial.getHours())}:${pad(initial.getMinutes())}`;
+
+  const [dateStr, setDateStr] = useState(initDateStr);
+  const [timeStr, setTimeStr] = useState(initTimeStr);
+
+  const commit = (d, t) => {
+    if (!d || !t) return;
+    const iso = new Date(`${d}T${t}`).toISOString();
+    onSetTarget(iso);
+    setEditing(false);
+  };
+
+  const handleDateChange = (e) => {
+    setDateStr(e.target.value);
+    commit(e.target.value, timeStr);
+  };
+  const handleTimeChange = (e) => {
+    setTimeStr(e.target.value);
+    commit(dateStr, e.target.value);
   };
 
   const clear = () => {
     onSetTarget(null);
     setEditing(true);
-  };
-
-  // datetime-local 需要 local-time 字符串 "yyyy-MM-ddTHH:mm"
-  const toLocalInput = (iso) => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
-
-  // 默认建议时间：明天下午 3 点
-  const defaultSuggestion = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    d.setHours(15, 0, 0, 0);
-    return toLocalInput(d.toISOString());
   };
 
   if (!targetBakeTime || editing) {
@@ -60,20 +68,30 @@ export function ScheduleHeader({
         <p className="text-xs text-muted font-body leading-relaxed">
           输入想要出炉的时间，自动反推每一步的起始时刻。
         </p>
-        <input
-          type="datetime-local"
-          defaultValue={toLocalInput(targetBakeTime) || defaultSuggestion()}
-          onChange={handleSubmit}
-          className="block h-11 px-3 rounded-sm border border-line bg-surface text-ink font-body tabular-nums"
-          style={{
-            width: '100%',
-            minWidth: 0,
-            maxWidth: '100%',
-            boxSizing: 'border-box',
-            fontSize: '16px',   // 防 iOS auto-zoom
-            colorScheme: 'light',
-          }}
-        />
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={dateStr}
+            onChange={handleDateChange}
+            className="flex-[1.3] min-w-0 h-11 px-3 rounded-sm border border-line bg-surface text-ink font-body tabular-nums"
+            style={{
+              boxSizing: 'border-box',
+              fontSize: '16px',
+              colorScheme: 'light',
+            }}
+          />
+          <input
+            type="time"
+            value={timeStr}
+            onChange={handleTimeChange}
+            className="flex-1 min-w-0 h-11 px-3 rounded-sm border border-line bg-surface text-ink font-body tabular-nums"
+            style={{
+              boxSizing: 'border-box',
+              fontSize: '16px',
+              colorScheme: 'light',
+            }}
+          />
+        </div>
         {targetBakeTime && (
           <Button variant="text" size="sm" onClick={() => setEditing(false)}>
             取消编辑
