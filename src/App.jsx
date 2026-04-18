@@ -9,7 +9,6 @@ import {
   calculateRecipe,
   calculateFeed,
   enhanceSteps,
-  adjustStepsForTemp,
 } from './domain/calculator.js';
 import { getProcessSteps } from './domain/process/index.js';
 
@@ -27,7 +26,7 @@ import {
 } from './components/recipe/index.js';
 
 import { FeedPanel } from './components/starter/index.js';
-import { StepList, CookMode, RoomTempCard, BatchLog } from './components/process/index.js';
+import { StepList, CookMode, BatchLog } from './components/process/index.js';
 
 const TABS = [
   { id: 'formula', label: 'Formula', zh: '配方' },
@@ -46,7 +45,6 @@ function App() {
   const [completedList, setCompletedList] = useStickyState([], 'sdl_completed_steps');
   const [coldStartTime, setColdStartTime] = useStickyState(null, 'sdl_cold_start');
   const [coldDuration, setColdDuration] = useStickyState(16, 'sdl_cold_duration');
-  const [roomTempC, setRoomTempC] = useStickyState(24, 'sdl_room_temp');
   const [batches, setBatches] = useStickyState([], 'sdl_batches');
 
   const [cookOpen, setCookOpen] = useState(false);
@@ -65,13 +63,9 @@ function App() {
   );
 
   const baseSteps = useMemo(() => getProcessSteps(base.processRef), [base]);
-  const adjustedSteps = useMemo(
-    () => adjustStepsForTemp(baseSteps, roomTempC),
-    [baseSteps, roomTempC]
-  );
   const steps = useMemo(
-    () => enhanceSteps(adjustedSteps, calculated),
-    [adjustedSteps, calculated]
+    () => enhanceSteps(baseSteps, calculated),
+    [baseSteps, calculated]
   );
 
   const completedIds = useMemo(() => new Set(completedList), [completedList]);
@@ -121,9 +115,8 @@ function App() {
     flavorName: activeFlavor?.name || '自定义配方',
     numUnits,
     hydration: calculated.actualHydration,
-    roomTempC,
     coldDuration,
-  }), [activeFlavor, numUnits, calculated.actualHydration, roomTempC, coldDuration]);
+  }), [activeFlavor, numUnits, calculated.actualHydration, coldDuration]);
 
   const openCookMode = useCallback(() => {
     const currentIdx = steps.findIndex((s) => !completedIds.has(s.id));
@@ -208,10 +201,6 @@ function App() {
 
             {tab === 'bake' && (
               <div className="space-y-4">
-                <RoomTempCard
-                  roomTempC={roomTempC}
-                  onChange={setRoomTempC}
-                />
                 <StepList
                   steps={steps}
                   completedIds={completedIds}
