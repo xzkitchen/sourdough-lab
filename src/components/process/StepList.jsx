@@ -123,7 +123,6 @@ export function StepList({
             <div
               key={step.id}
               ref={(el) => { stepRefs.current[step.id] = el; }}
-              style={{ scrollMarginTop: '16px' }}
             >
             <StepCard
               step={step}

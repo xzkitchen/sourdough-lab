@@ -12,6 +12,8 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* 给所有 scrollIntoView 留出 sticky Tab nav 的空间（~60px）+ 呼吸 */
+    scroll-padding-top: 80px;
   }
 
   body {
