@@ -52,7 +52,7 @@ export function ScheduleHeader({
 
   if (!targetBakeTime || editing) {
     return (
-      <Card variant="surface" padding="md" className={cn('space-y-3', className)}>
+      <Card variant="surface" padding="md" className={cn('space-y-3 overflow-hidden', className)}>
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-faint font-body">
           <Clock size={12} strokeWidth={1.5} />
           <span>Schedule · 目标出炉</span>
@@ -64,8 +64,15 @@ export function ScheduleHeader({
           type="datetime-local"
           defaultValue={toLocalInput(targetBakeTime) || defaultSuggestion()}
           onChange={handleSubmit}
-          className="w-full h-10 px-3 rounded-sm border border-line bg-surface text-ink font-body text-sm tabular-nums"
-          style={{ colorScheme: 'light' }}
+          className="block h-11 px-3 rounded-sm border border-line bg-surface text-ink font-body tabular-nums"
+          style={{
+            width: '100%',
+            minWidth: 0,
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            fontSize: '16px',   // 防 iOS auto-zoom
+            colorScheme: 'light',
+          }}
         />
         {targetBakeTime && (
           <Button variant="text" size="sm" onClick={() => setEditing(false)}>

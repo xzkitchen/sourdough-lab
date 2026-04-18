@@ -32,16 +32,19 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
   const handleClick = useCallback(
     (flavor) => {
       onApply(flavor);
-      // 把被点击的卡自己居中 —— 双向生效，不依赖方向
+      // 手动计算 scrollLeft 让被点击卡居中 —— 不依赖 scrollIntoView
+      // scrollIntoView 在目标已部分可见时可能 skip，尤其 iOS Safari
+      const container = scrollRef.current;
       const el = itemRefs.current[flavor.id];
-      if (el) {
+      if (container && el) {
         setTimeout(() => {
-          el.scrollIntoView({
+          const target = el.offsetLeft - (container.clientWidth - el.clientWidth) / 2;
+          const max = container.scrollWidth - container.clientWidth;
+          container.scrollTo({
+            left: Math.max(0, Math.min(max, target)),
             behavior: 'smooth',
-            inline: 'center',
-            block: 'nearest',
           });
-        }, 180);
+        }, 120);
       }
     },
     [onApply]
