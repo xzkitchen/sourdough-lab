@@ -22,6 +22,7 @@ import {
   IngredientTable,
   WarningList,
   SectionHeader,
+  FlavorSource,
 } from './components/recipe/index.js';
 
 import { FeedPanel } from './components/starter/index.js';
@@ -200,8 +201,10 @@ function App() {
   );
 }
 
-// ── Formula Tab — 只两块：创意预设 + 配方清单 ──────────────────
+// ── Formula Tab — 创意预设 + 来源 + 配方清单 ──────────────────
 function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
+  const activeFlavor = useMemo(() => matchFlavor(selected), [selected]);
+
   return (
     <div className="space-y-5">
       <FlavorPresets
@@ -210,6 +213,8 @@ function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
         selected={selected}
         onApply={onApplyFlavor}
       />
+
+      <FlavorSource flavor={activeFlavor} />
 
       <Card variant="surface" padding="md" className="space-y-4">
         <SectionHeader title="配方清单" latin="Formula" />
@@ -222,6 +227,21 @@ function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
       <WarningList warnings={calculated.warnings} notes={calculated.notes} />
     </div>
   );
+}
+
+/** 在当前 selected modifiers 中寻找完全匹配的 flavor */
+function matchFlavor(selected) {
+  return FLAVORS.find((f) => {
+    if (f.modifiers.length !== selected.length) return false;
+    return f.modifiers.every((m) => {
+      const sel = selected.find((s) => s.id === m.id);
+      if (!sel) return false;
+      return (
+        Math.abs((sel.dose ?? 0) - (m.dose ?? 0)) < 0.0001 ||
+        sel.dose === undefined
+      );
+    });
+  }) || null;
 }
 
 export default App;

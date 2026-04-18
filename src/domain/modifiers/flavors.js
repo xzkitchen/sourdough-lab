@@ -1,107 +1,187 @@
 /**
- * Flavors — 创意预设组合（"Chef's picks" / 实验室推荐）
+ * Flavors — 大师级创意预设
  *
- * 每个 flavor 指向一组 modifier id + 推荐 dose，UI 上作为一键套用的入口。
- * 所有引用的 modifier id 必须在 colorants.js 或 addins.js 中存在。
+ * 规范：每一条都必须有可核查的权威来源（书籍 / 官方 URL）。
+ * 所有配比基于原作者文献。第一条为 base（Tartine Country Bread 风格）。
  *
- * 新增 preset 时，确保风味/色彩在烘焙学上合理。
+ * Schema 额外字段：
+ *   source    { name, author, url }
+ *   difficulty 'beginner' | 'intermediate' | 'advanced'
+ *   note       简短作者说明（中文）
  */
 
 export const FLAVORS = [
   {
     id: 'plain',
     name: '原味',
-    nameLatin: 'Plain',
-    description: '最纯粹的乡村酸种，T65 面粉 + 鲁邦种 + 盐，无任何修饰',
+    nameLatin: 'Country Bread',
+    description: '最纯粹的乡村酸种，T65 + 鲁邦种 + 盐。',
     modifiers: [],
-    heroHue: 38,   // HSL hue 提示，用于预览色带
+    heroHue: 38,
+    difficulty: 'beginner',
+    source: {
+      name: 'Tartine Bread',
+      author: 'Chad Robertson',
+      url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',
+    },
+    note: 'Robertson 经典 75% 水合配方；新手可从 70% 起步。',
   },
   {
-    id: 'matcha-grass',
-    name: '抹茶草本',
-    nameLatin: 'Matcha Grass',
-    description: '4% 抹茶粉，鲜绿切面，苦韵与麦香',
+    id: 'walnut-levain',
+    name: '核桃乡村',
+    nameLatin: 'Walnut Levain',
+    description: '烤核桃 12%，Tartine 经典坚果乡村。',
     modifiers: [
-      { id: 'matcha', dose: 0.04 },
+      { id: 'walnut', dose: 0.12 },
     ],
-    heroHue: 90,
+    heroHue: 28,
+    difficulty: 'intermediate',
+    source: {
+      name: 'Tartine Bread — Walnut Country Bread variation',
+      author: 'Chad Robertson',
+      url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',
+    },
+    note: '坚果须烤过冷却；第 2 或第 3 次折叠时加入。',
   },
   {
-    id: 'prickly-pear-pink',
-    name: '仙人果淡粉',
-    nameLatin: 'Prickly Pear Pink',
-    description: '6% 仙人果粉，柔粉切面（烤后渐橙），微甜与麦香',
+    id: 'olive-rosemary',
+    name: '橄榄迷迭香',
+    nameLatin: 'Olive & Rosemary Levain',
+    description: 'Kalamata 橄榄 10% + 迷迭香，地中海经典。',
     modifiers: [
-      { id: 'prickly-pear', dose: 0.06 },
+      { id: 'olive', dose: 0.10 },
+      { id: 'rosemary', dose: 0.01 },
     ],
-    heroHue: 340,
+    heroHue: 80,
+    difficulty: 'intermediate',
+    source: {
+      name: 'Tartine Bread — Olive Rosemary variation',
+      author: 'Chad Robertson',
+      url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',
+    },
+    note: '橄榄带盐，基础盐减 0.2%。',
   },
   {
-    id: 'cocoa-cranberry-walnut',
-    name: '可可蔓越莓核桃',
-    nameLatin: 'Cocoa × Cran × Walnut',
-    description: '深棕切面，红蔓越莓点缀 + 核桃碎粒，早餐法国三重奏',
+    id: 'fig-walnut',
+    name: '无花果核桃',
+    nameLatin: 'Fig & Walnut',
+    description: '无花果干 21% + 核桃 24%，King Arthur 配方。',
     modifiers: [
-      { id: 'cocoa',     dose: 0.08 },
-      { id: 'cranberry', dose: 0.10 },
-      { id: 'walnut',    dose: 0.10 },
+      { id: 'fig', dose: 0.21 },
+      { id: 'walnut', dose: 0.24 },
     ],
     heroHue: 22,
+    difficulty: 'intermediate',
+    source: {
+      name: 'King Arthur — Fig and Walnut Sourdough',
+      url: 'https://www.kingarthurbaking.com/recipes/fig-and-walnut-sourdough-recipe',
+    },
+    note: '原方水合 63%；大量干果加水合补偿后约 72%。',
   },
   {
-    id: 'tomato-basil',
-    name: '番茄罗勒',
-    nameLatin: 'Tomato × Basil',
-    description: '地中海风格，风干番茄 + 罗勒碎',
+    id: 'chocolate',
+    name: '可可巧克力',
+    nameLatin: 'Chocolate Sourdough',
+    description: '可可 4% + 黑巧克力豆 22%，deep roasted 风味。',
     modifiers: [
-      { id: 'sundried-tomato', dose: 0.08 },
-      { id: 'basil',           dose: 0.0075 },
+      { id: 'cocoa', dose: 0.04 },
+      { id: 'chocolate-chips', dose: 0.22 },
     ],
-    heroHue: 10,
+    heroHue: 18,
+    difficulty: 'intermediate',
+    source: {
+      name: 'King Arthur — Chocolate Sourdough',
+      url: 'https://www.kingarthurbaking.com/recipes/chocolate-sourdough-bread-recipe',
+    },
+    note: '可可先和水拌匀去结块；推荐 Dutch-process 可可。',
   },
   {
-    id: 'purple-sesame',
-    name: '紫薯黑芝麻',
-    nameLatin: 'Purple × Sesame',
-    description: '紫薯粉的温柔淡紫 + 芝麻粒点缀',
+    id: 'jalapeno-cheddar',
+    name: '辣椒车达',
+    nameLatin: 'Jalapeño Cheddar',
+    description: '腌辣椒 24% + 车达 15%，咸鲜微辣。',
     modifiers: [
-      { id: 'purple-sweet-potato', dose: 0.08 },
-      { id: 'sesame',              dose: 0.04 },
+      { id: 'jalapeno', dose: 0.24 },
+      { id: 'cheddar', dose: 0.15 },
     ],
-    heroHue: 280,
+    heroHue: 50,
+    difficulty: 'intermediate',
+    source: {
+      name: 'King Arthur — Jalapeño-Cheddar Bread',
+      url: 'https://www.kingarthurbaking.com/recipes/jalapeno-cheddar-bread-recipe',
+    },
+    note: '奶酪一半磨碎 + 一半切块；橄榄/辣椒含盐，基础盐减 0.2%。',
   },
   {
-    id: 'squid-cheddar',
-    name: '墨鱼车达',
-    nameLatin: 'Squid × Cheddar',
-    description: '黑底面团镶橙黄奶酪，视觉最强对比',
+    id: 'walnut-cranberry',
+    name: '核桃蔓越莓',
+    nameLatin: 'Walnut Cranberry',
+    description: '核桃 12% + 蔓越莓 16%，早餐款酸甜平衡。',
     modifiers: [
-      { id: 'squid-ink', dose: 0.015 },
-      { id: 'cheddar',   dose: 0.08 },
+      { id: 'walnut', dose: 0.12 },
+      { id: 'cranberry', dose: 0.16 },
     ],
-    heroHue: 0,
+    heroHue: 355,
+    difficulty: 'intermediate',
+    source: {
+      name: 'The Perfect Loaf — Walnut Cranberry Sourdough',
+      author: 'Maurizio Leo',
+      url: 'https://www.theperfectloaf.com/walnut-cranberry-sourdough/',
+    },
+    note: '蔓越莓略泡温水再加入；酸度促发酵，主发酵缩短 10–15%。',
   },
   {
-    id: 'charcoal-olive',
-    name: '竹炭橄榄',
-    nameLatin: 'Charcoal × Olive',
-    description: '深灰切面 + 绿橄榄丁，烟熏地中海风',
+    id: 'seeded',
+    name: '混合种子',
+    nameLatin: 'Seeded Sourdough',
+    description: '南瓜籽 + 葵花籽 + 芝麻 各 5%，综合坚果谷物香。',
     modifiers: [
-      { id: 'bamboo-charcoal', dose: 0.015 },
-      { id: 'olive',           dose: 0.08 },
+      { id: 'pumpkin-seed', dose: 0.05 },
+      { id: 'sunflower-seed', dose: 0.05 },
+      { id: 'sesame', dose: 0.05 },
     ],
-    heroHue: 0,
+    heroHue: 38,
+    difficulty: 'intermediate',
+    source: {
+      name: 'The Perfect Loaf — Seeded Sourdough',
+      author: 'Maurizio Leo',
+      url: 'https://www.theperfectloaf.com/seeded-sourdough/',
+    },
+    note: '种子烤过香气更浓；最后一次折叠时加入。',
   },
   {
-    id: 'turmeric-pumpkin',
-    name: '姜黄南瓜',
-    nameLatin: 'Turmeric × Pumpkin',
-    description: '金黄橙色，秋日温暖的姜黄 + 南瓜籽',
+    id: 'pumpkin-cinnamon',
+    name: '南瓜肉桂',
+    nameLatin: 'Pumpkin Cinnamon',
+    description: '南瓜 8% + 肉桂 1.2%，秋日温暖金橙色。',
     modifiers: [
-      { id: 'turmeric',     dose: 0.025 },
-      { id: 'pumpkin-seed', dose: 0.08 },
+      { id: 'pumpkin', dose: 0.08 },
+      { id: 'cinnamon', dose: 0.012 },
     ],
-    heroHue: 40,
+    heroHue: 28,
+    difficulty: 'intermediate',
+    source: {
+      name: 'The Perfect Loaf — Pumpkin Cinnamon Sourdough',
+      author: 'Maurizio Leo',
+      url: 'https://www.theperfectloaf.com/pumpkin-cinnamon-sourdough-bread/',
+    },
+    note: '南瓜粉吸水大，水合度会升至约 75%。',
+  },
+  {
+    id: 'matcha-swirl',
+    name: '抹茶漩涡',
+    nameLatin: 'Matcha Swirl',
+    description: '抹茶 2.9%，改编自 King Arthur marbled matcha。',
+    modifiers: [
+      { id: 'matcha', dose: 0.029 },
+    ],
+    heroHue: 90,
+    difficulty: 'advanced',
+    source: {
+      name: 'King Arthur — Marbled Matcha Milk Bread (adapted for sourdough)',
+      url: 'https://www.kingarthurbaking.com/recipes/marbled-matcha-milk-bread-recipe',
+    },
+    note: '原方为奶油吐司；此处为 sourdough 改编版，颜色会因烤制略偏橄榄绿。',
   },
 ];
 
