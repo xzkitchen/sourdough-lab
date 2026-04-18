@@ -309,4 +309,93 @@ export function calculateFeed(calculated, seedStarter) {
   };
 }
 
+/**
+ * 按室温调整发酵阶段时长
+ *
+ * 规则（业界 rule of thumb）：
+ *   基准 24°C；每差 1°C 调整 ~5% 发酵时长（冷 → 延长 / 热 → 缩短）
+ *   只影响 phase = 'prep'（喂种）/ 'bulk'（主发酵）的步骤
+ *
+ * @param {Array} steps        基础步骤
+ * @param {number} roomTempC   室温摄氏度（18–32 合理，默认 24）
+ * @returns {Array}            minutes 字段被调整后的步骤
+ */
+export function adjustStepsForTemp(steps, roomTempC) {
+  if (!roomTempC || roomTempC === 24) return steps;
+  const factor = Math.max(0.5, Math.min(1.6, 1 - (roomTempC - 24) * 0.05));
+  return steps.map((s) => {
+    const affected = s.phase === 'prep' || s.phase === 'bulk';
+    if (!affected || !s.minutes) return s;
+    return { ...s, minutes: Math.round(s.minutes * factor) };
+  });
+}
+
+/**
+ * 时间反推计划器 —— 从目标出炉时间倒推每步起止时间
+ *
+ * @param {object} p
+ * @param {Array} p.steps             enhanceSteps 后的步骤数组
+ * @param {string|Date} p.targetBakeTime  目标面包出炉时刻（ISO 或 Date）
+ * @param {number} p.coldDurationHours    冷藏发酵时长（小时，默认 16）
+ * @returns {object|null}
+ *   {
+ *     schedule: { [stepId]: { start: Date, end: Date } },
+ *     feedStart: Date,           // 喂种开始
+ *     coldStart: Date,           // 放入冰箱
+ *     preheatTime: Date,         // 烤箱预热建议（cold_end - 1h）
+ *     bakeStart: Date,           // 入炉
+ *     bakeEnd: Date,             // 出炉（= target）
+ *     totalDurationMinutes: number
+ *   }
+ */
+export function calculateSchedule({ steps, targetBakeTime, coldDurationHours = 16 }) {
+  if (!targetBakeTime || !steps?.length) return null;
+
+  const target = targetBakeTime instanceof Date ? targetBakeTime : new Date(targetBakeTime);
+  if (isNaN(target.getTime())) return null;
+
+  const schedule = {};
+  let cursorEndMs = target.getTime();   // 最后一步 bake 的 end = target
+
+  // 从最后一步倒推
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const step = steps[i];
+    let durationMin;
+    if (step.id === 'cold') {
+      durationMin = coldDurationHours * 60;
+    } else {
+      durationMin = step.minutes || 0;
+    }
+    const startMs = cursorEndMs - durationMin * 60 * 1000;
+    schedule[step.id] = {
+      start: new Date(startMs),
+      end: new Date(cursorEndMs),
+      durationMinutes: durationMin,
+    };
+    cursorEndMs = startMs;
+  }
+
+  const firstStep = steps[0];
+  const feedStart = schedule[firstStep.id].start;
+  const coldStart = schedule.cold ? schedule.cold.start : null;
+  const coldEnd = schedule.cold ? schedule.cold.end : null;
+  const bakeStart = schedule.bake ? schedule.bake.start : target;
+  const preheatTime = bakeStart
+    ? new Date(bakeStart.getTime() - 60 * 60 * 1000)
+    : null;
+
+  const totalDurationMinutes = Math.round((target.getTime() - feedStart.getTime()) / 60000);
+
+  return {
+    schedule,
+    feedStart,
+    coldStart,
+    coldEnd,
+    preheatTime,
+    bakeStart,
+    bakeEnd: target,
+    totalDurationMinutes,
+  };
+}
+
 export { round, round1, pct };

@@ -9,6 +9,8 @@ import {
   calculateRecipe,
   calculateFeed,
   enhanceSteps,
+  calculateSchedule,
+  adjustStepsForTemp,
 } from './domain/calculator.js';
 import { getProcessSteps } from './domain/process/index.js';
 
@@ -26,7 +28,7 @@ import {
 } from './components/recipe/index.js';
 
 import { FeedPanel } from './components/starter/index.js';
-import { StepList, CookMode } from './components/process/index.js';
+import { StepList, CookMode, ScheduleHeader, BatchLog } from './components/process/index.js';
 
 const TABS = [
   { id: 'formula', label: 'Formula', zh: '配方' },
@@ -45,6 +47,9 @@ function App() {
   const [completedList, setCompletedList] = useStickyState([], 'sdl_completed_steps');
   const [coldStartTime, setColdStartTime] = useStickyState(null, 'sdl_cold_start');
   const [coldDuration, setColdDuration] = useStickyState(16, 'sdl_cold_duration');
+  const [targetBakeTime, setTargetBakeTime] = useStickyState(null, 'sdl_target_bake');
+  const [roomTempC, setRoomTempC] = useStickyState(24, 'sdl_room_temp');
+  const [batches, setBatches] = useStickyState([], 'sdl_batches');
 
   const [cookOpen, setCookOpen] = useState(false);
   const [cookCursor, setCookCursor] = useState(0);
@@ -62,9 +67,18 @@ function App() {
   );
 
   const baseSteps = useMemo(() => getProcessSteps(base.processRef), [base]);
+  const adjustedSteps = useMemo(
+    () => adjustStepsForTemp(baseSteps, roomTempC),
+    [baseSteps, roomTempC]
+  );
   const steps = useMemo(
-    () => enhanceSteps(baseSteps, calculated),
-    [baseSteps, calculated]
+    () => enhanceSteps(adjustedSteps, calculated),
+    [adjustedSteps, calculated]
+  );
+
+  const schedule = useMemo(
+    () => calculateSchedule({ steps, targetBakeTime, coldDurationHours: coldDuration }),
+    [steps, targetBakeTime, coldDuration]
   );
 
   const completedIds = useMemo(() => new Set(completedList), [completedList]);
@@ -83,6 +97,40 @@ function App() {
     setCompletedList([]);
     setColdStartTime(null);
   }, [setCompletedList, setColdStartTime]);
+
+  const saveBatch = useCallback((batch) => {
+    setBatches((prev) => [...prev, batch]);
+    // 保存后自动 reset 流程，开始新一轮
+    setCompletedList([]);
+    setColdStartTime(null);
+  }, [setBatches, setCompletedList, setColdStartTime]);
+
+  const deleteBatch = useCallback((id) => {
+    setBatches((prev) => prev.filter((b) => b.id !== id));
+  }, [setBatches]);
+
+  const activeFlavor = useMemo(
+    () => FLAVORS.find((f) => {
+      if (f.modifiers.length !== selected.length) return false;
+      return f.modifiers.every((m) => {
+        const sel = selected.find((s) => s.id === m.id);
+        if (!sel) return false;
+        return Math.abs((sel.dose ?? 0) - (m.dose ?? 0)) < 0.0001 || sel.dose === undefined;
+      });
+    }) || null,
+    [selected]
+  );
+
+  const allCompleted = steps.length > 0 && steps.every((s) => completedIds.has(s.id));
+
+  const currentBatchDraft = useMemo(() => ({
+    flavorId: activeFlavor?.id || 'custom',
+    flavorName: activeFlavor?.name || '自定义配方',
+    numUnits,
+    hydration: calculated.actualHydration,
+    roomTempC,
+    coldDuration,
+  }), [activeFlavor, numUnits, calculated.actualHydration, roomTempC, coldDuration]);
 
   const openCookMode = useCallback(() => {
     const currentIdx = steps.findIndex((s) => !completedIds.has(s.id));
@@ -166,18 +214,35 @@ function App() {
             )}
 
             {tab === 'bake' && (
-              <StepList
-                steps={steps}
-                completedIds={completedIds}
-                coldStartTime={coldStartTime}
-                coldDuration={coldDuration}
-                onToggle={toggleStep}
-                onColdStart={() => setColdStartTime(new Date().toISOString())}
-                onColdDuration={setColdDuration}
-                onColdReset={() => setColdStartTime(null)}
-                onReset={resetProgress}
-                onOpenCookMode={openCookMode}
-              />
+              <div className="space-y-4">
+                <ScheduleHeader
+                  targetBakeTime={targetBakeTime}
+                  onSetTarget={setTargetBakeTime}
+                  schedule={schedule}
+                  roomTempC={roomTempC}
+                  onRoomTempChange={setRoomTempC}
+                />
+                <StepList
+                  steps={steps}
+                  completedIds={completedIds}
+                  coldStartTime={coldStartTime}
+                  coldDuration={coldDuration}
+                  schedule={schedule}
+                  onToggle={toggleStep}
+                  onColdStart={() => setColdStartTime(new Date().toISOString())}
+                  onColdDuration={setColdDuration}
+                  onColdReset={() => setColdStartTime(null)}
+                  onReset={resetProgress}
+                  onOpenCookMode={openCookMode}
+                />
+                <BatchLog
+                  batches={batches}
+                  onSave={saveBatch}
+                  onDelete={deleteBatch}
+                  canSave={allCompleted}
+                  currentBatchDraft={currentBatchDraft}
+                />
+              </div>
             )}
           </motion.section>
         </AnimatePresence>
