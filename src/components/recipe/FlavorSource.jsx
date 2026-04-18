@@ -13,7 +13,7 @@ export function FlavorSource({ flavor, className }) {
     return (
       <div
         className={cn(
-          'flex items-start gap-2.5 px-4 py-3 rounded-md bg-sunken border border-line-soft',
+          'flex items-start gap-2.5 px-5 py-4 rounded-md bg-sunken border border-line-soft',
           className
         )}
       >
@@ -41,7 +41,7 @@ export function FlavorSource({ flavor, className }) {
   return (
     <div
       className={cn(
-        'px-4 py-3.5 rounded-md bg-surface border border-line space-y-2',
+        'px-5 py-4 rounded-md bg-surface border border-line space-y-2.5',
         className
       )}
     >

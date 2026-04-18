@@ -13,7 +13,6 @@ export function StepList({
   completedIds,
   coldStartTime,
   coldDuration,
-  schedule,
   onToggle,
   onColdStart,
   onColdDuration,
@@ -129,7 +128,6 @@ export function StepList({
               step={step}
               state={state}
               index={idx + 1}
-              startTime={schedule?.schedule?.[step.id]?.start || null}
               onToggle={() => onToggle(step.id)}
             >
               {step.id === 'cold' && state !== 'done' && (

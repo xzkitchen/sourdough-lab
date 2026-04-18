@@ -9,7 +9,6 @@ import {
   calculateRecipe,
   calculateFeed,
   enhanceSteps,
-  calculateSchedule,
   adjustStepsForTemp,
 } from './domain/calculator.js';
 import { getProcessSteps } from './domain/process/index.js';
@@ -28,7 +27,7 @@ import {
 } from './components/recipe/index.js';
 
 import { FeedPanel } from './components/starter/index.js';
-import { StepList, CookMode, ScheduleHeader, BatchLog } from './components/process/index.js';
+import { StepList, CookMode, RoomTempCard, BatchLog } from './components/process/index.js';
 
 const TABS = [
   { id: 'formula', label: 'Formula', zh: '配方' },
@@ -47,7 +46,6 @@ function App() {
   const [completedList, setCompletedList] = useStickyState([], 'sdl_completed_steps');
   const [coldStartTime, setColdStartTime] = useStickyState(null, 'sdl_cold_start');
   const [coldDuration, setColdDuration] = useStickyState(16, 'sdl_cold_duration');
-  const [targetBakeTime, setTargetBakeTime] = useStickyState(null, 'sdl_target_bake');
   const [roomTempC, setRoomTempC] = useStickyState(24, 'sdl_room_temp');
   const [batches, setBatches] = useStickyState([], 'sdl_batches');
 
@@ -74,11 +72,6 @@ function App() {
   const steps = useMemo(
     () => enhanceSteps(adjustedSteps, calculated),
     [adjustedSteps, calculated]
-  );
-
-  const schedule = useMemo(
-    () => calculateSchedule({ steps, targetBakeTime, coldDurationHours: coldDuration }),
-    [steps, targetBakeTime, coldDuration]
   );
 
   const completedIds = useMemo(() => new Set(completedList), [completedList]);
@@ -215,19 +208,15 @@ function App() {
 
             {tab === 'bake' && (
               <div className="space-y-4">
-                <ScheduleHeader
-                  targetBakeTime={targetBakeTime}
-                  onSetTarget={setTargetBakeTime}
-                  schedule={schedule}
+                <RoomTempCard
                   roomTempC={roomTempC}
-                  onRoomTempChange={setRoomTempC}
+                  onChange={setRoomTempC}
                 />
                 <StepList
                   steps={steps}
                   completedIds={completedIds}
                   coldStartTime={coldStartTime}
                   coldDuration={coldDuration}
-                  schedule={schedule}
                   onToggle={toggleStep}
                   onColdStart={() => setColdStartTime(new Date().toISOString())}
                   onColdDuration={setColdDuration}
@@ -279,7 +268,9 @@ function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
         onApply={onApplyFlavor}
       />
 
-      <FlavorSource flavor={activeFlavor} />
+      <div className="pt-2">
+        <FlavorSource flavor={activeFlavor} />
+      </div>
 
       <Card variant="surface" padding="md" className="space-y-4">
         <SectionHeader title="配方清单" latin="Formula" />

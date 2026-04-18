@@ -20,7 +20,7 @@ import { Pill } from '../primitives/index.js';
  *   onToggle() 点击"标记完成"/"撤销"时回调
  *   children   嵌套子元素（如 ColdRetardTracker）
  */
-export function StepCard({ step, state, index, startTime, onToggle, children }) {
+export function StepCard({ step, state, index, onToggle, children }) {
   const isDone = state === 'done';
   const isCurrent = state === 'current';
 
@@ -70,7 +70,7 @@ export function StepCard({ step, state, index, startTime, onToggle, children }) 
             </h3>
           </div>
 
-          {/* 右上：时间 + 预计开始 */}
+          {/* 右上：时间 */}
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <div className="text-right">
               <div className="font-mono text-base tabular-nums text-ink">
@@ -80,11 +80,6 @@ export function StepCard({ step, state, index, startTime, onToggle, children }) 
                 {step.timeUnit}
               </div>
             </div>
-            {startTime && (
-              <div className="text-[10px] text-accent-ink font-mono tabular-nums">
-                {startTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}
-              </div>
-            )}
           </div>
         </div>
 
