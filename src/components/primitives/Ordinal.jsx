@@ -33,7 +33,7 @@ export function Ordinal({
       <span
         className={cn(
           'inline-flex items-center justify-center aspect-square',
-          'bg-ink text-surface',
+          'bg-invert text-surface',
           'font-display tabular-nums',
           className
         )}

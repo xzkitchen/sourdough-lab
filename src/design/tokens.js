@@ -21,6 +21,11 @@ export const colors = {
   muted:    '#6B635A',
   faint:    '#A39A8E',
 
+  // Invert surface —— 用作反白色块（SpecimenCard active / LedgerTabs active /
+  // step current ordinal / MARK COMPLETE 按钮等）。比 ink 暖、比纯黑柔，
+  // 接近"深咖啡"的墨色，避免大面积反白时的"扎眼黑"。
+  invert:   '#2E2620',
+
   // Lines
   line:     '#E5DED0',
   lineSoft: '#EFEADF',

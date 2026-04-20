@@ -40,8 +40,8 @@ export function LedgerTabs({ tabs, value, onChange, className }) {
               // 竖 hairline 分隔（第 i>0 格左边）
               i > 0 && 'border-l border-line',
               active
-                ? 'bg-ink text-surface'
-                : 'bg-transparent text-ink hover:bg-sunken'
+                ? 'bg-invert text-surface'
+                : 'bg-transparent text-ink active:bg-sunken'
             )}
           >
             <span

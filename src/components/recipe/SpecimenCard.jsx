@@ -35,45 +35,46 @@ export function SpecimenCard({
       aria-pressed={active}
       className={cn(
         'snap-start shrink-0 relative overflow-hidden',
-        'w-[68vw] max-w-[220px] aspect-[11/12]',
+        'w-[52vw] max-w-[170px] aspect-[10/11]',
         'text-left flex flex-col',
         'border border-line',
         'transition-colors ease-editorial duration-fast',
+        'active:opacity-95',
         active
-          ? 'bg-ink text-surface'
-          : 'bg-surface text-ink hover:bg-sunken',
+          ? 'bg-invert text-surface border-invert'
+          : 'bg-surface text-ink',
         className
       )}
     >
       {/* Top meta row */}
-      <div className="flex items-start justify-between px-4 pt-4">
+      <div className="flex items-start justify-between px-3 pt-3">
         <span
           className={cn(
-            'font-body uppercase tabular-nums tracking-[0.18em] text-[10px] leading-[14px]',
+            'font-body uppercase tabular-nums tracking-[0.18em] text-[9px] leading-[14px]',
             active ? 'text-surface/60' : 'text-faint'
           )}
         >
           N°&nbsp;{String(ordinal).padStart(2, '0')}
         </span>
-        <div className={active ? 'text-surface/50' : 'text-faint/70'}>
-          <FlavorStamp size={54} />
+        <div className={active ? 'text-surface/45' : 'text-faint/70'}>
+          <FlavorStamp size={40} />
         </div>
       </div>
 
       {/* Middle: name */}
-      <div className="px-4 mt-2 flex-1 flex flex-col justify-end">
+      <div className="px-3 mt-1 flex-1 flex flex-col justify-end">
         <h3
           className="font-display leading-[1.05] tracking-tight"
           style={{
-            fontSize: 'clamp(22px, 5.2vw, 28px)',
-            fontVariationSettings: "'opsz' 32, 'SOFT' 50, 'wght' 400",
+            fontSize: 'clamp(18px, 4.2vw, 22px)',
+            fontVariationSettings: "'opsz' 28, 'SOFT' 50, 'wght' 400",
           }}
         >
           {flavor.name}
         </h3>
         <span
           className={cn(
-            'font-body uppercase tracking-[0.14em] text-[10px] leading-tight mt-1.5',
+            'font-body uppercase tracking-[0.14em] text-[9px] leading-tight mt-1 truncate',
             active ? 'text-surface/70' : 'text-muted'
           )}
         >
@@ -84,7 +85,7 @@ export function SpecimenCard({
       {/* Bottom: hydration pullquote */}
       <div
         className={cn(
-          'flex items-baseline justify-between px-4 py-3 mt-3 border-t',
+          'flex items-baseline justify-between px-3 py-2.5 mt-2 border-t',
           active ? 'border-surface/20' : 'border-line'
         )}
       >
@@ -94,12 +95,12 @@ export function SpecimenCard({
             active ? 'text-surface/60' : 'text-faint'
           )}
         >
-          Hydration
+          H
         </span>
         <span
           className="font-display tabular-nums tracking-tight leading-none"
           style={{
-            fontSize: 'clamp(20px, 4.8vw, 24px)',
+            fontSize: 'clamp(16px, 4vw, 20px)',
             fontVariationSettings: "'opsz' 28, 'wght' 420",
           }}
         >

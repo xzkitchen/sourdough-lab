@@ -34,7 +34,7 @@ const TABS = [
   { id: 'bake',    ordinal: '03', en: 'Method',  zh: '流程' },
 ];
 
-const motionTransition = { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] };
+const motionTransition = { duration: 0.14, ease: [0.2, 0.8, 0.2, 1] };
 
 function App() {
   const [tab, setTab] = useStickyState('formula', 'sdl_tab');

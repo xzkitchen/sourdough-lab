@@ -4,13 +4,12 @@ import { calculateRecipe } from '../../domain/calculator.js';
 import { SpecimenCard } from './SpecimenCard.jsx';
 
 /**
- * FlavorPresets —— Ledger V2 SPECIMEN 横排
+ * FlavorPresets —— Ledger V2 SPECIMEN 横排（不贴屏幕边）
  *
- * 不再有大标题 header（由外层 LedgerSection 承担），只渲染一条 snap-scroll 的卡片 strip。
- * 每张 SpecimenCard 调 calculateRecipe 算出自己的 actualHydration 显示。
- *
- * Props:
- *   base, flavors, selected, onApply, numUnits, className
+ * - strip 不再 -mx bleed 到屏幕边，保持在 LedgerSection 容器内
+ * - 每张卡 ~52vw / 最大 170px，一屏可见 1.5–2 张
+ * - 滑动停止 150ms 后自动把最接近中心的卡设为 active（无需再点一次）
+ * - 点击仍然立即 apply + 平滑滚动到中心
  */
 export function FlavorPresets({
   base,
@@ -22,6 +21,8 @@ export function FlavorPresets({
 }) {
   const scrollRef = useRef(null);
   const itemRefs = useRef({});
+  const scrollSettleTimeoutRef = useRef(null);
+  const programmaticScrollRef = useRef(false);
 
   const activeFlavorId = flavors.find((f) => {
     if (f.modifiers.length !== selected.length) return false;
@@ -49,33 +50,62 @@ export function FlavorPresets({
     return map;
   }, [base, flavors, numUnits]);
 
+  const findClosestFlavor = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return null;
+    const centerX = container.scrollLeft + container.clientWidth / 2;
+    let closest = null;
+    let closestDist = Infinity;
+    for (const f of flavors) {
+      const el = itemRefs.current[f.id];
+      if (!el) continue;
+      const elCenter = el.offsetLeft + el.offsetWidth / 2;
+      const dist = Math.abs(centerX - elCenter);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = f;
+      }
+    }
+    return closest;
+  }, [flavors]);
+
+  const handleScroll = useCallback(() => {
+    if (programmaticScrollRef.current) return;
+    clearTimeout(scrollSettleTimeoutRef.current);
+    scrollSettleTimeoutRef.current = setTimeout(() => {
+      const closest = findClosestFlavor();
+      if (closest && closest.id !== activeFlavorId) {
+        onApply(closest);
+      }
+    }, 150);
+  }, [activeFlavorId, findClosestFlavor, onApply]);
+
+  const scrollToFlavor = useCallback((flavorId, behavior = 'smooth') => {
+    const container = scrollRef.current;
+    const el = itemRefs.current[flavorId];
+    if (!container || !el) return;
+    const target = el.offsetLeft - (container.clientWidth - el.clientWidth) / 2;
+    const max = container.scrollWidth - container.clientWidth;
+    const left = Math.max(0, Math.min(max, target));
+    programmaticScrollRef.current = true;
+    container.scrollTo({ left, behavior });
+    setTimeout(() => {
+      programmaticScrollRef.current = false;
+    }, behavior === 'smooth' ? 500 : 50);
+  }, []);
+
   const handleClick = useCallback(
     (flavor) => {
       onApply(flavor);
-      const container = scrollRef.current;
-      const el = itemRefs.current[flavor.id];
-      if (container && el) {
-        setTimeout(() => {
-          const target = el.offsetLeft - (container.clientWidth - el.clientWidth) / 2;
-          const max = container.scrollWidth - container.clientWidth;
-          container.scrollTo({
-            left: Math.max(0, Math.min(max, target)),
-            behavior: 'smooth',
-          });
-        }, 120);
-      }
+      scrollToFlavor(flavor.id, 'smooth');
     },
-    [onApply]
+    [onApply, scrollToFlavor]
   );
 
+  // Initial mount: jump to active flavor without animation
   useEffect(() => {
-    if (!activeFlavorId) return;
-    const container = scrollRef.current;
-    const el = itemRefs.current[activeFlavorId];
-    if (container && el) {
-      const target = el.offsetLeft - (container.clientWidth - el.clientWidth) / 2;
-      const max = container.scrollWidth - container.clientWidth;
-      container.scrollLeft = Math.max(0, Math.min(max, target));
+    if (activeFlavorId) {
+      scrollToFlavor(activeFlavorId, 'auto');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -84,10 +114,10 @@ export function FlavorPresets({
     <div className={cn('relative', className)}>
       <div
         ref={scrollRef}
+        onScroll={handleScroll}
         className={cn(
           'flex overflow-x-auto overflow-y-visible snap-x snap-mandatory',
-          'gap-0 -mx-5 px-5 sm:-mx-8 sm:px-8',
-          'pb-1 no-scrollbar'
+          'gap-0 pr-[40%] pb-1 no-scrollbar'
         )}
       >
         {flavors.map((f, i) => {

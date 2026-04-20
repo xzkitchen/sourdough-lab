@@ -67,7 +67,7 @@ export function BatchLog({
                   className={cn(
                     'w-9 h-9 border font-mono text-sm transition-colors ease-editorial duration-fast',
                     n <= rating
-                      ? 'bg-ink border-ink text-surface'
+                      ? 'bg-invert border-invert text-surface'
                       : 'border-line text-muted hover:border-ink'
                   )}
                   aria-label={`${n} 星`}

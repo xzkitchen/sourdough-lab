@@ -44,7 +44,7 @@ export function StepCard({ step, state, index, onToggle, children }) {
         <div
           className={cn(
             'flex items-center justify-center',
-            isCurrent ? 'bg-ink text-surface' : 'bg-transparent text-faint'
+            isCurrent ? 'bg-invert text-surface' : 'bg-transparent text-faint'
           )}
         >
           <Ordinal
@@ -146,7 +146,7 @@ export function StepCard({ step, state, index, onToggle, children }) {
             onClick={onToggle}
             className={cn(
               'w-full flex items-center justify-center gap-2 py-3',
-              'bg-ink text-surface hover:bg-muted',
+              'bg-invert text-surface hover:opacity-90',
               'font-body uppercase tracking-[0.16em] text-[11px]',
               'transition-colors ease-editorial duration-fast'
             )}

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Play, RotateCcw } from 'lucide-react';
 import { cn } from '../../lib/cn.js';
 import { Button, SmallCaps, LedgerRule } from '../primitives/index.js';
@@ -8,12 +8,8 @@ import { ColdRetardTracker } from './ColdRetardTracker.jsx';
 /**
  * StepList —— Ledger V2
  *
- * 顶部 progress block：
- *   左列：`PROGRESS · 进度` + `0 / 13 steps`
- *   右列：Fraunces pullquote `0%`
- * ProgressSegmented：13 等宽段，完成段用 bg-warn
- * 步骤列表：LedgerStepRow（共用 StepCard 文件）
- * 底部 action 栏：Cook Mode + Reset
+ * 顶部 progress block + 分段进度 + 操作行 + 步骤列表。
+ * 无任何自动滚动（之前的 scrollIntoView 会在进入 Method tab 时自动跳，感知不好，已移除）。
  */
 export function StepList({
   steps,
@@ -35,37 +31,6 @@ export function StepList({
     const current = steps.find((s) => !completedIds.has(s.id))?.id || null;
     return { completedCount: done.length, percent: pct, currentId: current };
   }, [steps, completedIds]);
-
-  const stepRefs = useRef({});
-  const prevCurrentRef = useRef(null);
-  const mountedRef = useRef(false);
-
-  useEffect(() => {
-    if (!mountedRef.current && currentId) {
-      const el = stepRefs.current[currentId];
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'auto', block: 'start' });
-        }, 50);
-      }
-      mountedRef.current = true;
-      prevCurrentRef.current = currentId;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const prev = prevCurrentRef.current;
-    if (mountedRef.current && currentId && currentId !== prev && prev !== null) {
-      const el = stepRefs.current[currentId];
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-      }
-    }
-    prevCurrentRef.current = currentId;
-  }, [currentId]);
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -128,12 +93,7 @@ export function StepList({
               : 'pending';
 
           return (
-            <li
-              key={step.id}
-              ref={(el) => {
-                stepRefs.current[step.id] = el;
-              }}
-            >
+            <li key={step.id}>
               <StepCard
                 step={step}
                 state={state}
