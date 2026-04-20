@@ -29,13 +29,22 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
     });
   })?.id;
 
-  // 点击只 apply flavor，不再自动滚动居中
-  // —— 强制居中 88px 卡在 375px 视口时，两侧必然各留 ~143px 空白，
-  //    造成"尾部大片留白"。改为保留用户当前滚动位置，选中态通过名字颜色
-  //    和 accent dot 视觉反馈即可。
+  // 点击 → 应用 flavor + 平滑滚动到被点卡（尽量居中，最后几张被 clamp）
   const handleClick = useCallback(
     (flavor) => {
       onApply(flavor);
+      const container = scrollRef.current;
+      const el = itemRefs.current[flavor.id];
+      if (container && el) {
+        setTimeout(() => {
+          const target = el.offsetLeft - (container.clientWidth - el.clientWidth) / 2;
+          const max = container.scrollWidth - container.clientWidth;
+          container.scrollTo({
+            left: Math.max(0, Math.min(max, target)),
+            behavior: 'smooth',
+          });
+        }, 120);
+      }
     },
     [onApply]
   );

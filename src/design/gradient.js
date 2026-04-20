@@ -48,12 +48,27 @@ export function buildGradientBackground(prediction, modifiers = []) {
   const baseLayer = `linear-gradient(135deg, ${hslToCss(prediction.base)} 0%, ${hslToCss(crustSoft)} 100%)`;
 
   // 2. modifier hotspots（每个 modifier 一个光斑，不够 5 个用 base/crust 补）
+  //    fallback 用较大的 hue 偏移（+55 / -55 / +180 补色），即使 modifier
+  //    本身是单色系（如 pumpkin + cinnamon 都在橘黄段）也能拉开视觉对比，
+  //    避免球看起来像纯色。
   const fallback = [
     prediction.base,
-    { ...prediction.base, h: (prediction.base.h + 30) % 360, l: Math.min(95, prediction.base.l + 8) },
+    {
+      h: (prediction.base.h + 55) % 360,
+      s: Math.min(70, prediction.base.s + 15),
+      l: Math.min(92, prediction.base.l + 6),
+    },
     prediction.crust,
-    { ...prediction.crust, s: Math.max(10, prediction.crust.s - 15), l: Math.min(90, prediction.crust.l + 15) },
-    { ...prediction.base, h: (prediction.base.h + 330) % 360, l: Math.max(40, prediction.base.l - 10) },
+    {
+      h: (prediction.crust.h + 305) % 360,
+      s: Math.max(18, prediction.crust.s - 8),
+      l: Math.min(88, prediction.crust.l + 14),
+    },
+    {
+      h: (prediction.base.h + 180) % 360,
+      s: Math.min(55, prediction.base.s + 5),
+      l: Math.max(42, prediction.base.l - 12),
+    },
   ];
 
   slots.forEach((slot, i) => {
