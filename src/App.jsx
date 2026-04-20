@@ -129,9 +129,9 @@ function App() {
           </p>
         </header>
 
-        {/* ── Tab nav —— sticky 置顶，纸纹 overlay 和 body 对齐 ── */}
+        {/* ── Tab nav —— sticky 置顶，纸纹 + 底部渐变淡出 ── */}
         <nav
-          className="flex sticky top-0 z-20 bg-bg paper-grain-match pt-2 pb-1"
+          className="flex sticky top-0 z-20 bg-bg paper-grain-match sdl-nav-fade pt-2 pb-1"
           role="tablist"
           aria-label="页面切换"
         >

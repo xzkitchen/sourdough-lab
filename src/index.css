@@ -101,6 +101,27 @@
     mix-blend-mode: multiply;
   }
 
+  /* ─── sticky nav 底部渐变淡出 ─── *
+   * 内容（如横排色球）从下方滚入 sticky nav 时，会被 nav 的实心 bg
+   * 硬切成半圆。这条 ::before 在 nav 下方外延 20px，从 bg-bg 渐变到
+   * 透明，给经过此区域的内容做软淡出。
+   */
+  .sdl-nav-fade::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(
+      to bottom,
+      #F5F1EA 0%,
+      rgba(245, 241, 234, 0) 100%
+    );
+    pointer-events: none;
+    z-index: 19;
+  }
+
   /* ─── Leader dots（日式表格虚线填充） ─── */
   .leader-dots {
     flex: 1;
