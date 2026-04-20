@@ -1,20 +1,16 @@
 import React, { useRef, useCallback } from 'react';
 import { cn } from '../../lib/cn.js';
-import { predictBreadColor } from '../../domain/breadColor.js';
-import { buildGradientBackground } from '../../design/gradient.js';
+import { ColorOrb } from '../editorial/ColorOrb.jsx';
 
 /**
- * FlavorPresets — 横向滚动色球 feed
+ * FlavorPresets — 横向 feed
  *
- * 点击卡片：
- *   - 应用该 flavor
- *   - 自动平滑滚动到下一张（鼓励继续探索）
+ * v2 Editorial 差异：
+ *   - 色球改用 Editorial 版 ColorOrb（grain 用 multiply）
+ *   - 容器 overflow-y: visible + py-3 —— active 放大 3% 不再被裁
+ *   - 选中态：名字 accent-ink + italic，底部 accent 小圆点
  *
- * 选中态：
- *   - 无描边
- *   - 色球保持
- *   - 下方名字转 accent-ink + font-medium
- *   - 色球下加 1 个 2px accent dot
+ * NOTE: 色球内置 grain（每球独立 filter），无需全局 GrainFilter。
  */
 export function FlavorPresets({ base, flavors, selected, onApply, className }) {
   const scrollRef = useRef(null);
@@ -29,50 +25,31 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
     });
   })?.id;
 
-  const handleClick = useCallback(
-    (flavor) => {
-      onApply(flavor);
-      // 手动计算 scrollLeft 让被点击卡居中 —— 不依赖 scrollIntoView
-      // scrollIntoView 在目标已部分可见时可能 skip，尤其 iOS Safari
-      const container = scrollRef.current;
-      const el = itemRefs.current[flavor.id];
-      if (container && el) {
-        setTimeout(() => {
-          const target = el.offsetLeft - (container.clientWidth - el.clientWidth) / 2;
-          const max = container.scrollWidth - container.clientWidth;
-          container.scrollTo({
-            left: Math.max(0, Math.min(max, target)),
-            behavior: 'smooth',
-          });
-        }, 120);
-      }
-    },
-    [onApply]
-  );
+  const handleClick = useCallback((flavor) => {
+    onApply(flavor);
+    const container = scrollRef.current;
+    const el = itemRefs.current[flavor.id];
+    if (container && el) {
+      setTimeout(() => {
+        const target = el.offsetLeft - (container.clientWidth - el.clientWidth) / 2;
+        const max = container.scrollWidth - container.clientWidth;
+        container.scrollTo({ left: Math.max(0, Math.min(max, target)), behavior: 'smooth' });
+      }, 120);
+    }
+  }, [onApply]);
 
   return (
     <section className={cn('space-y-4', className)}>
-      <GrainFilter />
-
-      {/* Header 内缩 16px 模拟 Card 内部 padding，和"配方清单"起始 x 对齐 */}
       <div className="px-4 sm:px-5">
-        <SectionHeader title="创意预设" latin="Chef's picks" />
+        <SectionHeader title="Chef's Selection" latin="创意预设" />
       </div>
 
-      {/*
-        横向 feed：
-          - 左 pl-5 正常起始留白
-          - 右 pr-[50vw] 超大留白 —— 让最后一张卡也能真正 scroll 到居中
-            （否则 clamped 到 maxScroll，点倒数 1/2 张视觉上没滑动）
-      */}
       <div
         ref={scrollRef}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory -mx-5 pl-5 pr-[50vw] sm:-mx-8 sm:pl-8 pb-1"
+        className="flex gap-5 overflow-x-auto overflow-y-visible snap-x snap-mandatory -mx-5 pl-5 pr-[50vw] sm:-mx-8 sm:pl-8 py-3 pb-1"
       >
-        {flavors.map((f, i) => {
+        {flavors.map((f) => {
           const active = f.id === activeFlavorId;
-          const prediction = predictBreadColor(base, f.modifiers);
-          const gradientBg = buildGradientBackground(prediction, f.modifiers);
           return (
             <button
               key={f.id}
@@ -82,12 +59,12 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
               aria-pressed={active}
               className="snap-center shrink-0 flex flex-col items-center gap-3 py-1 w-[88px] group"
             >
-              <ColorOrb background={gradientBg} size={76} active={active} />
+              <ColorOrb base={base} modifiers={f.modifiers} size={76} active={active} />
               <div className="flex flex-col items-center gap-1.5">
                 <span
                   className={cn(
                     'font-body text-[12px] leading-tight text-center whitespace-nowrap',
-                    active ? 'text-accent-ink font-medium' : 'text-ink'
+                    active ? 'text-accent-ink italic font-medium' : 'text-ink'
                   )}
                 >
                   {f.name}
@@ -108,12 +85,15 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
   );
 }
 
-/** Section header —— 左对齐单行（中文 · LATIN） */
+/** Section header — Editorial 版：Latin 主位，中文副位 */
 export function SectionHeader({ title, latin, right, className }) {
   return (
     <div className={cn('flex items-baseline justify-between gap-3', className)}>
       <div className="flex items-baseline gap-2 min-w-0">
-        <span className="font-display text-[16px] text-ink tracking-tight leading-none">
+        <span
+          className="font-display text-ink tracking-tight leading-none"
+          style={{ fontSize: 16, fontVariationSettings: "'opsz' 18, 'wght' 400" }}
+        >
           {title}
         </span>
         {latin && (
@@ -127,55 +107,6 @@ export function SectionHeader({ title, latin, right, className }) {
       </div>
       {right && <div className="shrink-0">{right}</div>}
     </div>
-  );
-}
-
-/** ColorOrb — 色球 */
-function ColorOrb({ background, size, active }) {
-  return (
-    <div
-      className={cn(
-        'relative transition-transform ease-editorial duration-base',
-        active && 'scale-[1.06]'
-      )}
-      style={{ width: size, height: size }}
-    >
-      <div className="absolute inset-0 rounded-full" style={{ background }} />
-      <svg
-        className="absolute inset-0 w-full h-full rounded-full mix-blend-overlay pointer-events-none"
-        style={{ opacity: 0.5 }}
-        aria-hidden
-      >
-        <rect width="100%" height="100%" filter="url(#orbGrain)" fill="#fff" />
-      </svg>
-      <div
-        className="absolute inset-0 rounded-full pointer-events-none"
-        style={{
-          boxShadow: active
-            ? 'inset 0 0 0 0.5px rgba(26,24,21,0.08), 0 3px 10px rgba(176,137,104,0.20)'
-            : 'inset 0 0 0 0.5px rgba(26,24,21,0.06)',
-        }}
-      />
-    </div>
-  );
-}
-
-function GrainFilter() {
-  return (
-    <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
-      <defs>
-        <filter id="orbGrain" x="0%" y="0%" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="1.8" numOctaves="2" seed="9" stitchTiles="stitch" />
-          <feColorMatrix
-            values="0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 1.6 -0.5"
-          />
-          <feComposite in2="SourceGraphic" operator="in" />
-        </filter>
-      </defs>
-    </svg>
   );
 }
 
