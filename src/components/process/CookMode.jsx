@@ -136,7 +136,7 @@ export function CookMode({
 
                 {/* 投料 */}
                 {step.stageIngredients?.length > 0 && (
-                  <div className="border border-line rounded-md bg-surface p-6">
+                  <div className="border border-line bg-surface p-6">
                     <div className="text-[10px] uppercase tracking-widest text-muted font-body mb-3">
                       本阶段投料
                     </div>

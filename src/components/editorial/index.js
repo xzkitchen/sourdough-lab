@@ -1,4 +1,5 @@
 export { Masthead } from './Masthead.jsx';
-export { MetaLine } from './MetaLine.jsx';
-export { ChapterHero } from './ChapterHero.jsx';
-export { ColorOrb } from './ColorOrb.jsx';
+export { LedgerTabs } from './LedgerTabs.jsx';
+export { LedgerSection } from './LedgerSection.jsx';
+export { MemoBlock } from './MemoBlock.jsx';
+export { FlavorStamp } from './FlavorStamp.jsx';

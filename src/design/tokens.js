@@ -80,6 +80,11 @@ export const fontSize = {
   // Editorial additions
   'chapter': ['clamp(44px, 9vw, 96px)', { lineHeight: '0.95', letterSpacing: '-0.02em' }],
   'meta-big':['clamp(32px, 5vw, 44px)', { lineHeight: '1', letterSpacing: '-0.01em' }],
+  // Ledger V2 additions
+  'masthead':    ['clamp(42px, 10vw, 72px)',  { lineHeight: '0.92', letterSpacing: '-0.02em' }],
+  'stepper-num': ['clamp(72px, 20vw, 120px)', { lineHeight: '0.85', letterSpacing: '-0.02em' }],
+  'pullquote':   ['clamp(28px, 6vw, 44px)',   { lineHeight: '1',    letterSpacing: '-0.015em' }],
+  'ordinal-sm':  ['10px', { lineHeight: '14px', letterSpacing: '0.18em' }],
 };
 
 export const shadow = {
