@@ -38,10 +38,10 @@ export function IngredientTable({
       </ul>
 
       {/* TOTAL */}
-      <div className="pt-3">
+      <div className="pt-2">
         <LedgerRule variant="double" />
         <div
-          className="grid items-baseline pt-3"
+          className="grid items-baseline pt-2.5"
           style={{ gridTemplateColumns: '1fr auto' }}
         >
           <div className="flex flex-col gap-0.5">
@@ -68,7 +68,7 @@ function Row({ ing, showBakersPct }) {
   const accent = ing.source === 'modifier';
   return (
     <li
-      className="grid items-baseline py-3 border-b border-dotted border-line-soft"
+      className="grid items-baseline py-2.5 border-b border-dotted border-line-soft"
       style={{ gridTemplateColumns: '1fr 56px 96px' }}
     >
       {/* Name col: CN 主 + note/latin 小字 */}

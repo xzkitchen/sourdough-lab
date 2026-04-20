@@ -207,7 +207,7 @@ function FormulaTab({
   onApplyFlavor,
 }) {
   return (
-    <div className="space-y-10 sm:space-y-12">
+    <div className="space-y-7 sm:space-y-9">
       <LedgerSection ordinal={1} title="Specimen" zhTitle="选品 · 风味">
         <FlavorPresets
           base={base}
@@ -267,7 +267,7 @@ function BakeTab({
   currentBatchDraft,
 }) {
   return (
-    <div className="space-y-10 sm:space-y-12">
+    <div className="space-y-7 sm:space-y-9">
       {/* StepList 自带 progress block */}
       <StepList
         steps={steps}

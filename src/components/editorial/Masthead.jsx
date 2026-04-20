@@ -53,16 +53,15 @@ export function Masthead({
         className="font-display text-ink leading-[0.92] tracking-[-0.02em]"
         style={{
           fontSize: 'clamp(42px, 10vw, 72px)',
-          fontVariationSettings: "'opsz' 96, 'SOFT' 40, 'wght' 400",
+          fontVariationSettings: "'opsz' 96, 'SOFT' 40, 'wght' 380",
         }}
       >
         <span>{lead} </span>
-        <em
-          className="italic"
-          style={{ fontVariationSettings: "'opsz' 96, 'SOFT' 60, 'wght' 400" }}
+        <span
+          style={{ fontVariationSettings: "'opsz' 96, 'SOFT' 40, 'wght' 520" }}
         >
           {italic}
-        </em>
+        </span>
       </h1>
 
       <LedgerRule />

@@ -21,7 +21,7 @@ export function LedgerSection({
   className,
 }) {
   return (
-    <section className={cn('space-y-4', className)}>
+    <section className={cn('space-y-3', className)}>
       <header className="flex items-baseline justify-between gap-3 pl-0">
         <div className="flex items-baseline gap-3 min-w-0 flex-wrap">
           {ordinal != null && (

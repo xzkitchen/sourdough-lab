@@ -31,13 +31,13 @@ export function MemoBlock({
 }) {
   const spec = TONES[tone] || TONES.warn;
   return (
-    <div className={cn('pl-4 border-l-2', spec.border, className)}>
+    <div className={cn('pl-3.5 border-l-2', spec.border, className)}>
       {!compact && label && (
-        <SmallCaps tone={spec.label} className="block mb-1.5">
+        <SmallCaps tone={spec.label} className="block mb-1">
           {label}
         </SmallCaps>
       )}
-      <div className="text-sm text-ink font-body leading-relaxed space-y-2">
+      <div className="text-sm text-ink font-body leading-relaxed space-y-1.5">
         {children}
       </div>
     </div>

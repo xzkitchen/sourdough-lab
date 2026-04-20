@@ -132,6 +132,7 @@ export function FlavorPresets({
             >
               <SpecimenCard
                 ordinal={i + 1}
+                base={base}
                 flavor={f}
                 hydrationPct={hydrationByFlavor[f.id] ?? Math.round(base.hydration * 100)}
                 active={f.id === activeFlavorId}

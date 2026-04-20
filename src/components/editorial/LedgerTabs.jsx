@@ -35,7 +35,7 @@ export function LedgerTabs({ tabs, value, onChange, className }) {
             aria-selected={active}
             onClick={() => onChange(t.id)}
             className={cn(
-              'relative flex flex-col items-start gap-3 px-4 py-4 sm:px-5 sm:py-5',
+              'relative flex flex-col items-center gap-2 px-3 py-4 sm:px-4 sm:py-5',
               'transition-colors ease-editorial duration-fast',
               // 竖 hairline 分隔（第 i>0 格左边）
               i > 0 && 'border-l border-line',
@@ -52,7 +52,7 @@ export function LedgerTabs({ tabs, value, onChange, className }) {
             >
               {t.ordinal}
             </span>
-            <div className="flex flex-col items-start gap-0.5">
+            <div className="flex flex-col items-center gap-0.5">
               <span
                 className="font-display leading-none"
                 style={{
