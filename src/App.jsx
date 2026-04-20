@@ -31,7 +31,6 @@ import { StepList, CookMode, BatchLog } from './components/process/index.js';
 import {
   Masthead,
   ChapterHero,
-  ColorOrb,
 } from './components/editorial/index.js';
 
 const TABS = [
@@ -132,7 +131,6 @@ function App() {
   }, [steps, completedIds]);
 
   const currentTabMeta = TABS.find((t) => t.id === tab);
-  const flavorModifiers = activeFlavor?.modifiers || selected;
 
   return (
     <div className="min-h-screen relative">
@@ -193,7 +191,6 @@ function App() {
                 numUnits={numUnits}
                 activeFlavor={activeFlavor}
                 activeFlavorIdx={activeFlavorIdx}
-                flavorModifiers={flavorModifiers}
                 onApplyFlavor={applyFlavor}
               />
             )}
@@ -207,13 +204,11 @@ function App() {
                 numUnits={numUnits}
                 onNumUnitsChange={setNumUnits}
                 calculated={calculated}
-                flavorModifiers={flavorModifiers}
               />
             )}
 
             {tab === 'bake' && (
               <BakeTab
-                base={base}
                 steps={steps}
                 completedIds={completedIds}
                 coldStartTime={coldStartTime}
@@ -229,7 +224,6 @@ function App() {
                 onDeleteBatch={deleteBatch}
                 canSaveBatch={allCompleted}
                 currentBatchDraft={currentBatchDraft}
-                flavorModifiers={flavorModifiers}
               />
             )}
           </motion.section>
@@ -262,7 +256,6 @@ function FormulaTab({
   numUnits,
   activeFlavor,
   activeFlavorIdx,
-  flavorModifiers,
   onApplyFlavor,
 }) {
   const hydraDelta = calculated.actualHydration - base.hydration;
@@ -286,21 +279,13 @@ function FormulaTab({
   ];
 
   return (
-    <div className="space-y-10 md:space-y-section-lg">
+    <div className="space-y-8 md:space-y-section">
       <ChapterHero
         chapter="Chapter I · Formula"
         title={activeFlavor?.name || '自定义配方'}
         subtitle={activeFlavor?.nameLatin || 'Custom formula'}
         description={activeFlavor?.note}
         meta={meta}
-        anchor={
-          <ColorOrb
-            base={base}
-            modifiers={flavorModifiers}
-            size={168}
-            active
-          />
-        }
       />
 
       <div className="space-y-5">
@@ -338,7 +323,6 @@ function StarterTab({
   numUnits,
   onNumUnitsChange,
   calculated,
-  flavorModifiers,
 }) {
   const meta = feed
     ? [
@@ -350,20 +334,13 @@ function StarterTab({
     : [{ label: 'Status', value: '—', big: true }];
 
   return (
-    <div className="space-y-10 md:space-y-section-lg">
+    <div className="space-y-8 md:space-y-section">
       <ChapterHero
         chapter="Chapter II · Starter"
         title="养种"
         subtitle="Levain"
         description="配比与时间缓慢磨合——温度、时长、种龄共同塑造风味。峰值前取用，发酵力最稳。"
         meta={meta}
-        anchor={
-          <ColorOrb
-            base={base}
-            modifiers={flavorModifiers}
-            size={148}
-          />
-        }
       />
 
       <FeedPanel
@@ -381,7 +358,6 @@ function StarterTab({
 
 // ── Chapter III · Bake ─────────────────────────────────────────
 function BakeTab({
-  base,
   steps,
   completedIds,
   coldStartTime,
@@ -397,7 +373,6 @@ function BakeTab({
   onDeleteBatch,
   canSaveBatch,
   currentBatchDraft,
-  flavorModifiers,
 }) {
   const completedCount = steps.filter((s) => completedIds.has(s.id)).length;
   const totalMinutes = steps.reduce((sum, s) => sum + (s.minutes || 0), 0);
@@ -411,20 +386,13 @@ function BakeTab({
   ];
 
   return (
-    <div className="space-y-10 md:space-y-section-lg">
+    <div className="space-y-8 md:space-y-section">
       <ChapterHero
         chapter="Chapter III · Bake"
         title="流程"
         subtitle="Process"
         description="十道工序自喂种到出炉贯穿一昼夜。按表推进，耐心是风味的一部分。"
         meta={meta}
-        anchor={
-          <ColorOrb
-            base={base}
-            modifiers={flavorModifiers}
-            size={148}
-          />
-        }
       />
 
       <div className="space-y-4">

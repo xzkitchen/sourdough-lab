@@ -19,10 +19,11 @@ import { MetaLine } from './MetaLine.jsx';
  *   children         可选 CTA 按钮等
  */
 export function ChapterHero({ chapter, title, subtitle, description, meta = [], anchor, children }) {
+  const hasAnchor = !!anchor;
   return (
     <section className="grid grid-cols-12 gap-x-6 gap-y-8 pt-2">
       {/* 移动端：锚点置顶 */}
-      {anchor && (
+      {hasAnchor && (
         <div className="col-span-12 md:hidden flex justify-center">
           {anchor}
         </div>
@@ -35,8 +36,12 @@ export function ChapterHero({ chapter, title, subtitle, description, meta = [], 
         </div>
       </aside>
 
-      {/* 中栏 主文 */}
-      <div className="col-span-12 md:col-span-6 md:order-2 space-y-5 md:space-y-6">
+      {/* 中栏 主文 —— 无 anchor 时拉宽到 9 列 */}
+      <div
+        className={`col-span-12 ${
+          hasAnchor ? 'md:col-span-6' : 'md:col-span-9'
+        } md:order-2 space-y-5 md:space-y-6`}
+      >
         <div className="space-y-3">
           {chapter && (
             <div className="text-[10px] uppercase tracking-[0.28em] text-faint font-body">
@@ -77,7 +82,7 @@ export function ChapterHero({ chapter, title, subtitle, description, meta = [], 
       </div>
 
       {/* 桌面右栏：锚点 */}
-      {anchor && (
+      {hasAnchor && (
         <div className="hidden md:flex col-span-12 md:col-span-3 md:order-3 md:justify-end">
           {anchor}
         </div>
