@@ -32,14 +32,16 @@ export function buildGradientBackground(prediction, modifiers = []) {
     hotspots.push({ color, weight: m.dose || mod.dose?.default || 0.05 });
   }
 
-  // 固定位置的光斑槽（与卡片/圆内观感调过）
-  // 使用黄金比例角度分布，避免对称感
+  // 固定位置的光斑槽
+  // 调小前 3 个主槽、调大后 2 个 fallback 槽，防止 modifier 颜色
+  // （通常占 slot 0-2）因为 radius 太大而在 slot 3/4 的位置"吞噬"
+  // 对比色。这对单色系 flavor（如 pumpkin+cinnamon 都橘黄）尤其重要。
   const slots = [
-    { x: 28, y: 32, r: 68, alpha: 0.95 },
-    { x: 72, y: 28, r: 62, alpha: 0.90 },
-    { x: 40, y: 75, r: 70, alpha: 0.88 },
-    { x: 78, y: 72, r: 58, alpha: 0.85 },
-    { x: 15, y: 62, r: 50, alpha: 0.80 },
+    { x: 28, y: 32, r: 58, alpha: 0.95 },   // 68→58
+    { x: 72, y: 28, r: 52, alpha: 0.90 },   // 62→52
+    { x: 40, y: 75, r: 60, alpha: 0.88 },   // 70→60
+    { x: 78, y: 72, r: 65, alpha: 0.85 },   // 58→65（对比色：补大一点）
+    { x: 15, y: 62, r: 60, alpha: 0.80 },   // 50→60（对比色：补大一点）
   ];
 
   // 1. 最外层：prediction.crust 作为整体边缘色（低饱和，让中心色能透出）
@@ -48,26 +50,25 @@ export function buildGradientBackground(prediction, modifiers = []) {
   const baseLayer = `linear-gradient(135deg, ${hslToCss(prediction.base)} 0%, ${hslToCss(crustSoft)} 100%)`;
 
   // 2. modifier hotspots（每个 modifier 一个光斑，不够 5 个用 base/crust 补）
-  //    fallback 用较大的 hue 偏移（+55 / -55 / +180 补色），即使 modifier
-  //    本身是单色系（如 pumpkin + cinnamon 都在橘黄段）也能拉开视觉对比，
-  //    避免球看起来像纯色。
+  //    fallback 色的 s 下限提到 65-70 —— 渲染时会 +5 被 cap 到 75（最大饱和），
+  //    保证对比色不会被主色"冲淡"。hue 偏移 +60 / -60 / +200 覆盖多个色相象限。
   const fallback = [
     prediction.base,
     {
-      h: (prediction.base.h + 55) % 360,
-      s: Math.min(70, prediction.base.s + 15),
-      l: Math.min(92, prediction.base.l + 6),
+      h: (prediction.base.h + 60) % 360,
+      s: Math.max(70, prediction.base.s + 25),
+      l: Math.min(84, prediction.base.l + 2),
     },
     prediction.crust,
     {
-      h: (prediction.crust.h + 305) % 360,
-      s: Math.max(18, prediction.crust.s - 8),
-      l: Math.min(88, prediction.crust.l + 14),
+      h: (prediction.crust.h + 300) % 360,
+      s: Math.max(60, prediction.crust.s + 8),
+      l: Math.min(82, prediction.crust.l + 14),
     },
     {
-      h: (prediction.base.h + 180) % 360,
-      s: Math.min(55, prediction.base.s + 5),
-      l: Math.max(42, prediction.base.l - 12),
+      h: (prediction.base.h + 200) % 360,
+      s: Math.max(65, prediction.base.s + 20),
+      l: Math.max(48, prediction.base.l - 14),
     },
   ];
 
