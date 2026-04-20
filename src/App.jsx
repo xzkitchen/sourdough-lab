@@ -129,9 +129,9 @@ function App() {
           </p>
         </header>
 
-        {/* ── Tab nav —— sticky 置顶，纯色底 ── */}
+        {/* ── Tab nav —— sticky 置顶，无边框/无背景条，和页面融合 ── */}
         <nav
-          className="flex border-b border-line sticky top-0 z-20 bg-bg -mx-5 px-5 sm:-mx-8 sm:px-8 pt-2"
+          className="flex sticky top-0 z-20 bg-bg pt-2 pb-1"
           role="tablist"
           aria-label="页面切换"
         >
@@ -145,7 +145,7 @@ function App() {
                 aria-selected={active}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  'flex-1 pb-3 -mb-px border-b-[1.5px] transition-colors ease-editorial duration-fast flex flex-col items-center gap-0.5',
+                  'flex-1 pb-3 border-b-[1.5px] transition-colors ease-editorial duration-fast flex flex-col items-center gap-0.5',
                   active
                     ? 'border-accent text-ink'
                     : 'border-transparent text-muted hover:text-ink'
