@@ -1,21 +1,16 @@
 import React from 'react';
+import { Wheat, Droplet, Sprout } from 'lucide-react';
 import { cn } from '../../lib/cn.js';
-import {
-  SmallCaps,
-  LedgerRule,
-  BigSerifStepper,
-} from '../primitives/index.js';
-import { LedgerSection } from '../editorial/LedgerSection.jsx';
-import { MemoBlock } from '../editorial/MemoBlock.jsx';
-import { HydrationInline } from '../recipe/HydrationBadge.jsx';
+import { Card, NumberField } from '../primitives/index.js';
+import { SectionHeader, HydrationBadge } from '../recipe/index.js';
 
 /**
- * FeedPanel —— Ledger V2：多 LedgerSection 堆叠
+ * FeedPanel — 养种（含数量 / 水合度 / 旧种三合一输入）
  *
- * 01 Quantity 面包数量  →  BigSerifStepper (loaves) + rightMeta=H%
- * 02 Seed 旧种         →  BigSerifStepper (g)
- * 03 1:1 Feed 喂养方案 →  2-col ledger box (加T65 / 加水) + TOTAL
- * 04 Memo              →  使用说明 prose
+ * 顶部 Section header：养种计算 · Levain
+ * 输入 Card：数量 + 水合度（上排）/ 已有旧种（下排大 NumberField）
+ * 喂养方案：加 T65 / 加水
+ * 次要指标 + 说明
  */
 export function FeedPanel({
   feed,
@@ -30,115 +25,111 @@ export function FeedPanel({
   if (!feed) return null;
 
   return (
-    <div className={cn('space-y-10', className)}>
-      {/* 01 · Quantity */}
-      <LedgerSection
-        ordinal={1}
-        title="Quantity"
-        zhTitle="面包数量"
-        rightMeta={
-          <HydrationInline
-            value={calculated.actualHydration}
-            base={base.hydration}
-          />
-        }
-      >
-        <BigSerifStepper
-          value={numUnits}
-          onChange={onNumUnitsChange}
-          min={1}
-          max={10}
-          labelEn="Loaves"
-          labelZh="个"
-        />
-      </LedgerSection>
-
-      {/* 02 · Seed */}
-      <LedgerSection ordinal={2} title="Seed" zhTitle="已有旧种">
-        <BigSerifStepper
-          value={seedStarter}
-          onChange={onSeedChange}
-          min={1}
-          max={500}
-          step={1}
-          labelEn="Existing"
-          labelZh="旧种"
-          unit="g"
-        />
-      </LedgerSection>
-
-      {/* 03 · Feed */}
-      <LedgerSection ordinal={3} title="Feed" zhTitle="1:1 喂养方案">
-        <div className="grid grid-cols-2 border border-line">
-          <FeedCell labelEn="Add Flour" labelZh="加 T65" value={feed.flour} />
-          <FeedCell
-            labelEn="Add Water"
-            labelZh="加 水"
-            value={feed.water}
-            leftBorder
-          />
-        </div>
-
-        <div className="pt-4">
-          <LedgerRule variant="double" />
-          <div
-            className="grid items-baseline pt-3"
-            style={{ gridTemplateColumns: '1fr auto' }}
-          >
-            <div className="flex flex-col gap-0.5">
-              <SmallCaps tone="ink">Total After Feed</SmallCaps>
-              <span className="font-body text-[11px] text-faint">喂养后总量</span>
+    <div className={cn('space-y-4', className)}>
+      {/* 输入 Card —— 标题 + 数量 + 水合度（上） / 旧种（下） */}
+      <Card variant="surface" padding="md" className="space-y-5">
+        <SectionHeader title="养种计算" latin="Levain" />
+        <div className="flex items-stretch gap-5">
+          <div className="flex-1">
+            <NumberField
+              label="面包数量"
+              hint="Loaves"
+              value={numUnits}
+              onChange={onNumUnitsChange}
+              min={1}
+              max={10}
+            />
+          </div>
+          <div className="w-px bg-line-soft" aria-hidden />
+          <div className="flex flex-col justify-center items-start gap-2 shrink-0">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
+              水合度
             </div>
-            <span
-              className="font-display tabular-nums tracking-tight text-ink leading-none text-right"
-              style={{
-                fontSize: 'clamp(28px, 6vw, 40px)',
-                fontVariationSettings: "'opsz' 48, 'SOFT' 40, 'wght' 380",
-              }}
-            >
-              {feed.total}
-              <span className="text-[0.4em] text-faint font-mono ml-1 align-baseline">g</span>
-            </span>
+            <HydrationBadge
+              value={calculated.actualHydration}
+              base={base.hydration}
+            />
           </div>
         </div>
-      </LedgerSection>
 
-      {/* 04 · Memo */}
-      <MemoBlock tone="warn" label="Memo">
-        <p>
-          取 <MonoN>{seedStarter}g</MonoN> 旧种，加粉 <MonoN>{feed.flour}g</MonoN> +
-          水 <MonoN>{feed.water}g</MonoN>。28°C 发酵 4–6h 至峰值，
-          取 <MonoN>{feed.needed}g</MonoN> 做面包，余约 <MonoN>{feed.buffer}g</MonoN> 作下次火种。
-        </p>
-      </MemoBlock>
-    </div>
-  );
-}
+        <div className="border-t border-line-soft pt-5">
+          <NumberField
+            label="已有旧种"
+            hint="Seed"
+            value={seedStarter}
+            onChange={onSeedChange}
+            min={1}
+            step={1}
+            unit="g"
+          />
+        </div>
+      </Card>
 
-function FeedCell({ labelEn, labelZh, value, leftBorder }) {
-  return (
-    <div className={cn('p-5 sm:p-6 flex flex-col gap-2', leftBorder && 'border-l border-line')}>
-      <div className="flex flex-col gap-0.5">
-        <SmallCaps tone="muted">{labelEn}</SmallCaps>
-        <span className="font-body text-[11px] text-faint">{labelZh}</span>
+      {/* 喂养方案 */}
+      <div className="grid grid-cols-2 gap-3">
+        <BigMetric
+          icon={<Wheat size={14} strokeWidth={1.5} />}
+          label="加 T65"
+          value={feed.flour}
+        />
+        <BigMetric
+          icon={<Droplet size={14} strokeWidth={1.5} />}
+          label="加 水"
+          value={feed.water}
+        />
       </div>
-      <span
-        className="font-display tabular-nums text-ink leading-none"
-        style={{
-          fontSize: 'clamp(44px, 12vw, 72px)',
-          fontVariationSettings: "'opsz' 72, 'SOFT' 40, 'wght' 380",
-        }}
-      >
-        {value}
-      </span>
-      <SmallCaps tone="faint">Grams</SmallCaps>
+
+      {/* 次要指标 */}
+      <div className="grid grid-cols-2 gap-3 pt-1">
+        <SmallMetric label="配方需求" value={feed.needed} />
+        <SmallMetric label="喂养后总量" value={feed.total} />
+      </div>
+
+      {/* 说明 */}
+      <div className="flex items-start gap-2.5 pt-3 px-1">
+        <Sprout
+          size={12}
+          strokeWidth={1.5}
+          className="text-accent-ink shrink-0 mt-0.5"
+          aria-hidden
+        />
+        <p className="text-xs text-muted font-body leading-relaxed">
+          取 <span className="font-mono text-ink tabular-nums">{seedStarter}g</span> 旧种 +
+          <span className="font-mono text-ink tabular-nums"> {feed.flour}g</span> T65 +
+          <span className="font-mono text-ink tabular-nums"> {feed.water}g</span> 水，
+          28°C 发酵 4–6h 至峰值，取 <span className="font-mono text-ink tabular-nums">{feed.needed}g</span> 做面包。
+        </p>
+      </div>
     </div>
   );
 }
 
-function MonoN({ children }) {
+function BigMetric({ icon, label, value }) {
   return (
-    <span className="font-mono tabular-nums text-ink">{children}</span>
+    <Card variant="surface" padding="md" className="flex flex-col items-center gap-2 text-center">
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted font-body">
+        <span className="text-accent-ink">{icon}</span>
+        <span>{label}</span>
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className="font-display text-3xl tabular-nums text-accent-ink tracking-tight">
+          {value}
+        </span>
+        <span className="text-xs text-faint font-mono">g</span>
+      </div>
+    </Card>
+  );
+}
+
+function SmallMetric({ label, value }) {
+  return (
+    <div className="flex items-baseline justify-between px-1">
+      <span className="text-[11px] text-muted font-body">{label}</span>
+      <span className="font-mono text-sm text-ink tabular-nums">
+        {value}
+        <span className="text-[10px] text-faint ml-0.5">g</span>
+      </span>
+    </div>
   );
 }
 

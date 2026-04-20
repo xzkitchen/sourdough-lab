@@ -1,71 +1,84 @@
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import { BookOpen, ExternalLink } from 'lucide-react';
 import { cn } from '../../lib/cn.js';
-import { SmallCaps } from '../primitives/index.js';
-import { MemoBlock } from '../editorial/MemoBlock.jsx';
-
-const DIFFICULTY_LABEL = {
-  beginner: '新手友好',
-  intermediate: '进阶',
-  advanced: '高阶',
-};
 
 /**
- * FlavorSource —— Ledger V2 风格：MemoBlock 左竖线 + 出处 prose
+ * FlavorSource —— 展示当前激活 flavor 的权威来源
+ *
+ * Props:
+ *   flavor   激活的 flavor object（或 null）
  */
 export function FlavorSource({ flavor, className }) {
   if (!flavor) {
     return (
-      <MemoBlock tone="muted" label="Custom" compact className={className}>
-        <p className="text-xs text-muted">
-          当前为自定义组合。选择上方 SPECIMEN 可查看原作者来源。
+      <div
+        className={cn(
+          'flex items-start gap-2.5 px-5 py-4 rounded-md bg-sunken border border-line-soft',
+          className
+        )}
+      >
+        <BookOpen
+          size={12}
+          strokeWidth={1.5}
+          className="text-muted shrink-0 mt-0.5"
+          aria-hidden
+        />
+        <p className="text-xs text-muted font-body leading-relaxed">
+          当前为自定义组合。选择上方「创意预设」可查看原作者来源。
         </p>
-      </MemoBlock>
+      </div>
     );
   }
 
   const { source, note, difficulty } = flavor;
-  const diffLabel = DIFFICULTY_LABEL[difficulty];
+
+  const difficultyLabel = {
+    beginner: '新手友好',
+    intermediate: '进阶',
+    advanced: '高阶',
+  }[difficulty] || null;
 
   return (
-    <MemoBlock tone="warn" label="Source" className={className}>
-      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+    <div
+      className={cn(
+        'px-5 py-4 rounded-md bg-surface border border-line space-y-2.5',
+        className
+      )}
+    >
+      <div className="flex items-baseline justify-between gap-3">
         <div className="flex items-baseline gap-2 min-w-0">
-          <SmallCaps tone="faint" className="shrink-0">Based on</SmallCaps>
+          <span className="text-[10px] uppercase tracking-[0.18em] text-faint font-body shrink-0">
+            Based on
+          </span>
           <span className="font-body text-[13px] text-ink truncate">
-            {source?.name}
-            {source?.author && (
-              <span className="text-muted"> · {source.author}</span>
-            )}
+            {source.name}
           </span>
         </div>
-        {diffLabel && (
-          <SmallCaps tone="warn" className="shrink-0">
-            {diffLabel}
-          </SmallCaps>
+        {difficultyLabel && (
+          <span className="text-[10px] text-accent-ink font-body shrink-0">
+            {difficultyLabel}
+          </span>
         )}
       </div>
 
       {note && (
-        <p className="text-sm text-muted leading-relaxed mt-2">{note}</p>
+        <p className="text-xs text-muted font-body leading-relaxed">
+          {note}
+        </p>
       )}
 
-      {source?.url && (
+      {source.url && (
         <a
           href={source.url}
           target="_blank"
           rel="noopener noreferrer"
-          className={cn(
-            'inline-flex items-center gap-1 mt-2',
-            'text-[11px] text-warn hover:text-ink font-body',
-            'uppercase tracking-[0.14em] transition-colors ease-editorial duration-fast'
-          )}
+          className="inline-flex items-center gap-1 text-[11px] text-accent-ink hover:text-ink font-body transition-colors ease-editorial duration-fast"
         >
           查看原文
           <ExternalLink size={10} strokeWidth={1.5} />
         </a>
       )}
-    </MemoBlock>
+    </div>
   );
 }
 

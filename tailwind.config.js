@@ -22,7 +22,6 @@ export default {
       ink:      colors.ink,
       muted:    colors.muted,
       faint:    colors.faint,
-      invert:   colors.invert,
 
       line:     colors.line,
       'line-soft': colors.lineSoft,

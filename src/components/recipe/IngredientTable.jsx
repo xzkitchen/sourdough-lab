@@ -1,17 +1,11 @@
 import React from 'react';
 import { cn } from '../../lib/cn.js';
-import { SmallCaps, LedgerRule } from '../primitives/index.js';
 
 /**
- * IngredientTable —— Ledger V2 式配方表
+ * IngredientTable — 严格等高行的配方表
  *
- * 结构：
- *   表头行：INGREDIENT · BAK% · GRAM（SmallCaps，底 hairline）
- *   每行：CN 名（Fraunces md） / mono tracked 小字（note 或 id） · bp% · 克数（Fraunces pullquote）
- *   每行底 1px dotted border（ledger leader 感）
- *   底 TOTAL：double hairline 之上 + `TOTAL 总重` + 大号 Fraunces 克数
- *
- * modifier 行：左侧加一个极小的 accent 方块作视觉区分
+ * 所有行共享同一 grid 模板：[dot] [name · note] [bp%] [weight g]
+ * base 行 dot 不可见但占位，保证行高与 modifier 行完全一致。
  */
 export function IngredientTable({
   ingredients,
@@ -19,99 +13,76 @@ export function IngredientTable({
   showBakersPct = true,
   className,
 }) {
-  return (
-    <div className={cn('space-y-0', className)}>
-      {/* Table header */}
-      <div
-        className="grid items-baseline pb-2 border-b border-line"
-        style={{ gridTemplateColumns: '1fr 56px 96px' }}
-      >
-        <SmallCaps tone="faint">Ingredient</SmallCaps>
-        <SmallCaps tone="faint" className="text-right">Bak%</SmallCaps>
-        <SmallCaps tone="faint" className="text-right">Gram</SmallCaps>
-      </div>
+  const baseRows = ingredients.filter((i) => i.source !== 'modifier');
+  const modRows = ingredients.filter((i) => i.source === 'modifier');
+  const hasMod = modRows.length > 0;
 
-      <ul>
-        {ingredients.map((ing) => (
+  return (
+    <div className={cn('space-y-4', className)}>
+      <ul className="divide-y divide-line-soft">
+        {baseRows.map((ing) => (
           <Row key={ing.id} ing={ing} showBakersPct={showBakersPct} />
         ))}
+        {hasMod && (
+          <>
+            {/* modifier 分组 —— 紧接 base 行，共用 divide-y */}
+            {modRows.map((ing) => (
+              <Row key={ing.id} ing={ing} showBakersPct={showBakersPct} accent />
+            ))}
+          </>
+        )}
       </ul>
 
-      {/* TOTAL */}
-      <div className="pt-2">
-        <LedgerRule variant="double" />
-        <div
-          className="grid items-baseline pt-2.5"
-          style={{ gridTemplateColumns: '1fr auto' }}
-        >
-          <div className="flex flex-col gap-0.5">
-            <SmallCaps tone="ink">Total</SmallCaps>
-            <span className="font-body text-[11px] text-faint">总重</span>
-          </div>
-          <span
-            className="font-display tabular-nums tracking-tight text-ink leading-none text-right"
-            style={{
-              fontSize: 'clamp(28px, 6vw, 40px)',
-              fontVariationSettings: "'opsz' 48, 'SOFT' 40, 'wght' 380",
-            }}
-          >
-            {totalWeight}
-            <span className="text-[0.4em] text-faint font-mono ml-1 align-baseline">g</span>
-          </span>
-        </div>
+      <div className="flex items-baseline justify-between pt-4 border-t border-line">
+        <span className="text-[10px] text-muted font-body uppercase tracking-[0.18em]">
+          总重 · Total
+        </span>
+        <span className="font-display text-2xl tabular-nums text-ink tracking-tight">
+          {totalWeight}
+          <span className="text-xs text-faint font-mono font-normal ml-1">g</span>
+        </span>
       </div>
     </div>
   );
 }
 
-function Row({ ing, showBakersPct }) {
-  const accent = ing.source === 'modifier';
+/** 统一行结构：grid [14px dot] [1fr name] [44px bp] [64px weight] */
+function Row({ ing, showBakersPct, accent }) {
   return (
     <li
-      className="grid items-baseline py-2.5 border-b border-dotted border-line-soft"
-      style={{ gridTemplateColumns: '1fr 56px 96px' }}
+      className="grid items-center h-12 gap-3"
+      style={{ gridTemplateColumns: '6px 1fr 44px 64px' }}
     >
-      {/* Name col: CN 主 + note/latin 小字 */}
-      <div className="flex flex-col gap-0.5 min-w-0 pr-2">
-        <span
-          className={cn(
-            'font-display text-[16px] sm:text-[17px] leading-tight truncate',
-            accent ? 'text-accent-ink' : 'text-ink'
-          )}
-          style={{ fontVariationSettings: "'opsz' 24, 'wght' 400" }}
-        >
-          {accent && (
-            <span
-              className="inline-block w-1 h-1 mr-2 align-middle bg-accent"
-              aria-hidden
-            />
-          )}
-          {ing.name}
-        </span>
-        {ing.note && (
-          <span className="text-[10px] text-faint font-body uppercase tracking-[0.14em]">
-            {ing.note}
-          </span>
+      {/* dot 位 —— 始终存在，accent 时显示麦色点 */}
+      <span
+        className={cn(
+          'w-1 h-1 rounded-full',
+          accent ? 'bg-accent' : 'bg-transparent'
         )}
-      </div>
+        aria-hidden
+      />
 
-      {/* BAK% */}
+      <span
+        className={cn(
+          'font-body text-sm min-w-0 truncate',
+          accent ? 'text-accent-ink' : 'text-ink'
+        )}
+      >
+        {ing.name}
+        {ing.note && (
+          <span className="text-[11px] text-faint ml-2">· {ing.note}</span>
+        )}
+      </span>
+
       <span className="font-mono text-[11px] text-faint tabular-nums text-right">
         {showBakersPct && ing.bakersPct !== undefined
-          ? `${Math.round(ing.bakersPct * 1000) / 10}`
+          ? `${Math.round(ing.bakersPct * 1000) / 10}%`
           : ''}
       </span>
 
-      {/* GRAM —— Fraunces meta-big */}
-      <span
-        className="font-display tabular-nums text-ink leading-none text-right"
-        style={{
-          fontSize: 'clamp(22px, 5vw, 28px)',
-          fontVariationSettings: "'opsz' 36, 'SOFT' 40, 'wght' 380",
-        }}
-      >
+      <span className="font-mono text-sm tabular-nums text-ink text-right">
         {formatWeight(ing.weight)}
-        <span className="text-[0.4em] text-faint font-mono ml-0.5 align-baseline">g</span>
+        <span className="text-[11px] text-faint ml-0.5">g</span>
       </span>
     </li>
   );

@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from './lib/cn.js';
 import { useStickyState } from './hooks/useStickyState.js';
 
 import { DEFAULT_BASE } from './domain/base-recipes/index.js';
@@ -12,29 +13,28 @@ import {
 import { getProcessSteps } from './domain/process/index.js';
 
 import {
+  Card,
+  Divider,
+} from './components/primitives/index.js';
+
+import {
   FlavorPresets,
   IngredientTable,
   WarningList,
+  SectionHeader,
   FlavorSource,
-  HydrationInline,
 } from './components/recipe/index.js';
 
 import { FeedPanel } from './components/starter/index.js';
 import { StepList, CookMode, BatchLog } from './components/process/index.js';
 
-import {
-  Masthead,
-  LedgerTabs,
-  LedgerSection,
-} from './components/editorial/index.js';
-
 const TABS = [
-  { id: 'formula', ordinal: '01', en: 'Formula', zh: '配方' },
-  { id: 'starter', ordinal: '02', en: 'Levain',  zh: '养种' },
-  { id: 'bake',    ordinal: '03', en: 'Method',  zh: '流程' },
+  { id: 'formula', label: 'Formula', zh: '配方' },
+  { id: 'starter', label: 'Starter', zh: '养种' },
+  { id: 'bake',    label: 'Bake',    zh: '流程' },
 ];
 
-const motionTransition = { duration: 0.14, ease: [0.2, 0.8, 0.2, 1] };
+const motionTransition = { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] };
 
 function App() {
   const [tab, setTab] = useStickyState('formula', 'sdl_tab');
@@ -87,6 +87,7 @@ function App() {
 
   const saveBatch = useCallback((batch) => {
     setBatches((prev) => [...prev, batch]);
+    // 保存后自动 reset 流程，开始新一轮
     setCompletedList([]);
     setColdStartTime(null);
   }, [setBatches, setCompletedList, setColdStartTime]);
@@ -95,7 +96,17 @@ function App() {
     setBatches((prev) => prev.filter((b) => b.id !== id));
   }, [setBatches]);
 
-  const activeFlavor = useMemo(() => matchFlavor(selected), [selected]);
+  const activeFlavor = useMemo(
+    () => FLAVORS.find((f) => {
+      if (f.modifiers.length !== selected.length) return false;
+      return f.modifiers.every((m) => {
+        const sel = selected.find((s) => s.id === m.id);
+        if (!sel) return false;
+        return Math.abs((sel.dose ?? 0) - (m.dose ?? 0)) < 0.0001 || sel.dose === undefined;
+      });
+    }) || null,
+    [selected]
+  );
 
   const allCompleted = steps.length > 0 && steps.every((s) => completedIds.has(s.id));
 
@@ -115,13 +126,48 @@ function App() {
 
   return (
     <div className="min-h-screen relative">
-      <div className="max-w-[720px] mx-auto px-5 sm:px-8 py-6 sm:py-10 relative z-10 space-y-8 sm:space-y-10">
+      <div className="max-w-2xl mx-auto px-5 py-7 sm:px-8 sm:py-12 relative z-10 space-y-7 sm:space-y-10">
 
-        {/* ── Masthead ── */}
-        <Masthead volume={1} count={FLAVORS.length} />
+        {/* ── Header ── */}
+        <header className="space-y-2">
+          <h1 className="font-display text-[26px] sm:text-[32px] text-ink leading-[1.1] tracking-tight">
+            Sourdough Lab
+          </h1>
+          <p className="text-xs text-muted font-body">
+            手作酸面包实验室 · Artisan sourdough, modular
+          </p>
+        </header>
 
-        {/* ── LedgerTabs ── */}
-        <LedgerTabs tabs={TABS} value={tab} onChange={setTab} />
+        {/* ── Tab nav —— sticky 磁吸置顶 ── */}
+        <nav
+          className="flex border-b border-line sticky top-0 z-20 bg-bg/92 backdrop-blur-md -mx-5 px-5 sm:-mx-8 sm:px-8 pt-2"
+          role="tablist"
+          aria-label="页面切换"
+        >
+          {TABS.map((t) => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  'flex-1 pb-3 -mb-px border-b-[1.5px] transition-colors ease-editorial duration-fast flex flex-col items-center gap-0.5',
+                  active
+                    ? 'border-accent text-ink'
+                    : 'border-transparent text-muted hover:text-ink'
+                )}
+              >
+                <span className="font-display text-[17px] leading-none">{t.label}</span>
+                <span className="font-body text-[10px] tracking-[0.2em] text-faint uppercase">
+                  {t.zh}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
 
         <AnimatePresence mode="wait">
           <motion.section
@@ -137,8 +183,6 @@ function App() {
                 base={base}
                 selected={selected}
                 calculated={calculated}
-                numUnits={numUnits}
-                activeFlavor={activeFlavor}
                 onApplyFlavor={applyFlavor}
               />
             )}
@@ -156,31 +200,34 @@ function App() {
             )}
 
             {tab === 'bake' && (
-              <BakeTab
-                steps={steps}
-                completedIds={completedIds}
-                coldStartTime={coldStartTime}
-                coldDuration={coldDuration}
-                onToggle={toggleStep}
-                onColdStart={() => setColdStartTime(new Date().toISOString())}
-                onColdDuration={setColdDuration}
-                onColdReset={() => setColdStartTime(null)}
-                onResetProgress={resetProgress}
-                onOpenCookMode={openCookMode}
-                batches={batches}
-                onSaveBatch={saveBatch}
-                onDeleteBatch={deleteBatch}
-                canSaveBatch={allCompleted}
-                currentBatchDraft={currentBatchDraft}
-              />
+              <div className="space-y-4">
+                <StepList
+                  steps={steps}
+                  completedIds={completedIds}
+                  coldStartTime={coldStartTime}
+                  coldDuration={coldDuration}
+                  onToggle={toggleStep}
+                  onColdStart={() => setColdStartTime(new Date().toISOString())}
+                  onColdDuration={setColdDuration}
+                  onColdReset={() => setColdStartTime(null)}
+                  onReset={resetProgress}
+                  onOpenCookMode={openCookMode}
+                />
+                <BatchLog
+                  batches={batches}
+                  onSave={saveBatch}
+                  onDelete={deleteBatch}
+                  canSave={allCompleted}
+                  currentBatchDraft={currentBatchDraft}
+                />
+              </div>
             )}
           </motion.section>
         </AnimatePresence>
 
-        <footer className="pt-8 text-center">
-          <span className="text-[10px] text-faint font-body uppercase tracking-[0.24em]">
-            Sourdough Lab · MMXXVI
-          </span>
+        <Divider />
+        <footer className="py-3 text-center text-[10px] text-faint font-body">
+          Sourdough Lab · 2026
         </footer>
       </div>
 
@@ -197,100 +244,32 @@ function App() {
   );
 }
 
-// ── Chapter I · Formula ────────────────────────────────────────
-function FormulaTab({
-  base,
-  selected,
-  calculated,
-  numUnits,
-  activeFlavor,
-  onApplyFlavor,
-}) {
+// ── Formula Tab — 创意预设 + 来源 + 配方清单 ──────────────────
+function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
+  const activeFlavor = useMemo(() => matchFlavor(selected), [selected]);
+
   return (
-    <div className="space-y-7 sm:space-y-9">
-      <LedgerSection ordinal={1} title="Specimen" zhTitle="选品 · 风味">
-        <FlavorPresets
-          base={base}
-          flavors={FLAVORS}
-          selected={selected}
-          onApply={onApplyFlavor}
-          numUnits={numUnits}
-        />
-      </LedgerSection>
+    <div className="space-y-5">
+      <FlavorPresets
+        base={base}
+        flavors={FLAVORS}
+        selected={selected}
+        onApply={onApplyFlavor}
+      />
 
-      <LedgerSection ordinal={2} title="Source" zhTitle="出处与说明">
+      <div className="pt-2">
         <FlavorSource flavor={activeFlavor} />
-      </LedgerSection>
+      </div>
 
-      <LedgerSection
-        ordinal={3}
-        title="Formula"
-        zhTitle="配方清单"
-        rightMeta={
-          <HydrationInline
-            value={calculated.actualHydration}
-            base={base.hydration}
-          />
-        }
-      >
+      <Card variant="surface" padding="md" className="space-y-4">
+        <SectionHeader title="配方清单" latin="Formula" />
         <IngredientTable
           ingredients={calculated.ingredients}
           totalWeight={calculated.totalWeight}
         />
-      </LedgerSection>
+      </Card>
 
-      {(calculated.warnings?.length > 0 || calculated.notes?.length > 0) && (
-        <LedgerSection ordinal={4} title="Notes" zhTitle="注释与警告">
-          <WarningList warnings={calculated.warnings} notes={calculated.notes} />
-        </LedgerSection>
-      )}
-    </div>
-  );
-}
-
-// ── Chapter III · Bake ─────────────────────────────────────────
-function BakeTab({
-  steps,
-  completedIds,
-  coldStartTime,
-  coldDuration,
-  onToggle,
-  onColdStart,
-  onColdDuration,
-  onColdReset,
-  onResetProgress,
-  onOpenCookMode,
-  batches,
-  onSaveBatch,
-  onDeleteBatch,
-  canSaveBatch,
-  currentBatchDraft,
-}) {
-  return (
-    <div className="space-y-7 sm:space-y-9">
-      {/* StepList 自带 progress block */}
-      <StepList
-        steps={steps}
-        completedIds={completedIds}
-        coldStartTime={coldStartTime}
-        coldDuration={coldDuration}
-        onToggle={onToggle}
-        onColdStart={onColdStart}
-        onColdDuration={onColdDuration}
-        onColdReset={onColdReset}
-        onReset={onResetProgress}
-        onOpenCookMode={onOpenCookMode}
-      />
-
-      <LedgerSection ordinal={1} title="Bake Log" zhTitle="批次记录">
-        <BatchLog
-          batches={batches}
-          onSave={onSaveBatch}
-          onDelete={onDeleteBatch}
-          canSave={canSaveBatch}
-          currentBatchDraft={currentBatchDraft}
-        />
-      </LedgerSection>
+      <WarningList warnings={calculated.warnings} notes={calculated.notes} />
     </div>
   );
 }

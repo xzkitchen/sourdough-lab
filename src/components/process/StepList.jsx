@@ -1,15 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Play, RotateCcw } from 'lucide-react';
 import { cn } from '../../lib/cn.js';
-import { Button, SmallCaps, LedgerRule } from '../primitives/index.js';
+import { Button } from '../primitives/index.js';
 import { StepCard } from './StepCard.jsx';
 import { ColdRetardTracker } from './ColdRetardTracker.jsx';
 
 /**
- * StepList —— Ledger V2
- *
- * 顶部 progress block + 分段进度 + 操作行 + 步骤列表。
- * 无任何自动滚动（之前的 scrollIntoView 会在进入 Method tab 时自动跳，感知不好，已移除）。
+ * StepList — 流程步骤列表（极简 header，不 sticky）
  */
 export function StepList({
   steps,
@@ -27,64 +24,94 @@ export function StepList({
   const { completedCount, percent, currentId } = useMemo(() => {
     const ids = new Set(steps.map((s) => s.id));
     const done = [...completedIds].filter((id) => ids.has(id));
-    const pct = steps.length > 0 ? Math.round((done.length / steps.length) * 100) : 0;
+    const pct = Math.round((done.length / steps.length) * 100);
     const current = steps.find((s) => !completedIds.has(s.id))?.id || null;
     return { completedCount: done.length, percent: pct, currentId: current };
   }, [steps, completedIds]);
 
+  // 完成步骤后 / mount 时，把当前 step 滚到视图顶部
+  const stepRefs = useRef({});
+  const prevCurrentRef = useRef(null);
+  const mountedRef = useRef(false);
+
+  // Mount 时：立即滚到 current，无动画（避免感知到"滚动"）
+  useEffect(() => {
+    if (!mountedRef.current && currentId) {
+      const el = stepRefs.current[currentId];
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }, 50);
+      }
+      mountedRef.current = true;
+      prevCurrentRef.current = currentId;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // currentId 改变时（完成一步）：平滑滚到新 current
+  useEffect(() => {
+    const prev = prevCurrentRef.current;
+    if (mountedRef.current && currentId && currentId !== prev && prev !== null) {
+      const el = stepRefs.current[currentId];
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+    prevCurrentRef.current = currentId;
+  }, [currentId]);
+
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Progress block */}
+    <div className={cn('space-y-4', className)}>
+      {/* 极简 header */}
+      <div className="flex items-baseline gap-2 px-0.5">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-faint font-body">
+          Process
+        </span>
+        <span className="font-display text-base text-ink">制作流程</span>
+        <span className="ml-auto text-[11px] font-mono text-muted tabular-nums">
+          {completedCount} / {steps.length}
+        </span>
+      </div>
+
+      {/* 1px 进度线 + 操作按钮 */}
       <div className="space-y-3">
-        <div className="flex items-end justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <SmallCaps tone="faint">Progress · 进度</SmallCaps>
-            <span className="font-mono text-[13px] tabular-nums text-muted">
-              {completedCount} / {steps.length} steps
-            </span>
-          </div>
-          <span
-            className="font-display tabular-nums tracking-tight text-ink leading-none"
-            style={{
-              fontSize: 'clamp(40px, 8vw, 56px)',
-              fontVariationSettings: "'opsz' 64, 'SOFT' 40, 'wght' 380",
-            }}
-          >
-            {percent}
-            <span className="text-[0.45em] text-faint font-mono ml-0.5 align-baseline">%</span>
-          </span>
+        <div className="h-[2px] bg-sunken rounded-full overflow-hidden">
+          <div
+            className="h-full bg-accent rounded-full transition-[width] ease-editorial duration-slow"
+            style={{ width: `${percent}%` }}
+          />
         </div>
 
-        <ProgressSegmented total={steps.length} completed={completedCount} />
-      </div>
-
-      {/* Action row */}
-      <div className="flex items-stretch gap-3 border-y border-line -mx-5 px-5 sm:-mx-8 sm:px-8 py-3">
-        <Button
-          variant="primary"
-          size="md"
-          icon={<Play size={12} strokeWidth={1.5} />}
-          onClick={onOpenCookMode}
-          className="flex-1"
-        >
-          Cook Mode
-        </Button>
-        {completedCount > 0 && (
+        <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
-            size="md"
-            icon={<RotateCcw size={12} strokeWidth={1.5} />}
-            onClick={() => {
-              if (window.confirm('重置所有进度？')) onReset();
-            }}
+            variant="primary"
+            size="sm"
+            icon={<Play size={11} strokeWidth={1.5} />}
+            onClick={onOpenCookMode}
+            className="flex-1"
           >
-            重置
+            Cook Mode
           </Button>
-        )}
+          {completedCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<RotateCcw size={11} strokeWidth={1.5} />}
+              onClick={() => {
+                if (window.confirm('重置所有进度？')) onReset();
+              }}
+            >
+              重置
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Step list */}
-      <ul className="border-t border-line">
+      {/* Step cards */}
+      <div className="space-y-3 pt-1">
         {steps.map((step, idx) => {
           const state = completedIds.has(step.id)
             ? 'done'
@@ -93,27 +120,30 @@ export function StepList({
               : 'pending';
 
           return (
-            <li key={step.id}>
-              <StepCard
-                step={step}
-                state={state}
-                index={idx + 1}
-                onToggle={() => onToggle(step.id)}
-              >
-                {step.id === 'cold' && state !== 'done' && (
-                  <ColdRetardTracker
-                    savedTime={coldStartTime}
-                    savedDuration={coldDuration}
-                    onSetTime={onColdStart}
-                    onSetDuration={onColdDuration}
-                    onReset={onColdReset}
-                  />
-                )}
-              </StepCard>
-            </li>
+            <div
+              key={step.id}
+              ref={(el) => { stepRefs.current[step.id] = el; }}
+            >
+            <StepCard
+              step={step}
+              state={state}
+              index={idx + 1}
+              onToggle={() => onToggle(step.id)}
+            >
+              {step.id === 'cold' && state !== 'done' && (
+                <ColdRetardTracker
+                  savedTime={coldStartTime}
+                  savedDuration={coldDuration}
+                  onSetTime={onColdStart}
+                  onSetDuration={onColdDuration}
+                  onReset={onColdReset}
+                />
+              )}
+            </StepCard>
+            </div>
           );
         })}
-      </ul>
+      </div>
 
       {/* 冷发酵已完成但仍显示时间表 */}
       {coldStartTime && completedIds.has('cold') && (
@@ -125,24 +155,6 @@ export function StepList({
           onReset={onColdReset}
         />
       )}
-    </div>
-  );
-}
-
-/** 13 等宽段 progress bar —— 完成段 bg-warn */
-function ProgressSegmented({ total, completed }) {
-  const segments = Array.from({ length: total }, (_, i) => i < completed);
-  return (
-    <div className="flex gap-[2px]">
-      {segments.map((done, i) => (
-        <div
-          key={i}
-          className={cn(
-            'h-[6px] flex-1 transition-colors ease-editorial duration-base',
-            done ? 'bg-warn' : 'bg-line-soft'
-          )}
-        />
-      ))}
     </div>
   );
 }

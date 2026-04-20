@@ -52,18 +52,3 @@
 :lang(zh), :lang(zh-CN), :lang(zh-Hans) {
   font-feature-settings: 'palt'; /* 比例假名/汉字 */
 }
-
-/*
- * Editorial utilities
- *
- * .no-scrollbar —— 隐藏滚动条但保留滚动能力。
- * FlavorPresets 的横向 strip 依赖此类防止 webkit 在 overflow-x:auto + overflow-y:visible
- * 组合下显示残余滚动条，并保证色球 active 放大不被裁切。
- */
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
