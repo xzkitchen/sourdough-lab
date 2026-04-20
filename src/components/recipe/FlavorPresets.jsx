@@ -29,23 +29,13 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
     });
   })?.id;
 
+  // 点击只 apply flavor，不再自动滚动居中
+  // —— 强制居中 88px 卡在 375px 视口时，两侧必然各留 ~143px 空白，
+  //    造成"尾部大片留白"。改为保留用户当前滚动位置，选中态通过名字颜色
+  //    和 accent dot 视觉反馈即可。
   const handleClick = useCallback(
     (flavor) => {
       onApply(flavor);
-      // 手动计算 scrollLeft 让被点击卡居中 —— 不依赖 scrollIntoView
-      // scrollIntoView 在目标已部分可见时可能 skip，尤其 iOS Safari
-      const container = scrollRef.current;
-      const el = itemRefs.current[flavor.id];
-      if (container && el) {
-        setTimeout(() => {
-          const target = el.offsetLeft - (container.clientWidth - el.clientWidth) / 2;
-          const max = container.scrollWidth - container.clientWidth;
-          container.scrollTo({
-            left: Math.max(0, Math.min(max, target)),
-            behavior: 'smooth',
-          });
-        }, 120);
-      }
     },
     [onApply]
   );
@@ -61,15 +51,14 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
 
       {/*
         横向 feed：
-          - 左 pl-5 正常起始留白
-          - 右 padding = 最后一张卡居中所需的最小值
-            mobile：~42vw（足够 88px 卡在 375px 视口居中 + 小 buffer）
-            desktop：fixed 320px（够 88px 卡在 max-w-2xl 容器里居中）
-            之前用 pr-[50vw] 造成尾部过多空白（over-scroll 空区）
+          - pl-5 起始留白
+          - pr-8 / sm:pr-12 尾部 padding 只够最后一张卡不贴边，
+            不再尝试"居中最后一张"（居中一张小卡必然留 ~143px 空白，无解）
+          - snap-proximity 而非 mandatory —— 允许自由滚动，不强制对齐到卡
       */}
       <div
         ref={scrollRef}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory -mx-5 pl-5 pr-[42vw] sm:-mx-8 sm:pl-8 sm:pr-[320px] pb-1"
+        className="flex gap-5 overflow-x-auto snap-x snap-proximity -mx-5 pl-5 pr-8 sm:-mx-8 sm:pl-8 sm:pr-12 pb-1"
       >
         {flavors.map((f, i) => {
           const active = f.id === activeFlavorId;
