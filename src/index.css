@@ -75,30 +75,45 @@
     mix-blend-mode: multiply;
   }
 
-  /* ─── 给 sticky 实心元素（如 tab nav）叠同款纸纹 ─── *
-   * body 的 paper-grain 是 position:fixed 覆盖整个视口，sticky 元素
-   * 的 bg-bg 实心填充会盖住这层纹理，造成"光滑矩形"视觉。
-   * 此 utility 用 ::after 在元素内部再叠一层同参数的纹理，让两边连续。
+  /* ─── sticky nav 专用：bg + grain + 底部软淡出 ─── *
    *
-   * 注意：不设 position:relative，否则会覆盖 Tailwind 的 .sticky
-   *       (position:sticky) 从而破坏磁吸。sticky 本身就是 positioned
-   *       ancestor，::after 的 absolute 会正确地以 nav 为参考。
+   * 问题：sticky nav 是不透明遮挡层，内容（如色球）从下方滚入
+   * 会瞬间被整块挡掉，产生"半圆切边"。
+   *
+   * 解法：把 nav 的 bg 和 grain 都放到 pseudo-element 上，并对
+   * pseudo 应用 mask-image，让 nav 底部 14px 从不透明渐变到透明。
+   * 色球进入这段渐变区时软性露出，不再硬切。
+   * 关键：children（tab 按钮）放在 z:2 且不被 mask —— 激活下划线、
+   * 文字全部完整保留。
+   *
+   * 注意：不设 position:relative，否则覆盖 Tailwind 的 .sticky
+   *       (position:sticky) 导致磁吸失效。sticky 本身就是
+   *       positioned ancestor，pseudo 的 absolute 会正确以 nav 为参考。
    */
-  .paper-grain-match > * {
+  .nav-masked > * {
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
-  .paper-grain-match::after {
+  .nav-masked::before,
+  .nav-masked::after {
     content: '';
     position: absolute;
     inset: 0;
-    z-index: 0;
     pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 14px), transparent 100%);
+            mask-image: linear-gradient(to bottom, black calc(100% - 14px), transparent 100%);
+  }
+  .nav-masked::before {
+    background-color: #F5F1EA;
+    z-index: 0;
+  }
+  .nav-masked::after {
     background-image: url('/src/design/textureOverlay.svg');
     background-size: 240px 240px;
     background-repeat: repeat;
     opacity: 0.5;
     mix-blend-mode: multiply;
+    z-index: 1;
   }
 
 
