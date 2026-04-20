@@ -132,6 +132,26 @@ export const ADDINS = [
       url: 'https://www.theperfectloaf.com/seeded-sourdough/',
     },
   },
+  {
+    id: 'fennel-seed',
+    name: '茴香籽',
+    nameLatin: 'Fennel Seed',
+    category: 'addin',
+    dose: { default: 0.008, min: 0.005, max: 0.015 },
+    preTreatment: 'crush-lightly',
+    hydrationAdjust: { method: 'none' },
+    fermentationAdjust: null,
+    glutenAdjust: null,
+    dotColor: { h: 60, s: 30, l: 35 },
+    flavor: ['anise', 'sweet-herbal', 'aromatic'],
+    worksWith: ['sesame', 'olive', 'raisin'],
+    addStage: 'mix',
+    warnings: ['剂量超过 1.5% 会掩盖小麦香；推荐 0.8%'],
+    source: {
+      name: "Jeffrey Hamelman — Bread: A Baker's Book of Techniques and Formulas",
+      url: 'https://www.amazon.com/Bread-Bakers-Book-Techniques-Formulas/dp/0470380187',
+    },
+  },
 
   // ── 干果类 ───────────────────────────────────
   {
