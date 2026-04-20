@@ -97,6 +97,14 @@ export const FLAVORS = [
       { id: 'pumpkin', dose: 0.08 },
       { id: 'cinnamon', dose: 0.012 },
     ],
+    // pumpkin + cinnamon 的 breadColor 都挤在 h24-28 窄色带，默认渲染看起来像纯色。
+    // 这里补 3 个**同色系但明度拉开**的装饰色点，模拟真实切面的 crust 焦糖 /
+    // crumb 气孔 / 肉桂深褐 streak。全部在 h18-40 暖色段，不会出现冷色。
+    orbAccents: [
+      { color: { h: 22, s: 65, l: 38 }, weight: 0.18 }, // 深焦糖 crust
+      { color: { h: 40, s: 25, l: 86 }, weight: 0.18 }, // 浅 crumb 气孔
+      { color: { h: 18, s: 55, l: 48 }, weight: 0.15 }, // 肉桂深褐 streak
+    ],
     heroHue: 28,
     difficulty: 'intermediate',
     source: {

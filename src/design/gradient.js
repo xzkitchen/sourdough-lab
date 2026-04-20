@@ -15,11 +15,13 @@ import { getModifier } from '../domain/modifiers/index.js';
 /**
  * 根据 prediction 和可选 modifiers 生成多层 radial gradient。
  *
- * @param {object} prediction  breadColor 的输出 {base, crust, dots}
+ * @param {object} prediction     breadColor 的输出 {base, crust, dots}
  * @param {Array<{id, dose}>} modifiers  用于取 colorant 的 breadColor / addin 的 dotColor
+ * @param {Array<{color, weight?}>} extraAccents  flavor 级额外色点（可选）
+ *                   用于补充同色系的明暗层次，只应使用与 flavor 真实颜色相关的色相
  * @returns {string} CSS background 值
  */
-export function buildGradientBackground(prediction, modifiers = []) {
+export function buildGradientBackground(prediction, modifiers = [], extraAccents = []) {
   const layers = [];
 
   // 收集所有色点（modifier 的 breadColor 优先，addin 的 dotColor 次之）
@@ -30,6 +32,11 @@ export function buildGradientBackground(prediction, modifiers = []) {
     const color = mod.breadColor || mod.dotColor;
     if (!color) continue;
     hotspots.push({ color, weight: m.dose || mod.dose?.default || 0.05 });
+  }
+  // 追加 flavor 级色点（纯装饰性，不参与 predictBreadColor 的底色计算）
+  for (const accent of extraAccents) {
+    if (!accent?.color) continue;
+    hotspots.push({ color: accent.color, weight: accent.weight || 0.1 });
   }
 
   // 固定位置的光斑槽（使用黄金比例角度分布，避免对称感）

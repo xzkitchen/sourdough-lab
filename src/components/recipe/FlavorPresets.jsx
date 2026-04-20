@@ -73,7 +73,7 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
         {flavors.map((f, i) => {
           const active = f.id === activeFlavorId;
           const prediction = predictBreadColor(base, f.modifiers);
-          const gradientBg = buildGradientBackground(prediction, f.modifiers);
+          const gradientBg = buildGradientBackground(prediction, f.modifiers, f.orbAccents);
           return (
             <button
               key={f.id}
