@@ -75,6 +75,48 @@
     mix-blend-mode: multiply;
   }
 
+  /* ─── 横向 scroll 条两端软淡出（用在外层 wrapper）─── *
+   * 问题：overflow-x-auto 容器左右边界会把球硬切成半圆。
+   * 解法：mask 加在外层 wrapper 而不是 scroll 容器本身，避开
+   *      iOS Safari 的 "mask + overflow-x 破坏横向 scroll" bug。
+   * fade 宽度刚好等于内层 scroll 容器的 horizontal padding，
+   * 静止状态下第一/最后一张卡的边缘正好落在"全不透明"的起点。
+   */
+  .sdl-hscroll-fade-wrap {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black 20px,
+      black calc(100% - 32px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black 20px,
+      black calc(100% - 32px),
+      transparent 100%
+    );
+  }
+  @media (min-width: 640px) {
+    .sdl-hscroll-fade-wrap {
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black 32px,
+        black calc(100% - 48px),
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black 32px,
+        black calc(100% - 48px),
+        transparent 100%
+      );
+    }
+  }
+
   /* ─── sticky nav 专用：bg + grain + 底部软淡出 ─── *
    *
    * 问题：sticky nav 是不透明遮挡层，内容（如色球）从下方滚入

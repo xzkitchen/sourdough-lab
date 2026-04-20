@@ -50,16 +50,17 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
       </div>
 
       {/*
-        横向 feed：
-          - pl-5 起始留白
-          - pr-8 / sm:pr-12 尾部 padding 只够最后一张卡不贴边，
-            不再尝试"居中最后一张"（居中一张小卡必然留 ~143px 空白，无解）
-          - snap-proximity 而非 mandatory —— 允许自由滚动，不强制对齐到卡
+        横向 feed 结构（两层）：
+          - 外层 wrapper 负责 bleed 到屏幕边（-mx-*）+ 承担 mask-image 做左右软淡出
+          - 内层 scroll 容器只管 overflow-x-auto + snap + padding
+        这样分离是因为：mask-image 直接加在 overflow-x-auto 容器上会
+        在 iOS Safari 破坏横向 scroll（WebKit compositing bug）
       */}
-      <div
-        ref={scrollRef}
-        className="flex gap-5 overflow-x-auto snap-x snap-proximity -mx-5 pl-5 pr-8 sm:-mx-8 sm:pl-8 sm:pr-12 pb-1"
-      >
+      <div className="-mx-5 sm:-mx-8 sdl-hscroll-fade-wrap">
+        <div
+          ref={scrollRef}
+          className="flex gap-5 overflow-x-auto snap-x snap-proximity pl-5 pr-8 sm:pl-8 sm:pr-12 pb-1"
+        >
         {flavors.map((f, i) => {
           const active = f.id === activeFlavorId;
           const prediction = predictBreadColor(base, f.modifiers);
@@ -94,6 +95,7 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
             </button>
           );
         })}
+        </div>
       </div>
     </section>
   );
