@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from './lib/cn.js';
 import { useStickyState } from './hooks/useStickyState.js';
@@ -26,7 +26,7 @@ import {
 } from './components/recipe/index.js';
 
 import { FeedPanel } from './components/starter/index.js';
-import { StepList, CookMode, BatchLog } from './components/process/index.js';
+import { StepList, BatchLog } from './components/process/index.js';
 
 const TABS = [
   { id: 'formula', label: 'Formula', zh: '配方' },
@@ -46,9 +46,6 @@ function App() {
   const [coldStartTime, setColdStartTime] = useStickyState(null, 'sdl_cold_start');
   const [coldDuration, setColdDuration] = useStickyState(16, 'sdl_cold_duration');
   const [batches, setBatches] = useStickyState([], 'sdl_batches');
-
-  const [cookOpen, setCookOpen] = useState(false);
-  const [cookCursor, setCookCursor] = useState(0);
 
   const base = DEFAULT_BASE;
 
@@ -118,12 +115,6 @@ function App() {
     coldDuration,
   }), [activeFlavor, numUnits, calculated.actualHydration, coldDuration]);
 
-  const openCookMode = useCallback(() => {
-    const currentIdx = steps.findIndex((s) => !completedIds.has(s.id));
-    setCookCursor(currentIdx === -1 ? 0 : currentIdx);
-    setCookOpen(true);
-  }, [steps, completedIds]);
-
   return (
     <div className="min-h-screen relative">
       <div className="max-w-2xl mx-auto px-5 py-7 sm:px-8 sm:py-12 relative z-10 space-y-7 sm:space-y-10">
@@ -138,9 +129,9 @@ function App() {
           </p>
         </header>
 
-        {/* ── Tab nav —— sticky 磁吸置顶 ── */}
+        {/* ── Tab nav —— sticky 置顶，纯色底 ── */}
         <nav
-          className="flex border-b border-line sticky top-0 z-20 bg-bg/92 backdrop-blur-md -mx-5 px-5 sm:-mx-8 sm:px-8 pt-2"
+          className="flex border-b border-line sticky top-0 z-20 bg-bg -mx-5 px-5 sm:-mx-8 sm:px-8 pt-2"
           role="tablist"
           aria-label="页面切换"
         >
@@ -211,7 +202,6 @@ function App() {
                   onColdDuration={setColdDuration}
                   onColdReset={() => setColdStartTime(null)}
                   onReset={resetProgress}
-                  onOpenCookMode={openCookMode}
                 />
                 <BatchLog
                   batches={batches}
@@ -230,16 +220,6 @@ function App() {
           Sourdough Lab · 2026
         </footer>
       </div>
-
-      <CookMode
-        open={cookOpen}
-        steps={steps}
-        completedIds={completedIds}
-        cursorIndex={cookCursor}
-        onCursor={setCookCursor}
-        onToggle={toggleStep}
-        onClose={() => setCookOpen(false)}
-      />
     </div>
   );
 }

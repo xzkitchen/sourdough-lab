@@ -1,12 +1,18 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { Play, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { cn } from '../../lib/cn.js';
 import { Button } from '../primitives/index.js';
 import { StepCard } from './StepCard.jsx';
 import { ColdRetardTracker } from './ColdRetardTracker.jsx';
 
 /**
- * StepList — 流程步骤列表（极简 header，不 sticky）
+ * StepList —— 流程步骤列表（手风琴式，只展开 current）
+ *
+ * 行为：
+ *   - 进入 Bake tab：不自动滚动
+ *   - 完成当前步骤后：平滑滚动到下一个 current
+ *   - Cook Mode 已移除
+ *   - 只有 current 步骤是展开 + 可点"标记完成"；pending 折叠；done 折叠 + 撤销
  */
 export function StepList({
   steps,
@@ -18,41 +24,31 @@ export function StepList({
   onColdDuration,
   onColdReset,
   onReset,
-  onOpenCookMode,
   className,
 }) {
   const { completedCount, percent, currentId } = useMemo(() => {
     const ids = new Set(steps.map((s) => s.id));
     const done = [...completedIds].filter((id) => ids.has(id));
-    const pct = Math.round((done.length / steps.length) * 100);
+    const pct = steps.length > 0 ? Math.round((done.length / steps.length) * 100) : 0;
     const current = steps.find((s) => !completedIds.has(s.id))?.id || null;
     return { completedCount: done.length, percent: pct, currentId: current };
   }, [steps, completedIds]);
 
-  // 完成步骤后 / mount 时，把当前 step 滚到视图顶部
+  // 只在 currentId 真正"变化"时（完成一步后）平滑滚动；
+  // 进入 tab / 第一次 render 不滚动
   const stepRefs = useRef({});
+  const initializedRef = useRef(false);
   const prevCurrentRef = useRef(null);
-  const mountedRef = useRef(false);
 
-  // Mount 时：立即滚到 current，无动画（避免感知到"滚动"）
   useEffect(() => {
-    if (!mountedRef.current && currentId) {
-      const el = stepRefs.current[currentId];
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'auto', block: 'start' });
-        }, 50);
-      }
-      mountedRef.current = true;
+    if (!initializedRef.current) {
+      // 首次 render：仅记录当前 currentId，不滚动
+      initializedRef.current = true;
       prevCurrentRef.current = currentId;
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // currentId 改变时（完成一步）：平滑滚到新 current
-  useEffect(() => {
-    const prev = prevCurrentRef.current;
-    if (mountedRef.current && currentId && currentId !== prev && prev !== null) {
+    // 后续：currentId 改变（= 用户完成了一步）→ 平滑滚到新 current
+    if (currentId && currentId !== prevCurrentRef.current) {
       const el = stepRefs.current[currentId];
       if (el) {
         setTimeout(() => {
@@ -76,7 +72,7 @@ export function StepList({
         </span>
       </div>
 
-      {/* 1px 进度线 + 操作按钮 */}
+      {/* 1px 进度线 + 重置按钮 */}
       <div className="space-y-3">
         <div className="h-[2px] bg-sunken rounded-full overflow-hidden">
           <div
@@ -85,17 +81,8 @@ export function StepList({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            icon={<Play size={11} strokeWidth={1.5} />}
-            onClick={onOpenCookMode}
-            className="flex-1"
-          >
-            Cook Mode
-          </Button>
-          {completedCount > 0 && (
+        {completedCount > 0 && (
+          <div className="flex justify-end">
             <Button
               variant="ghost"
               size="sm"
@@ -106,8 +93,8 @@ export function StepList({
             >
               重置
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Step cards */}
@@ -124,22 +111,22 @@ export function StepList({
               key={step.id}
               ref={(el) => { stepRefs.current[step.id] = el; }}
             >
-            <StepCard
-              step={step}
-              state={state}
-              index={idx + 1}
-              onToggle={() => onToggle(step.id)}
-            >
-              {step.id === 'cold' && state !== 'done' && (
-                <ColdRetardTracker
-                  savedTime={coldStartTime}
-                  savedDuration={coldDuration}
-                  onSetTime={onColdStart}
-                  onSetDuration={onColdDuration}
-                  onReset={onColdReset}
-                />
-              )}
-            </StepCard>
+              <StepCard
+                step={step}
+                state={state}
+                index={idx + 1}
+                onToggle={() => onToggle(step.id)}
+              >
+                {step.id === 'cold' && state === 'current' && (
+                  <ColdRetardTracker
+                    savedTime={coldStartTime}
+                    savedDuration={coldDuration}
+                    onSetTime={onColdStart}
+                    onSetDuration={onColdDuration}
+                    onReset={onColdReset}
+                  />
+                )}
+              </StepCard>
             </div>
           );
         })}
