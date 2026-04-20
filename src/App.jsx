@@ -152,7 +152,7 @@ function App() {
                 )}
               >
                 <span className="font-display text-[17px] leading-none">{t.label}</span>
-                <span className="font-body text-[10px] tracking-[0.2em] text-faint uppercase">
+                <span className="font-body text-[11px] tracking-[0.18em] text-muted uppercase">
                   {t.zh}
                 </span>
               </button>
