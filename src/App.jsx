@@ -129,9 +129,9 @@ function App() {
           </p>
         </header>
 
-        {/* ── Tab nav —— sticky 置顶；bg/grain 走 pseudo 并在底部软淡出 ── */}
+        {/* ── Tab nav —— sticky 置顶 + 全宽麦色底线 ── */}
         <nav
-          className="flex sticky top-0 z-20 nav-masked pt-2 pb-1"
+          className="flex sticky top-0 z-20 bg-bg nav-masked border-b-[1.5px] border-accent pt-2 pb-2 -mx-5 px-5 sm:-mx-8 sm:px-8"
           role="tablist"
           aria-label="页面切换"
         >
@@ -145,14 +145,26 @@ function App() {
                 aria-selected={active}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  'flex-1 pb-3 border-b-[1.5px] transition-colors ease-editorial duration-fast flex flex-col items-center gap-0.5',
+                  'flex-1 transition-colors ease-editorial duration-fast flex flex-col items-center gap-0.5',
                   active
-                    ? 'border-accent text-ink'
-                    : 'border-transparent text-muted hover:text-ink'
+                    ? 'text-accent-ink'
+                    : 'text-muted active:text-ink'
                 )}
               >
-                <span className="font-display text-[17px] leading-none">{t.label}</span>
-                <span className="font-body text-[11px] tracking-[0.18em] text-muted uppercase">
+                <span
+                  className={cn(
+                    'font-display text-[17px] leading-none',
+                    active && 'font-medium'
+                  )}
+                >
+                  {t.label}
+                </span>
+                <span
+                  className={cn(
+                    'font-body text-[11px] tracking-[0.18em] uppercase',
+                    active ? 'text-accent-ink' : 'text-muted'
+                  )}
+                >
                   {t.zh}
                 </span>
               </button>

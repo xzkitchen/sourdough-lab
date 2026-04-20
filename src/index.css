@@ -117,43 +117,27 @@
     }
   }
 
-  /* ─── sticky nav：bg 渐变淡出 + grain overlay ─── *
-   *
-   * 问题：sticky nav 是不透明遮挡层，球从下方滚入会整块挡掉成半圆。
-   *
-   * 解法（不依赖 mask-image）：nav 的 background-image 直接用
-   * linear-gradient 从不透明 cream 渐变到透明，底部 48px 是 fade zone。
-   * 不用 mask-image 避开 iOS Safari 伪元素 mask 的已知 bug。
-   *
-   * 注意：不设 position:relative，否则覆盖 Tailwind 的 .sticky
-   *       导致磁吸失效。sticky 本身就是 positioned ancestor。
+  /* ─── sticky nav：保持原有 paper-grain 纹理（无 mask/gradient）─── *
+   * 之前试过 mask-image 和 background gradient 做软淡出，都不理想。
+   * 回到最简单的：实心 bg + paper-grain 纹理 + 一条全宽底线。
+   * 球滚入 nav 会被底线"切断"，但因为线是设计性的全宽横线，
+   * 切口视觉上合理（像经典 sticky header）。
    */
-  .nav-masked {
-    background-image: linear-gradient(
-      to bottom,
-      #F5F1EA 0%,
-      #F5F1EA calc(100% - 48px),
-      rgba(245, 241, 234, 0) 100%
-    );
-  }
   .nav-masked > * {
     position: relative;
-    z-index: 2;
+    z-index: 1;
   }
   .nav-masked::after {
     content: '';
     position: absolute;
     inset: 0;
-    z-index: 1;
+    z-index: 0;
     pointer-events: none;
     background-image: url('/src/design/textureOverlay.svg');
     background-size: 240px 240px;
     background-repeat: repeat;
     opacity: 0.5;
     mix-blend-mode: multiply;
-    /* grain 也在底部跟随淡出，与 bg 渐变同步 */
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 48px), transparent 100%);
-            mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 48px), transparent 100%);
   }
 
 
