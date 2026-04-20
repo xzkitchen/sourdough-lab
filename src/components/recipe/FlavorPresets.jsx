@@ -68,7 +68,7 @@ export function FlavorPresets({ base, flavors, selected, onApply, className }) {
       <div className="-mx-5 sm:-mx-8 sdl-hscroll-fade-wrap">
         <div
           ref={scrollRef}
-          className="flex gap-5 overflow-x-auto snap-x snap-proximity pl-5 pr-8 sm:pl-8 sm:pr-12 pb-1"
+          className="flex gap-5 overflow-x-auto snap-x snap-proximity pl-5 pr-16 sm:pl-8 sm:pr-20 pb-1"
         >
         {flavors.map((f, i) => {
           const active = f.id === activeFlavorId;
