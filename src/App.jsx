@@ -129,9 +129,9 @@ function App() {
           </p>
         </header>
 
-        {/* ── Tab nav —— sticky 置顶，轻玻璃 + 细底线 ── */}
+        {/* ── Tab nav —— sticky 置顶，纯玻璃无线 ── */}
         <nav
-          className="flex sticky top-0 z-20 bg-bg/88 backdrop-blur-sm border-b border-line pt-2 pb-2 -mx-5 px-5 sm:-mx-8 sm:px-8"
+          className="flex sticky top-0 z-20 bg-bg/88 backdrop-blur-sm pt-2 pb-2 -mx-5 px-5 sm:-mx-8 sm:px-8"
           role="tablist"
           aria-label="页面切换"
         >
