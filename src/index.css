@@ -142,8 +142,8 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 14px), transparent 100%);
-            mask-image: linear-gradient(to bottom, black calc(100% - 14px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+            mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
   }
   .nav-masked::before {
     background-color: #F5F1EA;
