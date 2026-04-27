@@ -185,7 +185,6 @@ function App() {
               steps={steps}
               completedIds={completedIds}
               currentStepId={currentStepId}
-              onReset={resetProgress}
             />
           )}
         </div>
@@ -223,6 +222,7 @@ function App() {
                   completedIds={completedIds}
                   currentStepId={currentStepId}
                   onToggle={toggleStep}
+                  onReset={resetProgress}
                   coldSlot={coldSlot}
                 />
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 /**
  * StepList — V2 Ledger 流程清单
@@ -6,22 +6,37 @@ import React, { useState, useCallback } from 'react';
  * 特性：
  *   - 编号步骤卡（NN/total），点击展开看 tips
  *   - "NOW" + "+ MOD" 标签
- *   - Mark complete → 自动展开下一未完成步骤
+ *   - Mark complete → 自动展开下一未完成步骤 + 平滑滚到 sticky 头部下方
  *   - Locked 守卫：未到的步骤可以预读，但不能"跳着"标完成
  *   - 已完成的步骤可以再次点开 → "↶ Undo" 撤销该步
- *
- * 注：进度条 / Reset 按钮 / segment bar 已抽出到 ProcessProgress 组件，
- * 由 App.jsx 在 sticky 头部渲染。
+ *   - 所有步骤之后的 footer 行右侧有 Reset 按钮（不在 sticky 头部抢戏）
  *
  * Props:
  *   steps             enhanceSteps() 输出
  *   completedIds      Set<string>
- *   currentStepId     string | null  外部传入（避免重复计算）
+ *   currentStepId     string | null
  *   onToggle(stepId)
- *   coldSlot          可选：ColdRetardTracker 的 React 节点，会被插入到 phase='cold' 的步骤展开区
+ *   onReset()
+ *   coldSlot          可选：ColdRetardTracker 的 React 节点
  */
-export function StepList({ steps, completedIds, currentStepId, onToggle, coldSlot }) {
+export function StepList({ steps, completedIds, currentStepId, onToggle, onReset, coldSlot }) {
   const [openId, setOpenId] = useState(null);
+
+  // Reset 二步确认状态：'idle' → 'confirming' → reset/timeout 回 'idle'
+  const [resetState, setResetState] = useState('idle');
+  const resetTimerRef = useRef(null);
+
+  const completed = steps.filter(s => completedIds.has(s.id)).length;
+
+  // 完成步骤后自动滚到下一步：scrollIntoView + scroll-mt 已在 StepRow 上设
+  // sticky 头部高度 ~150px (mobile) / ~160px (desktop)。
+  const scrollToStep = useCallback((stepId) => {
+    // setTimeout 让 React 先 render 出展开区再滚动，避免位置跳动
+    setTimeout(() => {
+      const el = document.querySelector(`[data-step-id="${stepId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  }, []);
 
   const markComplete = useCallback((stepId) => {
     onToggle(stepId);
@@ -29,12 +44,39 @@ export function StepList({ steps, completedIds, currentStepId, onToggle, coldSlo
     const idx = steps.findIndex(s => s.id === stepId);
     const next = steps.slice(idx + 1).find(s => !completedIds.has(s.id));
     setOpenId(next ? next.id : null);
-  }, [onToggle, steps, completedIds]);
+    if (next) scrollToStep(next.id);
+  }, [onToggle, steps, completedIds, scrollToStep]);
 
   const undoStep = useCallback((stepId) => {
     onToggle(stepId);
     setOpenId(stepId);
   }, [onToggle]);
+
+  const handleReset = useCallback(() => {
+    if (completed === 0) return;
+    if (resetState === 'idle') {
+      // 第一次点：进入待确认态，3 秒未二次点则静默回滚
+      setResetState('confirming');
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = setTimeout(() => {
+        setResetState('idle');
+        resetTimerRef.current = null;
+      }, 3000);
+    } else {
+      // 第二次点：执行重置
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+      setResetState('idle');
+      onReset();
+      setOpenId(steps[0]?.id || null);
+    }
+  }, [completed, onReset, steps, resetState]);
+
+  useEffect(() => () => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+  }, []);
 
   return (
     <div className="space-y-0">
@@ -55,8 +97,27 @@ export function StepList({ steps, completedIds, currentStepId, onToggle, coldSlo
         />
       ))}
 
-      <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em] text-center py-7">
-        — end —
+      {/* 末尾 footer：左侧 — end —，右侧 Reset 按钮（低调、不抢戏） */}
+      <div className="flex items-center justify-between gap-3 py-7 mt-2 border-t border-line-soft">
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
+          — end —
+        </div>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={completed === 0}
+          aria-pressed={resetState === 'confirming'}
+          className={[
+            'font-mono text-2xs uppercase tracking-[0.24em] px-2.5 py-1.5 border whitespace-nowrap transition-colors duration-fast',
+            completed === 0
+              ? 'border-line-soft text-faint cursor-not-allowed'
+              : resetState === 'confirming'
+                ? 'border-accent bg-accent text-bg cursor-pointer'
+                : 'border-ink text-ink hover:bg-ink hover:text-bg active:bg-sunken cursor-pointer',
+          ].join(' ')}
+        >
+          {resetState === 'confirming' ? '↻ Tap again to confirm' : '↻ Reset progress'}
+        </button>
       </div>
     </div>
   );
@@ -76,15 +137,15 @@ function StepRow({
 }) {
   const hasModInjection = (step.stageIngredients || []).length > 0;
   const locked = !done && !!prevIncomplete;
-  const prevStepNum = prevIncomplete
-    ? null /* 计算延后注入避免 closure */
-    : null;
 
   return (
     <div
+      data-step-id={step.id}
       onClick={onOpen}
       className={[
         '-mb-px border border-ink cursor-pointer relative transition-opacity duration-fast',
+        // 滚动 offset：sticky nav (~80) + sticky progress (~70) + 12px 呼吸 ≈ 162
+        'scroll-mt-[150px] sm:scroll-mt-[162px]',
         done ? (isCurrent ? '' : 'bg-bg') : (isCurrent ? 'bg-surface' : 'bg-bg'),
         done && !isOpen ? 'opacity-40' : 'opacity-100',
       ].join(' ')}
@@ -190,7 +251,7 @@ function StepRow({
         </div>
       )}
 
-      {/* 展开区：已完成 → Undo（右对齐：符合右手拇指操作习惯）*/}
+      {/* 展开区：已完成 → Undo（右对齐）*/}
       {isOpen && done && (
         <div
           className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface flex items-center justify-between gap-3"
