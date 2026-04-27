@@ -35,11 +35,23 @@ export function FlavorPresets({ flavors, activeId, onApply }) {
           <button
             key={f.id}
             type="button"
-            onClick={() => onApply(f)}
+            onClick={(e) => {
+              const el = e.currentTarget;
+              onApply(f);
+              // 选完后把这张卡片平滑顶到 sticky 头部正下方
+              // sticky = nav (~76px) + ActiveFlavorBar (~58px) = ~134px
+              // scroll-mt-[140px] 是这个 offset；setTimeout 让 React 先 render
+              setTimeout(() => {
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 60);
+            }}
             aria-pressed={sel}
             className={[
               'text-left px-4 py-3.5 sm:p-3 cursor-pointer transition-colors duration-fast ease-editorial',
               'active:bg-sunken',
+              // 滚动 offset：抵消 sticky nav + ActiveFlavorBar 高度，
+              // 让选中的卡片落在 sticky 头部下方 ~10px 的位置
+              'scroll-mt-[140px] sm:scroll-mt-[150px]',
               sel ? 'bg-ink text-bg active:bg-ink' : 'bg-surface text-ink hover:bg-sunken',
               // mobile: 单列，每一项之间用 top border 分隔（首项除外）
               i > 0 ? 'border-t border-ink' : '',
