@@ -286,16 +286,19 @@ function StepRow({
         </div>
       )}
 
-      {/* 展开区：已完成 → Undo */}
+      {/* 展开区：已完成 → Undo（右对齐：符合右手拇指操作习惯）*/}
       {isOpen && done && (
-        <div className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
-          <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mb-2">
+        <div
+          className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface flex items-center justify-between gap-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
             ✓ Completed · 已完成
           </div>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onUndo(); }}
-            className="px-3 py-1.5 bg-transparent text-ink border border-ink font-mono text-2xs uppercase tracking-[0.30em] cursor-pointer hover:bg-ink hover:text-bg transition-colors duration-fast"
+            className="px-3 py-1.5 bg-transparent text-ink border border-ink font-mono text-2xs uppercase tracking-[0.30em] cursor-pointer hover:bg-ink hover:text-bg active:bg-sunken transition-colors duration-fast whitespace-nowrap"
           >
             ↶ Undo
           </button>

@@ -1,5 +1,4 @@
 import React from 'react';
-import { StampRadial } from '../ledger/index.js';
 
 /**
  * ActiveFlavorBar — Formula tab 顶部 sticky 横条
@@ -7,7 +6,7 @@ import { StampRadial } from '../ledger/index.js';
  * 滚动时一直贴顶，显示当前激活的 flavor，方便用户在浏览风味列表时
  * 不丢失"我现在选的是什么"。
  *
- * 布局：[ № 圆章 40px ] | [ Latin name + 中文名 ] | [ Hydration + Mods ]
+ * 布局：[ № 09 数字牌 ] | [ Latin name + 中文名 ] | [ 水合度 · HYDRATION / 73% ]
  *
  * Props:
  *   flavor       FLAVORS 中的一项（含 name / nameLatin / modifiers）
@@ -17,13 +16,10 @@ import { StampRadial } from '../ledger/index.js';
 export function ActiveFlavorBar({ flavor, index, hydration }) {
   return (
     <div className="sticky top-[80px] sm:top-[90px] z-20 bg-bg/95 backdrop-blur-sm border-b border-ink">
-      <div className="grid items-center gap-2 sm:gap-3 py-2.5 sm:py-3 grid-cols-[36px_1fr_auto] sm:grid-cols-[40px_1fr_auto]">
-        {/* 圆章 + 编号 */}
-        <div className="relative w-9 h-9 sm:w-10 sm:h-10">
-          <div className="absolute inset-0 opacity-60 text-ink">
-            <StampRadial size={40} />
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-semibold text-ink">
+      <div className="grid items-center gap-3 sm:gap-4 py-2.5 sm:py-3 px-3 sm:px-4 grid-cols-[40px_1fr_auto] sm:grid-cols-[44px_1fr_auto]">
+        {/* 编号牌：1px 实线方形 + 大号 mono 数字（清晰、编辑器风）*/}
+        <div className="border border-ink flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11">
+          <div className="font-mono text-[15px] sm:text-base font-semibold text-ink tabular-nums leading-none">
             {String(index + 1).padStart(2, '0')}
           </div>
         </div>
@@ -43,12 +39,13 @@ export function ActiveFlavorBar({ flavor, index, hydration }) {
           </div>
         </div>
 
-        {/* 数据 */}
-        <div className="text-right border-l border-line-soft pl-2 sm:pl-3">
-          <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] sm:tracking-[0.24em] whitespace-nowrap">
-            H · {flavor.modifiers.length} mod
+        {/* 水合度：清晰双语标签 + 大号数字 */}
+        <div className="text-right border-l border-line-soft pl-3 sm:pl-4 min-w-0">
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] whitespace-nowrap">
+            Hydration
           </div>
-          <div className="font-mono text-[15px] sm:text-base font-semibold text-ink leading-tight tabular-nums mt-0.5">
+          <div className="font-zh text-[10px] text-faint leading-none mt-0.5">水合度</div>
+          <div className="font-mono text-base sm:text-lg font-semibold text-ink leading-none tabular-nums mt-1">
             {Math.round(hydration * 100)}%
           </div>
         </div>
