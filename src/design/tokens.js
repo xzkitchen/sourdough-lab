@@ -1,32 +1,34 @@
 /**
- * Sourdough Lab Design Tokens
- * 2026 Warm Editorial — 暖米纸 + 墨黑 + 单一麦色
+ * Sourdough Lab Design Tokens — V2 Ledger
+ *
+ * 编辑器/手账风：暖纸底 + 墨黑 + 单色焦土 accent。
+ * 1px hairline 主导，零渐变、零阴影（只在 ColdRetard 等少数地方破例）。
  *
  * 使用：JS 侧直接 import；Tailwind 侧见 tailwind.config.js。
  */
 
 export const colors = {
-  // Surfaces — 背景层级从最暗到最亮
-  bg:       '#F5F1EA',   // 暖米纸（body）
-  surface:  '#FBF8F2',   // 卡片背景（比 bg 略亮）
-  sunken:   '#EDE7DB',   // 嵌入式背景（输入框、slider track）
+  // Surfaces — 暖纸三阶
+  bg:       '#F5F1E5',   // 暖米纸（body）
+  surface:  '#EFE9DC',   // 卡片 / 节内底
+  sunken:   '#E8E0D0',   // 嵌入式底（输入、被禁用）
 
-  // Text — 墨色层级
-  ink:      '#1A1815',   // 主文字（近墨黑，不用纯黑）
-  muted:    '#6B635A',   // 次要文字
-  faint:    '#A39A8E',   // 三级 / 占位 / disabled
+  // Ink — 墨色三阶
+  ink:      '#1A1715',   // 主墨色（近黑非黑）
+  muted:    '#5C544C',   // 次要文字
+  faint:    '#9C9387',   // 三级 / 占位 / disabled
 
-  // Lines — hairline 主力
-  line:     '#E5DED0',   // 1px 实线
-  lineSoft: '#EFEADF',   // 虚线 / 极弱分隔
+  // Lines — hairline 主力（V2 比 V1 更清淡）
+  line:     '#3A3530',   // 1px 实线 —— 跟 ink 同色系，比之前的 #E5DED0 重很多（编辑器风）
+  lineSoft: '#C9BFAE',   // 弱分隔（虚线、软线）
 
-  // Accent — 唯一强调色
-  accent:     '#B08968', // 麦色
-  accentSoft: '#D9C3A8', // hover / 淡底
-  accentInk:  '#6E4F2F', // accent 上的文字
-  accentLine: '#C9A57F', // accent 线条（比 accent 略浅）
+  // Accent — 唯一焦土色
+  accent:     '#B85A3E',  // 焦土红（V2 logo 章）
+  accentSoft: '#E8C9B8',  // hover / 淡底
+  accentInk:  '#7A2E1A',  // 焦土上的深色文字
+  accentLine: '#D08060',  // 焦土线条
 
-  // Semantic — 仅用于警告/完成的弹字与小徽记
+  // Semantic
   warn:   '#A04530',
   warnBg: '#F4E4D7',
   ok:     '#5C7A5A',
@@ -34,7 +36,6 @@ export const colors = {
 };
 
 export const spacing = {
-  // 基于 4px 栅格；大号留白是 2026 quiet luxury 核心
   0: '0px',
   1: '4px',
   2: '8px',
@@ -50,52 +51,62 @@ export const spacing = {
   20: '80px',
   24: '96px',
 
-  // 语义间距 tier（手机优先节奏）
-  tight:  '8px',    // 同一卡片内相邻元素
-  normal: '16px',   // 相关段落之间
-  group:  '28px',   // 大分组之间
-  section:'40px',   // Tab 内 section 之间（桌面加大）
+  // 语义间距
+  tight:  '8px',
+  normal: '16px',
+  group:  '28px',
+  section:'40px',
 };
 
 export const radii = {
   none: '0px',
-  sm:   '4px',
-  md:   '8px',
-  lg:   '12px',
+  sm:   '2px',
+  md:   '4px',
+  lg:   '8px',
   pill: '999px',
-  full: '9999px',   // 圆形（=tailwind 默认 rounded-full）
+  full: '9999px',
 };
 
+/**
+ * 字体栈
+ *  display — EB Garamond（编辑器衬线，主标题、数字大字）
+ *  serif   — Cormorant Garamond（拉丁副标题、引号字体）
+ *  zh      — Noto Serif SC（中文标题）
+ *  body    — Noto Sans SC（中文正文）
+ *  mono    — IBM Plex Mono（编号、克数、间距字符）
+ */
 export const fontFamily = {
-  display: ['Fraunces', 'Noto Serif SC', 'Georgia', 'serif'],
-  body:    ['Inter', 'Noto Sans SC', 'system-ui', '-apple-system', 'sans-serif'],
-  mono:    ['IBM Plex Mono', 'ui-monospace', 'SF Mono', 'monospace'],
+  display: ['"EB Garamond"', 'Georgia', 'serif'],
+  serif:   ['"Cormorant Garamond"', '"EB Garamond"', 'Georgia', 'serif'],
+  zh:      ['"Noto Serif SC"', '"Source Han Serif SC"', 'serif'],
+  body:    ['"Noto Sans SC"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+  mono:    ['"IBM Plex Mono"', 'ui-monospace', 'SF Mono', 'monospace'],
 };
 
 export const fontSize = {
-  xs:   ['11px', { lineHeight: '16px', letterSpacing: '0.02em' }],
-  sm:   ['13px', { lineHeight: '20px' }],
-  base: ['15px', { lineHeight: '24px' }],
-  md:   ['17px', { lineHeight: '26px' }],
-  lg:   ['20px', { lineHeight: '28px' }],
-  xl:   ['24px', { lineHeight: '32px', letterSpacing: '-0.01em' }],
-  '2xl':['32px', { lineHeight: '40px', letterSpacing: '-0.015em' }],
-  '3xl':['44px', { lineHeight: '52px', letterSpacing: '-0.02em' }],
-  '4xl':['60px', { lineHeight: '68px', letterSpacing: '-0.025em' }],
+  // ledger 偏大反差：mono 极小、display 极大
+  '2xs': ['9px',  { lineHeight: '12px', letterSpacing: '0.24em' }],
+  xs:    ['11px', { lineHeight: '16px', letterSpacing: '0.18em' }],
+  sm:    ['13px', { lineHeight: '20px' }],
+  base:  ['15px', { lineHeight: '24px' }],
+  md:    ['17px', { lineHeight: '26px' }],
+  lg:    ['20px', { lineHeight: '28px' }],
+  xl:    ['24px', { lineHeight: '32px', letterSpacing: '-0.01em' }],
+  '2xl': ['32px', { lineHeight: '40px', letterSpacing: '-0.015em' }],
+  '3xl': ['44px', { lineHeight: '48px', letterSpacing: '-0.02em' }],
+  '4xl': ['54px', { lineHeight: '58px', letterSpacing: '-0.03em' }],
+  '5xl': ['72px', { lineHeight: '72px', letterSpacing: '-0.04em' }],
 };
 
 export const shadow = {
-  // 极度克制，平面优先
   none: 'none',
-  sm:   '0 1px 2px rgba(26, 24, 21, 0.04)',
-  md:   '0 1px 2px rgba(26, 24, 21, 0.04), 0 8px 24px rgba(26, 24, 21, 0.06)',
-  lg:   '0 2px 6px rgba(26, 24, 21, 0.05), 0 16px 40px rgba(26, 24, 21, 0.08)',
+  sm:   '0 1px 2px rgba(26, 23, 21, 0.04)',
+  md:   '0 1px 2px rgba(26, 23, 21, 0.04), 0 8px 24px rgba(26, 23, 21, 0.06)',
+  lg:   '0 2px 6px rgba(26, 23, 21, 0.05), 0 16px 40px rgba(26, 23, 21, 0.08)',
 };
 
 export const motion = {
-  // iOS 风缓动，自然而克制
   ease: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-  // 三档时长
   fast:  '180ms',
   base:  '260ms',
   slow:  '420ms',
@@ -110,7 +121,6 @@ export const zIndex = {
   toast:    80,
 };
 
-// 便利导出：整体主题对象
 export const theme = {
   colors,
   spacing,

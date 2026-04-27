@@ -13,39 +13,36 @@ import {
 import { getProcessSteps } from './domain/process/index.js';
 
 import {
-  Card,
-  Divider,
-} from './components/primitives/index.js';
-
-import {
+  ActiveFlavorBar,
   FlavorPresets,
   IngredientTable,
-  WarningList,
-  SectionHeader,
+  Marginalia,
   FlavorSource,
 } from './components/recipe/index.js';
-
 import { FeedPanel } from './components/starter/index.js';
-import { StepList, BatchLog } from './components/process/index.js';
+import { StepList, ColdRetardTracker } from './components/process/index.js';
+import { SecHead } from './components/ledger/index.js';
 
 const TABS = [
-  { id: 'formula', label: 'Formula', zh: '配方' },
-  { id: 'starter', label: 'Starter', zh: '养种' },
-  { id: 'bake',    label: 'Bake',    zh: '流程' },
+  { id: 'formula', label: 'Formula', zh: '配方', n: '01' },
+  { id: 'starter', label: 'Starter', zh: '养种', n: '02' },
+  { id: 'bake',    label: 'Bake',    zh: '流程', n: '03' },
 ];
 
 const motionTransition = { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] };
 
+/**
+ * Sourdough Lab · V2 Ledger shell
+ *
+ * Domain 层完全沿用 v3 的 calculator + FLAVORS + steps；
+ * 表现层全部替换为 migration/components 下的 ledger 组件。
+ */
 function App() {
-  const [tab, setTab] = useStickyState('formula', 'sdl_tab');
-  const [numUnits, setNumUnits] = useStickyState(3, 'sdl_num_units');
-  const [selected, setSelected] = useStickyState([], 'sdl_selected_modifiers');
-
-  const [seedStarter, setSeedStarter] = useStickyState(60, 'sdl_seed_starter');
-  const [completedList, setCompletedList] = useStickyState([], 'sdl_completed_steps');
-  const [coldStartTime, setColdStartTime] = useStickyState(null, 'sdl_cold_start');
-  const [coldDuration, setColdDuration] = useStickyState(16, 'sdl_cold_duration');
-  const [batches, setBatches] = useStickyState([], 'sdl_batches');
+  const [tab, setTab] = useStickyState('formula', 'sdlv2_tab');
+  const [numUnits, setNumUnits] = useStickyState(3, 'sdlv2_num_units');
+  const [selected, setSelected] = useStickyState([], 'sdlv2_selected_modifiers');
+  const [seedStarter, setSeedStarter] = useStickyState(60, 'sdlv2_seed_starter');
+  const [completedList, setCompletedList] = useStickyState([], 'sdlv2_completed_steps');
 
   const base = DEFAULT_BASE;
 
@@ -53,89 +50,65 @@ function App() {
     () => calculateRecipe({ base, numUnits, selectedModifiers: selected }),
     [base, numUnits, selected]
   );
-
   const feed = useMemo(
     () => calculateFeed(calculated, seedStarter),
     [calculated, seedStarter]
   );
-
   const baseSteps = useMemo(() => getProcessSteps(base.processRef), [base]);
-  const steps = useMemo(
-    () => enhanceSteps(baseSteps, calculated),
-    [baseSteps, calculated]
-  );
+  const steps = useMemo(() => enhanceSteps(baseSteps, calculated), [baseSteps, calculated]);
 
   const completedIds = useMemo(() => new Set(completedList), [completedList]);
 
   const applyFlavor = useCallback((flavor) => {
-    setSelected(flavor.modifiers.map((m) => ({ id: m.id, dose: m.dose })));
+    setSelected(flavor.modifiers.map(m => ({ id: m.id, dose: m.dose })));
   }, [setSelected]);
 
   const toggleStep = useCallback((stepId) => {
-    setCompletedList((prev) =>
-      prev.includes(stepId) ? prev.filter((id) => id !== stepId) : [...prev, stepId]
+    setCompletedList(prev =>
+      prev.includes(stepId) ? prev.filter(id => id !== stepId) : [...prev, stepId]
     );
   }, [setCompletedList]);
 
   const resetProgress = useCallback(() => {
     setCompletedList([]);
-    setColdStartTime(null);
-  }, [setCompletedList, setColdStartTime]);
+  }, [setCompletedList]);
 
-  const saveBatch = useCallback((batch) => {
-    setBatches((prev) => [...prev, batch]);
-    // 保存后自动 reset 流程，开始新一轮
-    setCompletedList([]);
-    setColdStartTime(null);
-  }, [setBatches, setCompletedList, setColdStartTime]);
+  const activeFlavor = useMemo(() => matchFlavor(selected) || FLAVORS[0], [selected]);
+  const activeIndex = FLAVORS.findIndex(f => f.id === activeFlavor.id);
 
-  const deleteBatch = useCallback((id) => {
-    setBatches((prev) => prev.filter((b) => b.id !== id));
-  }, [setBatches]);
-
-  const activeFlavor = useMemo(
-    () => FLAVORS.find((f) => {
-      if (f.modifiers.length !== selected.length) return false;
-      return f.modifiers.every((m) => {
-        const sel = selected.find((s) => s.id === m.id);
-        if (!sel) return false;
-        return Math.abs((sel.dose ?? 0) - (m.dose ?? 0)) < 0.0001 || sel.dose === undefined;
-      });
-    }) || null,
-    [selected]
-  );
-
-  const allCompleted = steps.length > 0 && steps.every((s) => completedIds.has(s.id));
-
-  const currentBatchDraft = useMemo(() => ({
-    flavorId: activeFlavor?.id || 'custom',
-    flavorName: activeFlavor?.name || '自定义配方',
-    numUnits,
-    hydration: calculated.actualHydration,
-    coldDuration,
-  }), [activeFlavor, numUnits, calculated.actualHydration, coldDuration]);
+  // 冷藏步骤插入计时器
+  const coldStep = steps.find(s => s.phase === 'cold');
+  const coldSlot = coldStep ? <ColdRetardTracker stepId={coldStep.id} /> : null;
 
   return (
     <div className="min-h-screen relative">
-      <div className="max-w-2xl mx-auto px-5 py-7 sm:px-8 sm:py-12 relative z-10 space-y-7 sm:space-y-10">
+      <div className="max-w-2xl mx-auto px-5 py-7 sm:px-8 sm:py-10 relative z-10 space-y-6">
 
-        {/* ── Header ── */}
-        <header className="space-y-2">
-          <h1 className="font-display text-[26px] sm:text-[32px] text-ink leading-[1.1] tracking-tight">
-            Sourdough Lab
-          </h1>
-          <p className="text-xs text-muted font-body">
-            手作酸面包实验室 · Artisan sourdough, modular
-          </p>
+        {/* ── Masthead ── */}
+        <header className="border-b-2 border-ink pb-4">
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
+                № 001 · Vol. 2026
+              </div>
+              <h1 className="font-display font-medium text-3xl text-ink leading-none mt-1.5" style={{ letterSpacing: '-0.025em' }}>
+                Sourdough Lab
+              </h1>
+              <p className="font-zh text-xs text-muted mt-1">手作酸面包实验室</p>
+            </div>
+            <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] text-right hidden sm:block">
+              Modular<br/>edition
+            </div>
+          </div>
         </header>
 
-        {/* ── Tab nav —— sticky 置顶，纯玻璃无线 ── */}
+        {/* ── Tab nav ── */}
         <nav
-          className="flex sticky top-0 z-20 bg-bg/88 backdrop-blur-sm pt-2 pb-2 -mx-5 px-5 sm:-mx-8 sm:px-8"
+          className="grid grid-cols-3 border-2 border-ink sticky top-0 z-30 bg-bg"
           role="tablist"
           aria-label="页面切换"
         >
-          {TABS.map((t) => {
+          {TABS.map((t, i) => {
             const active = tab === t.id;
             return (
               <button
@@ -145,28 +118,23 @@ function App() {
                 aria-selected={active}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  'flex-1 transition-colors ease-editorial duration-fast flex flex-col items-center gap-0.5',
-                  active
-                    ? 'text-accent-ink'
-                    : 'text-muted active:text-ink'
+                  'py-2.5 transition-colors ease-editorial duration-fast cursor-pointer',
+                  i > 0 ? 'border-l-2 border-ink' : '',
+                  active ? 'bg-ink text-bg' : 'bg-bg text-ink hover:bg-surface',
                 )}
               >
-                <span
-                  className={cn(
-                    'font-display text-[17px] leading-none',
-                    active && 'font-medium'
-                  )}
-                >
+                <div className={cn(
+                  'font-mono text-2xs uppercase tracking-[0.30em]',
+                  active ? 'opacity-65' : 'text-faint',
+                )}>
+                  № {t.n}
+                </div>
+                <div className="font-display text-base font-medium leading-tight" style={{ letterSpacing: '-0.01em' }}>
                   {t.label}
-                </span>
-                <span
-                  className={cn(
-                    'font-body text-[11px] tracking-[0.18em] uppercase',
-                    active ? 'text-accent-ink' : 'text-muted'
-                  )}
-                >
+                </div>
+                <div className={cn('font-zh text-xs', active ? 'opacity-85' : 'text-muted')}>
                   {t.zh}
-                </span>
+                </div>
               </button>
             );
           })}
@@ -183,100 +151,99 @@ function App() {
           >
             {tab === 'formula' && (
               <FormulaTab
-                base={base}
-                selected={selected}
+                activeFlavor={activeFlavor}
+                activeIndex={activeIndex}
                 calculated={calculated}
                 onApplyFlavor={applyFlavor}
               />
             )}
-
             {tab === 'starter' && (
               <FeedPanel
-                feed={feed}
-                seedStarter={seedStarter}
-                onSeedChange={setSeedStarter}
-                base={base}
                 numUnits={numUnits}
                 onNumUnitsChange={setNumUnits}
-                calculated={calculated}
+                seedStarter={seedStarter}
+                onSeedChange={setSeedStarter}
+                feed={feed}
               />
             )}
-
             {tab === 'bake' && (
-              <div className="space-y-4">
+              <div>
+                <SecHead n={1} label="Process" zhLabel="制作流程" />
                 <StepList
                   steps={steps}
                   completedIds={completedIds}
-                  coldStartTime={coldStartTime}
-                  coldDuration={coldDuration}
                   onToggle={toggleStep}
-                  onColdStart={() => setColdStartTime(new Date().toISOString())}
-                  onColdDuration={setColdDuration}
-                  onColdReset={() => setColdStartTime(null)}
                   onReset={resetProgress}
-                />
-                <BatchLog
-                  batches={batches}
-                  onSave={saveBatch}
-                  onDelete={deleteBatch}
-                  canSave={allCompleted}
-                  currentBatchDraft={currentBatchDraft}
+                  coldSlot={coldSlot}
                 />
               </div>
             )}
           </motion.section>
         </AnimatePresence>
 
-        <Divider />
-        <footer className="py-3 text-center text-[10px] text-faint font-body">
-          Sourdough Lab · 2026
+        {/* ── Colophon ── */}
+        <footer className="border-t-2 border-ink pt-3 mt-10">
+          <div className="flex justify-between items-baseline">
+            <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
+              Sourdough Lab · 2026
+            </div>
+            <div className="font-zh text-xs text-faint">编辑器 · ledger ed.</div>
+          </div>
         </footer>
       </div>
     </div>
   );
 }
 
-// ── Formula Tab — 创意预设 + 来源 + 配方清单 ──────────────────
-function FormulaTab({ base, selected, calculated, onApplyFlavor }) {
-  const activeFlavor = useMemo(() => matchFlavor(selected), [selected]);
-
+// ── Formula Tab ─────────────────────────────────────────────
+function FormulaTab({ activeFlavor, activeIndex, calculated, onApplyFlavor }) {
   return (
-    <div className="space-y-5">
-      <FlavorPresets
-        base={base}
-        flavors={FLAVORS}
-        selected={selected}
-        onApply={onApplyFlavor}
+    <div className="space-y-7">
+      {/* Active bar */}
+      <ActiveFlavorBar
+        flavor={activeFlavor}
+        index={activeIndex >= 0 ? activeIndex : 0}
+        hydration={calculated.actualHydration}
       />
 
-      <div className="pt-2">
-        <FlavorSource flavor={activeFlavor} />
-      </div>
+      {/* №01 Choose flavor */}
+      <section>
+        <SecHead n={1} label="Flavor" zhLabel="风味预设" />
+        <FlavorPresets
+          flavors={FLAVORS}
+          activeId={activeFlavor.id}
+          onApply={onApplyFlavor}
+        />
+      </section>
 
-      <Card variant="surface" padding="md" className="space-y-4">
-        <SectionHeader title="配方清单" latin="Formula" />
+      {/* №02 Ingredient table */}
+      <section>
+        <SecHead n={2} label="Ingredients" zhLabel="配方清单" />
         <IngredientTable
           ingredients={calculated.ingredients}
           totalWeight={calculated.totalWeight}
         />
-      </Card>
+      </section>
 
-      <WarningList warnings={calculated.warnings} notes={calculated.notes} />
+      {/* Marginalia (notes + warnings) */}
+      <Marginalia
+        notes={calculated.notes || []}
+        warnings={calculated.warnings || []}
+      />
+
+      {/* Source */}
+      <FlavorSource flavor={activeFlavor} />
     </div>
   );
 }
 
-/** 在当前 selected modifiers 中寻找完全匹配的 flavor */
 function matchFlavor(selected) {
-  return FLAVORS.find((f) => {
+  return FLAVORS.find(f => {
     if (f.modifiers.length !== selected.length) return false;
-    return f.modifiers.every((m) => {
-      const sel = selected.find((s) => s.id === m.id);
+    return f.modifiers.every(m => {
+      const sel = selected.find(s => s.id === m.id);
       if (!sel) return false;
-      return (
-        Math.abs((sel.dose ?? 0) - (m.dose ?? 0)) < 0.0001 ||
-        sel.dose === undefined
-      );
+      return Math.abs((sel.dose ?? 0) - (m.dose ?? 0)) < 0.0001 || sel.dose === undefined;
     });
   }) || null;
 }

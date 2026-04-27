@@ -1,96 +1,93 @@
 import React from 'react';
-import { cn } from '../../lib/cn.js';
+import { LedgerRow } from '../ledger/index.js';
 
 /**
- * IngredientTable — 严格等高行的配方表
+ * IngredientTable — 配方清单（编辑器表格）
  *
- * 所有行共享同一 grid 模板：[dot] [name · note] [bp%] [weight g]
- * base 行 dot 不可见但占位，保证行高与 modifier 行完全一致。
+ * 表格 4 列：
+ *   Ingredient | Bak% | Gram | Src
+ *
+ * - 表头/表脚为 2px 上下双线（ledger 风）
+ * - 每行 1px 软线分隔
+ * - 总重单独一行，加粗 + mono
+ *
+ * Props:
+ *   ingredients   calculator 输出的 ingredients 数组
+ *   totalWeight   总重 g
  */
-export function IngredientTable({
-  ingredients,
-  totalWeight,
-  showBakersPct = true,
-  className,
-}) {
-  const baseRows = ingredients.filter((i) => i.source !== 'modifier');
-  const modRows = ingredients.filter((i) => i.source === 'modifier');
-  const hasMod = modRows.length > 0;
-
+export function IngredientTable({ ingredients, totalWeight }) {
   return (
-    <div className={cn('space-y-4', className)}>
-      <ul className="divide-y divide-line-soft">
-        {baseRows.map((ing) => (
-          <Row key={ing.id} ing={ing} showBakersPct={showBakersPct} />
-        ))}
-        {hasMod && (
-          <>
-            {/* modifier 分组 —— 紧接 base 行，共用 divide-y */}
-            {modRows.map((ing) => (
-              <Row key={ing.id} ing={ing} showBakersPct={showBakersPct} accent />
-            ))}
-          </>
-        )}
-      </ul>
+    <div className="border-t-2 border-b-2 border-ink">
+      {/* 表头 */}
+      <div
+        className="grid gap-1 pt-2 pb-1 border-b border-ink"
+        style={{ gridTemplateColumns: '1fr 50px 60px 38px' }}
+      >
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">Ingredient</div>
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] text-right">Bak%</div>
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] text-right">Gram</div>
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] text-right">Src</div>
+      </div>
 
-      <div className="flex items-baseline justify-between pt-4 border-t border-line">
-        <span className="text-[10px] text-muted font-body uppercase tracking-[0.18em]">
-          总重 · Total
-        </span>
-        <span className="font-display text-2xl tabular-nums text-ink tracking-tight">
+      {/* 数据行 */}
+      {ingredients.map((ing, i) => (
+        <LedgerRow
+          key={`${ing.id}-${i}`}
+          name={ing.name}
+          en={prettyEn(ing)}
+          pct={fmtPct(ing.bakersPct)}
+          grams={ing.weight}
+          src={shortSrc(ing)}
+          last={i === ingredients.length - 1}
+        />
+      ))}
+
+      {/* 总重行 */}
+      <div
+        className="grid gap-1 py-2 border-t border-ink bg-surface"
+        style={{ gridTemplateColumns: '1fr 50px 60px 38px' }}
+      >
+        <div className="font-mono text-xs text-ink uppercase tracking-[0.20em]">
+          Total · 总重
+        </div>
+        <div></div>
+        <div className="font-mono text-base font-semibold text-ink text-right tabular-nums">
           {totalWeight}
-          <span className="text-xs text-faint font-mono font-normal ml-1">g</span>
-        </span>
+          <span className="text-2xs text-faint ml-0.5">g</span>
+        </div>
+        <div></div>
       </div>
     </div>
   );
 }
 
-/** 统一行结构：grid [14px dot] [1fr name] [44px bp] [64px weight] */
-function Row({ ing, showBakersPct, accent }) {
-  return (
-    <li
-      className="grid items-center h-12 gap-3"
-      style={{ gridTemplateColumns: '6px 1fr 44px 64px' }}
-    >
-      {/* dot 位 —— 始终存在，accent 时显示麦色点 */}
-      <span
-        className={cn(
-          'w-1 h-1 rounded-full',
-          accent ? 'bg-accent' : 'bg-transparent'
-        )}
-        aria-hidden
-      />
-
-      <span
-        className={cn(
-          'font-body text-sm min-w-0 truncate',
-          accent ? 'text-accent-ink' : 'text-ink'
-        )}
-      >
-        {ing.name}
-        {ing.note && (
-          <span className="text-[11px] text-faint ml-2">· {ing.note}</span>
-        )}
-      </span>
-
-      <span className="font-mono text-[11px] text-faint tabular-nums text-right">
-        {showBakersPct && ing.bakersPct !== undefined
-          ? `${Math.round(ing.bakersPct * 1000) / 10}%`
-          : ''}
-      </span>
-
-      <span className="font-mono text-sm tabular-nums text-ink text-right">
-        {formatWeight(ing.weight)}
-        <span className="text-[11px] text-faint ml-0.5">g</span>
-      </span>
-    </li>
-  );
+function fmtPct(bp) {
+  if (bp == null) return '—';
+  const v = bp * 100;
+  return v < 10 ? `${v.toFixed(1)}%` : `${Math.round(v)}%`;
 }
 
-function formatWeight(w) {
-  if (Number.isInteger(w)) return w;
-  return Math.round(w * 10) / 10;
+function shortSrc(ing) {
+  if (ing.source === 'modifier') return 'mod';
+  if (ing.id === 'water-autolyse') return 'auto';
+  if (ing.id === 'water-reserved') return 'rsv';
+  return '·';
+}
+
+/**
+ * 拉丁副标题 — 给基础食材一个手账风的英文小注。
+ * 对于 modifier 和未知 id，返回 null（行不显示副标）
+ */
+function prettyEn(ing) {
+  const map = {
+    flour: 'Strong wheat T65',
+    'water-autolyse': 'Water · autolyse',
+    'water-reserved': 'Water · bassinage 10%',
+    water: 'Water · total',
+    starter: 'Active levain',
+    salt: 'Sea salt · fine',
+  };
+  return map[ing.id] || null;
 }
 
 export default IngredientTable;

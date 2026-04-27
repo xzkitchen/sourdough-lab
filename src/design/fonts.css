@@ -1,54 +1,19 @@
-/*
- * Sourdough Lab — 字体系统
- * 2026 Warm Editorial
+/**
+ * Sourdough Lab — V2 Ledger Font Stack
  *
- * Display: Fraunces (variable, opsz + wght + SOFT)
- * Body:    Inter (variable)
- * Mono:    IBM Plex Mono
- * CJK:     Noto Serif SC / Noto Sans SC
+ * Google Fonts CSS 变量。配合 index.html 中 <link> 预加载使用。
  *
- * 字体通过 index.html 的 <link preload> 拉取；此文件仅定义 CSS 变量与 utility。
+ *   --font-display  EB Garamond              主标题、克数、大字数字
+ *   --font-serif    Cormorant Garamond       拉丁副标题、引号
+ *   --font-zh       Noto Serif SC            中文标题
+ *   --font-body     Noto Sans SC + system    中文正文
+ *   --font-mono     IBM Plex Mono            编号、间距字符、tabular nums
  */
 
 :root {
-  --font-display: 'Fraunces', 'Noto Serif SC', Georgia, serif;
-  --font-body:    'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
-
-  /* Fraunces variable axes 默认值 */
-  --fraunces-opsz: 28;   /* 显示用光学尺寸 */
-  --fraunces-soft: 50;   /* 0 机械 / 100 柔软 */
-}
-
-/* Fraunces 显式字体加载 */
-@font-face {
-  font-family: 'Fraunces';
-  font-style: normal;
-  font-weight: 300 800;
-  font-display: swap;
-  src: url('https://fonts.gstatic.com/s/fraunces/v35/6NUh8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAe8g.woff2') format('woff2');
-  font-feature-settings: 'ss01', 'ss02'; /* 启用弧形 a、g */
-}
-
-.font-display {
-  font-family: var(--font-display);
-  font-variation-settings:
-    'opsz' var(--fraunces-opsz),
-    'SOFT' var(--fraunces-soft);
-  font-feature-settings: 'ss01', 'ss02';
-}
-
-.font-body {
-  font-family: var(--font-body);
-}
-
-.font-mono {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: 'ss01', 'cv11'; /* 启用 Inter 的单层 a 和 straight l (如有) */
-}
-
-/* 针对中文正文：稍微提亮字重到 400 比默认 sans 更清晰 */
-:lang(zh), :lang(zh-CN), :lang(zh-Hans) {
-  font-feature-settings: 'palt'; /* 比例假名/汉字 */
+  --font-display: 'EB Garamond', Georgia, serif;
+  --font-serif:   'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-zh:      'Noto Serif SC', 'Source Han Serif SC', serif;
+  --font-body:    'Noto Sans SC', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }

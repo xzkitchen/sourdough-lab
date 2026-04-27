@@ -1,82 +1,51 @@
 import React from 'react';
-import { BookOpen, ExternalLink } from 'lucide-react';
-import { cn } from '../../lib/cn.js';
 
 /**
- * FlavorSource —— 展示当前激活 flavor 的权威来源
+ * FlavorSource — Formula tab 底部 source footer
+ *
+ * 显示当前 flavor 的来源（master 烘焙书 / 官方 URL / 成名博客）+ 中文 note。
+ *
+ * 古书 colophon（版权页）风：
+ *   - 上方双线
+ *   - "SOURCE · 出处" 小标
+ *   - 来源名 + 作者（如有）
+ *   - URL（可点）
+ *   - 中文 note（小字、italic 模拟手写注解）
  *
  * Props:
- *   flavor   激活的 flavor object（或 null）
+ *   flavor   FLAVORS 中一项
  */
-export function FlavorSource({ flavor, className }) {
-  if (!flavor) {
-    return (
-      <div
-        className={cn(
-          'flex items-start gap-2.5 px-5 py-4 rounded-md bg-sunken border border-line-soft',
-          className
-        )}
-      >
-        <BookOpen
-          size={12}
-          strokeWidth={1.5}
-          className="text-muted shrink-0 mt-0.5"
-          aria-hidden
-        />
-        <p className="text-xs text-muted font-body leading-relaxed">
-          当前为自定义组合。选择上方「创意预设」可查看原作者来源。
-        </p>
-      </div>
-    );
-  }
-
-  const { source, note, difficulty } = flavor;
-
-  const difficultyLabel = {
-    beginner: '新手友好',
-    intermediate: '进阶',
-    advanced: '高阶',
-  }[difficulty] || null;
+export function FlavorSource({ flavor }) {
+  if (!flavor || !flavor.source) return null;
+  const { name, author, url } = flavor.source;
 
   return (
-    <div
-      className={cn(
-        'px-5 py-4 rounded-md bg-surface border border-line space-y-2.5',
-        className
-      )}
-    >
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-faint font-body shrink-0">
-            Based on
-          </span>
-          <span className="font-body text-[13px] text-ink truncate">
-            {source.name}
-          </span>
-        </div>
-        {difficultyLabel && (
-          <span className="text-[10px] text-accent-ink font-body shrink-0">
-            {difficultyLabel}
-          </span>
-        )}
+    <div className="border-t-2 border-b-2 border-ink py-3">
+      <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mb-1.5">
+        Source · 出处
       </div>
-
-      {note && (
-        <p className="text-xs text-muted font-body leading-relaxed">
-          {note}
-        </p>
+      <div className="font-display text-base text-ink leading-tight">
+        {name}
+      </div>
+      {author && (
+        <div className="font-serif italic text-sm text-muted mt-0.5">
+          — {author}
+        </div>
       )}
-
-      {source.url && (
+      {url && (
         <a
-          href={source.url}
+          href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[11px] text-accent-ink hover:text-ink font-body transition-colors ease-editorial duration-fast"
+          className="font-mono text-2xs text-accent-ink uppercase tracking-[0.18em] mt-2 inline-block hover:text-accent transition-colors duration-fast"
         >
-          查看原文
-          <ExternalLink size={10} strokeWidth={1.5} />
+          ↗ visit
         </a>
+      )}
+      {flavor.note && (
+        <p className="font-zh text-sm text-muted leading-relaxed mt-3 pt-3 border-t border-line-soft">
+          {flavor.note}
+        </p>
       )}
     </div>
   );

@@ -1,8 +1,5 @@
-export { FlavorPresets, SectionHeader } from './FlavorPresets.jsx';
-export { FlavorSource } from './FlavorSource.jsx';
-export { ModifierCard } from './ModifierCard.jsx';
-export { ModifierTray } from './ModifierTray.jsx';
+export { ActiveFlavorBar } from './ActiveFlavorBar.jsx';
+export { FlavorPresets } from './FlavorPresets.jsx';
 export { IngredientTable } from './IngredientTable.jsx';
-export { HydrationBadge } from './HydrationBadge.jsx';
-export { BreadPreview } from './BreadPreview.jsx';
-export { WarningList } from './WarningList.jsx';
+export { Marginalia } from './Marginalia.jsx';
+export { FlavorSource } from './FlavorSource.jsx';

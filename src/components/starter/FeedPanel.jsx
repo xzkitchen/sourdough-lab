@@ -1,134 +1,171 @@
 import React from 'react';
-import { Wheat, Droplet, Sprout } from 'lucide-react';
-import { cn } from '../../lib/cn.js';
-import { Card, NumberField } from '../primitives/index.js';
-import { SectionHeader, HydrationBadge } from '../recipe/index.js';
+import { SecHead } from '../ledger/index.js';
 
 /**
- * FeedPanel — 养种（含数量 / 水合度 / 旧种三合一输入）
+ * Stepper — 大号 ± 步进器（编辑器风：1px 实线 + 大号 mono 数字）
  *
- * 顶部 Section header：养种计算 · Levain
- * 输入 Card：数量 + 水合度（上排）/ 已有旧种（下排大 NumberField）
- * 喂养方案：加 T65 / 加水
- * 次要指标 + 说明
+ * Props:
+ *   value          数字
+ *   onChange(v)
+ *   step           默认 1
+ *   min            默认 1
+ *   suffix         右侧小字（如 'g' / '个'）
+ *   labelEn / labelZh   右侧上下两行小标
+ *   ariaLabel
  */
-export function FeedPanel({
-  feed,
-  seedStarter,
-  onSeedChange,
-  base,
-  numUnits,
-  onNumUnitsChange,
-  calculated,
-  className,
-}) {
-  if (!feed) return null;
-
+function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh, ariaLabel }) {
+  const dec = () => onChange(Math.max(min, value - step));
+  const inc = () => onChange(value + step);
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* 输入 Card —— 标题 + 数量 + 水合度（上） / 旧种（下） */}
-      <Card variant="surface" padding="md" className="space-y-5">
-        <SectionHeader title="养种计算" latin="Levain" />
-        <div className="flex items-stretch gap-5">
-          <div className="flex-1">
-            <NumberField
-              label="面包数量"
-              hint="Loaves"
-              value={numUnits}
-              onChange={onNumUnitsChange}
-              min={1}
-              max={10}
-            />
-          </div>
-          <div className="w-px bg-line-soft" aria-hidden />
-          <div className="flex flex-col justify-center items-start gap-2 shrink-0">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-faint font-body">
-              水合度
+    <div
+      className="grid border border-ink bg-surface"
+      style={{ gridTemplateColumns: '56px 1fr 56px' }}
+      role="group"
+      aria-label={ariaLabel}
+    >
+      <button
+        type="button"
+        onClick={dec}
+        aria-label="decrease"
+        className="font-display text-2xl text-ink border-r border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer"
+      >
+        −
+      </button>
+      <div className="px-4 py-3 flex items-center justify-between">
+        <div className="font-display font-medium text-4xl text-ink leading-none tabular-nums" style={{ letterSpacing: '-0.04em' }}>
+          {value}
+          {suffix && (
+            <span className="font-mono text-base text-faint ml-1.5">{suffix}</span>
+          )}
+        </div>
+        <div className="text-right">
+          {labelEn && (
+            <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
+              {labelEn}
             </div>
-            <HydrationBadge
-              value={calculated.actualHydration}
-              base={base.hydration}
-            />
-          </div>
+          )}
+          {labelZh && (
+            <div className="font-zh text-xs text-muted mt-0.5">{labelZh}</div>
+          )}
         </div>
-
-        <div className="border-t border-line-soft pt-5">
-          <NumberField
-            label="已有旧种"
-            hint="Seed"
-            value={seedStarter}
-            onChange={onSeedChange}
-            min={1}
-            step={1}
-            unit="g"
-          />
-        </div>
-      </Card>
-
-      {/* 喂养方案 */}
-      <div className="grid grid-cols-2 gap-3">
-        <BigMetric
-          icon={<Wheat size={14} strokeWidth={1.5} />}
-          label="加 T65"
-          value={feed.flour}
-        />
-        <BigMetric
-          icon={<Droplet size={14} strokeWidth={1.5} />}
-          label="加 水"
-          value={feed.water}
-        />
       </div>
-
-      {/* 次要指标 */}
-      <div className="grid grid-cols-2 gap-3 pt-1">
-        <SmallMetric label="配方需求" value={feed.needed} />
-        <SmallMetric label="喂养后总量" value={feed.total} />
-      </div>
-
-      {/* 说明 */}
-      <div className="flex items-start gap-2.5 pt-3 px-1">
-        <Sprout
-          size={12}
-          strokeWidth={1.5}
-          className="text-accent-ink shrink-0 mt-0.5"
-          aria-hidden
-        />
-        <p className="text-xs text-muted font-body leading-relaxed">
-          取 <span className="font-mono text-ink tabular-nums">{seedStarter}g</span> 旧种 +
-          <span className="font-mono text-ink tabular-nums"> {feed.flour}g</span> T65 +
-          <span className="font-mono text-ink tabular-nums"> {feed.water}g</span> 水，
-          28°C 发酵 4–6h 至峰值，取 <span className="font-mono text-ink tabular-nums">{feed.needed}g</span> 做面包。
-        </p>
-      </div>
+      <button
+        type="button"
+        onClick={inc}
+        aria-label="increase"
+        className="font-display text-2xl text-ink border-l border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer"
+      >
+        +
+      </button>
     </div>
   );
 }
 
-function BigMetric({ icon, label, value }) {
-  return (
-    <Card variant="surface" padding="md" className="flex flex-col items-center gap-2 text-center">
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted font-body">
-        <span className="text-accent-ink">{icon}</span>
-        <span>{label}</span>
-      </div>
-      <div className="flex items-baseline gap-1">
-        <span className="font-display text-3xl tabular-nums text-accent-ink tracking-tight">
-          {value}
-        </span>
-        <span className="text-xs text-faint font-mono">g</span>
-      </div>
-    </Card>
-  );
-}
+/**
+ * FeedPanel — 喂养 Tab
+ *
+ * 三段：
+ *   №01 Quantity      面包数量（驱动配方与喂种用量）
+ *   №02 Seed amount   旧种数量
+ *   №03 1:1 Feed      自动算出加粉/加水量 + 总量 + 取用提示
+ *
+ * Props:
+ *   numUnits / onNumUnitsChange
+ *   seedStarter / onSeedChange
+ *   feed     calculator.calculateFeed() 输出 { needed, seed, flour, water, total, buffer }
+ */
+export function FeedPanel({
+  numUnits,
+  onNumUnitsChange,
+  seedStarter,
+  onSeedChange,
+  feed,
+}) {
+  if (!feed) return null;
 
-function SmallMetric({ label, value }) {
   return (
-    <div className="flex items-baseline justify-between px-1">
-      <span className="text-[11px] text-muted font-body">{label}</span>
-      <span className="font-mono text-sm text-ink tabular-nums">
-        {value}
-        <span className="text-[10px] text-faint ml-0.5">g</span>
-      </span>
+    <div className="space-y-7">
+      {/* №01 Quantity */}
+      <section>
+        <SecHead n={1} label="Quantity" zhLabel="面包数量" />
+        <Stepper
+          value={numUnits}
+          onChange={onNumUnitsChange}
+          step={1}
+          min={1}
+          labelEn="Loaves"
+          labelZh="个"
+          ariaLabel="面包数量"
+        />
+      </section>
+
+      {/* №02 Seed amount */}
+      <section>
+        <SecHead n={2} label="Seed amount" zhLabel="旧种数量" />
+        <Stepper
+          value={seedStarter}
+          onChange={onSeedChange}
+          step={5}
+          min={5}
+          suffix="g"
+          labelEn="Existing"
+          labelZh="现有量"
+          ariaLabel="旧种数量"
+        />
+      </section>
+
+      {/* №03 1:1 Feed */}
+      <section>
+        <SecHead n={3} label="1:1 Feed" zhLabel="喂养方案" />
+        <div className="grid grid-cols-2 border border-ink">
+          {[
+            { label: 'Add flour', zh: '加 T65', v: feed.flour },
+            { label: 'Add water', zh: '加 水',  v: feed.water },
+          ].map((x, i) => (
+            <div
+              key={x.label}
+              className={`p-5 bg-surface ${i > 0 ? 'border-l border-ink' : ''}`}
+            >
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
+                {x.label}
+              </div>
+              <div className="font-zh text-xs text-muted mt-0.5">{x.zh}</div>
+              <div className="font-display font-medium text-4xl text-ink leading-none mt-3 tabular-nums" style={{ letterSpacing: '-0.03em' }}>
+                {x.v}
+              </div>
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mt-1">
+                grams
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 总量 */}
+        <div className="flex justify-between items-baseline border-t-2 border-b-2 border-ink py-3 mt-4">
+          <div>
+            <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
+              Total after feed
+            </div>
+            <div className="font-zh text-xs text-muted mt-0.5">喂养后总量</div>
+          </div>
+          <div className="font-display font-medium text-3xl text-ink tabular-nums" style={{ letterSpacing: '-0.03em' }}>
+            {feed.total}
+            <span className="font-mono text-sm text-faint ml-1.5">g</span>
+          </div>
+        </div>
+
+        {/* Memo */}
+        <div className="mt-4 px-4 py-3 bg-surface border border-line-soft border-l-[3px] border-l-accent">
+          <div className="font-mono text-2xs text-accent-ink uppercase tracking-[0.30em] mb-1.5">
+            Memo · 操作提示
+          </div>
+          <p className="font-zh text-sm text-muted leading-relaxed">
+            取 <strong className="font-mono text-ink font-semibold">{seedStarter}g</strong> 旧种，加粉和水。
+            静置至峰值（4–6h），取 <strong className="font-mono text-ink font-semibold">{feed.needed}g</strong> 用于配方，
+            剩 <strong className="font-mono text-ink font-semibold">{feed.buffer}g</strong> 作下次火种。
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

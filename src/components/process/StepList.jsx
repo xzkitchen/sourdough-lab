@@ -1,146 +1,278 @@
-import React, { useMemo, useRef, useEffect } from 'react';
-import { RotateCcw } from 'lucide-react';
-import { cn } from '../../lib/cn.js';
-import { Button } from '../primitives/index.js';
-import { StepCard } from './StepCard.jsx';
-import { ColdRetardTracker } from './ColdRetardTracker.jsx';
+import React, { useState, useCallback } from 'react';
 
 /**
- * StepList —— 流程步骤列表（手风琴式，只展开 current）
+ * StepList — V2 Ledger 流程清单
  *
- * 行为：
- *   - 进入 Bake tab：不自动滚动
- *   - 完成当前步骤后：平滑滚动到下一个 current
- *   - Cook Mode 已移除
- *   - 只有 current 步骤是展开 + 可点"标记完成"；pending 折叠；done 折叠 + 撤销
+ * 特性：
+ *   - 编号步骤卡（NN/total），点击展开看 tips
+ *   - "NOW" + "+ MOD" 标签
+ *   - Mark complete → 自动展开下一未完成步骤
+ *   - Locked 守卫：未到的步骤可以预读，但不能"跳着"标完成
+ *   - 已完成的步骤可以再次点开 → "↶ Undo" 撤销该步
+ *   - 顶部进度条 + Reset 按钮（confirm 二次确认）
+ *
+ * Props:
+ *   steps             enhanceSteps() 输出
+ *   completedIds      Set<string>
+ *   onToggle(stepId)
+ *   onReset()
+ *   coldSlot          可选：ColdRetardTracker 的 React 节点，会被插入到 phase='cold' 的步骤展开区
  */
-export function StepList({
-  steps,
-  completedIds,
-  coldStartTime,
-  coldDuration,
-  onToggle,
-  onColdStart,
-  onColdDuration,
-  onColdReset,
-  onReset,
-  className,
-}) {
-  const { completedCount, percent, currentId } = useMemo(() => {
-    const ids = new Set(steps.map((s) => s.id));
-    const done = [...completedIds].filter((id) => ids.has(id));
-    const pct = steps.length > 0 ? Math.round((done.length / steps.length) * 100) : 0;
-    const current = steps.find((s) => !completedIds.has(s.id))?.id || null;
-    return { completedCount: done.length, percent: pct, currentId: current };
-  }, [steps, completedIds]);
+export function StepList({ steps, completedIds, onToggle, onReset, coldSlot }) {
+  const [openId, setOpenId] = useState(null);
 
-  // 只在 currentId 真正"变化"时（完成一步后）平滑滚动；
-  // 进入 tab / 第一次 render 不滚动
-  const stepRefs = useRef({});
-  const initializedRef = useRef(false);
-  const prevCurrentRef = useRef(null);
+  const completed = steps.filter(s => completedIds.has(s.id)).length;
+  const total = steps.length;
+  const percent = total > 0 ? Math.round(completed / total * 100) : 0;
 
-  useEffect(() => {
-    if (!initializedRef.current) {
-      // 首次 render：仅记录当前 currentId，不滚动
-      initializedRef.current = true;
-      prevCurrentRef.current = currentId;
-      return;
+  // 当前可推进的下一步：第一个未完成
+  const currentStepId = steps.find(s => !completedIds.has(s.id))?.id || null;
+
+  const markComplete = useCallback((stepId) => {
+    onToggle(stepId);
+    // 找下一个未完成（排除刚 toggle 的这一步）
+    const idx = steps.findIndex(s => s.id === stepId);
+    const next = steps.slice(idx + 1).find(s => !completedIds.has(s.id));
+    setOpenId(next ? next.id : null);
+  }, [onToggle, steps, completedIds]);
+
+  const undoStep = useCallback((stepId) => {
+    onToggle(stepId);
+    setOpenId(stepId);
+  }, [onToggle]);
+
+  const handleReset = useCallback(() => {
+    if (completed === 0) return;
+    if (window.confirm('重置所有流程进度？\nReset all step progress?')) {
+      onReset();
+      setOpenId(steps[0]?.id || null);
     }
-    // 后续：currentId 改变（= 用户完成了一步）→ 平滑滚到新 current
-    if (currentId && currentId !== prevCurrentRef.current) {
-      const el = stepRefs.current[currentId];
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-      }
-    }
-    prevCurrentRef.current = currentId;
-  }, [currentId]);
+  }, [completed, onReset, steps]);
 
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* 极简 header */}
-      <div className="flex items-baseline gap-2 px-0.5">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-faint font-body">
-          Process
-        </span>
-        <span className="font-display text-base text-ink">制作流程</span>
-        <span className="ml-auto text-[11px] font-mono text-muted tabular-nums">
-          {completedCount} / {steps.length}
-        </span>
+    <div className="space-y-0">
+      {/* 进度头条 */}
+      <div className="border-t-2 border-b-2 border-ink py-3 mb-6">
+        <div className="flex justify-between items-end">
+          <div>
+            <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
+              Progress · 进度
+            </div>
+            <div className="font-mono text-xs text-muted mt-1">
+              {completed} / {total} steps
+            </div>
+          </div>
+          <div className="flex items-end gap-3">
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={completed === 0}
+              className={[
+                'self-center font-mono text-2xs uppercase tracking-[0.30em] px-2.5 py-1.5 border transition-colors duration-fast',
+                completed === 0
+                  ? 'border-line-soft text-faint cursor-not-allowed'
+                  : 'border-ink text-ink hover:bg-ink hover:text-bg cursor-pointer',
+              ].join(' ')}
+            >
+              ↻ Reset
+            </button>
+            <div className="font-display font-medium text-4xl text-ink leading-none tabular-nums" style={{ letterSpacing: '-0.04em' }}>
+              {percent}
+              <span className="font-mono text-base text-faint">%</span>
+            </div>
+          </div>
+        </div>
+        {/* 段位条 */}
+        <div className="flex mt-2.5 border border-ink">
+          {steps.map(s => {
+            const done = completedIds.has(s.id);
+            const isCurrent = s.id === currentStepId;
+            return (
+              <div
+                key={s.id}
+                className="flex-1 h-2 border-r border-line-soft last:border-r-0"
+                style={{
+                  background: done
+                    ? 'var(--seg-done)'
+                    : isCurrent
+                      ? 'var(--seg-current)'
+                      : 'transparent',
+                }}
+              />
+            );
+          })}
+        </div>
+        <style>{`
+          :root { --seg-done: #1A1715; --seg-current: #B85A3E; }
+        `}</style>
       </div>
 
-      {/* 1px 进度线 + 重置按钮 */}
-      <div className="space-y-3">
-        <div className="h-[2px] bg-sunken rounded-full overflow-hidden">
-          <div
-            className="h-full bg-accent rounded-full transition-[width] ease-editorial duration-slow"
-            style={{ width: `${percent}%` }}
-          />
+      {/* 步骤列表 */}
+      {steps.map((s, i) => (
+        <StepRow
+          key={s.id}
+          step={s}
+          index={i}
+          done={completedIds.has(s.id)}
+          isCurrent={s.id === currentStepId}
+          isOpen={openId === s.id}
+          onOpen={() => setOpenId(openId === s.id ? null : s.id)}
+          onComplete={() => markComplete(s.id)}
+          onUndo={() => undoStep(s.id)}
+          prevIncomplete={steps.slice(0, i).find(p => !completedIds.has(p.id))}
+          coldSlot={s.phase === 'cold' ? coldSlot : null}
+        />
+      ))}
+
+      <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em] text-center py-7">
+        — end —
+      </div>
+    </div>
+  );
+}
+
+function StepRow({
+  step,
+  index,
+  done,
+  isCurrent,
+  isOpen,
+  onOpen,
+  onComplete,
+  onUndo,
+  prevIncomplete,
+  coldSlot,
+}) {
+  const hasModInjection = (step.stageIngredients || []).length > 0;
+  const locked = !done && !!prevIncomplete;
+  const prevStepNum = prevIncomplete
+    ? null /* 计算延后注入避免 closure */
+    : null;
+
+  return (
+    <div
+      onClick={onOpen}
+      className={[
+        '-mb-px border border-ink cursor-pointer relative transition-opacity duration-fast',
+        done ? (isCurrent ? '' : 'bg-bg') : (isCurrent ? 'bg-surface' : 'bg-bg'),
+        done && !isOpen ? 'opacity-40' : 'opacity-100',
+      ].join(' ')}
+    >
+      <div className="grid items-stretch" style={{ gridTemplateColumns: '52px 1fr 72px' }}>
+        {/* 编号格 */}
+        <div
+          className={[
+            'border-r border-ink flex items-center justify-center',
+            done || isCurrent ? 'bg-ink text-bg' : 'text-ink',
+          ].join(' ')}
+        >
+          <div className="font-display font-medium text-xl">
+            {String(index + 1).padStart(2, '0')}
+          </div>
         </div>
 
-        {completedCount > 0 && (
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<RotateCcw size={11} strokeWidth={1.5} />}
-              onClick={() => {
-                if (window.confirm('重置所有进度？')) onReset();
-              }}
-            >
-              重置
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Step cards */}
-      <div className="space-y-3 pt-1">
-        {steps.map((step, idx) => {
-          const state = completedIds.has(step.id)
-            ? 'done'
-            : step.id === currentId
-              ? 'current'
-              : 'pending';
-
-          return (
-            <div
-              key={step.id}
-              ref={(el) => { stepRefs.current[step.id] = el; }}
-            >
-              <StepCard
-                step={step}
-                state={state}
-                index={idx + 1}
-                onToggle={() => onToggle(step.id)}
-              >
-                {step.id === 'cold' && state === 'current' && (
-                  <ColdRetardTracker
-                    savedTime={coldStartTime}
-                    savedDuration={coldDuration}
-                    onSetTime={onColdStart}
-                    onSetDuration={onColdDuration}
-                    onReset={onColdReset}
-                  />
-                )}
-              </StepCard>
+        {/* 标题 + 标签 */}
+        <div className="px-3.5 py-3">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <div className={`font-zh text-base font-medium ${done ? 'line-through' : ''}`}>
+              {step.title}
             </div>
-          );
-        })}
+            {isCurrent && (
+              <span className="font-mono text-2xs text-accent border border-accent px-1.5 py-0.5 tracking-[0.20em] leading-none">
+                NOW
+              </span>
+            )}
+            {hasModInjection && !done && (
+              <span className="font-mono text-2xs text-ink border border-ink px-1.5 py-0.5 tracking-[0.20em] leading-none">
+                + MOD
+              </span>
+            )}
+          </div>
+          <div className="font-mono text-xs text-faint uppercase tracking-[0.18em] mt-1">
+            {step.subtitle}
+          </div>
+        </div>
+
+        {/* 右侧时间 */}
+        <div className="px-3.5 py-3 text-right border-l border-line-soft border-dashed">
+          <div className="font-mono text-xs font-semibold text-ink tabular-nums">
+            {step.timeValue}
+          </div>
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.15em] mt-0.5">
+            {step.timeUnit}
+          </div>
+        </div>
       </div>
 
-      {/* 冷发酵已完成但仍显示时间表 */}
-      {coldStartTime && completedIds.has('cold') && (
-        <ColdRetardTracker
-          savedTime={coldStartTime}
-          savedDuration={coldDuration}
-          onSetTime={onColdStart}
-          onSetDuration={onColdDuration}
-          onReset={onColdReset}
-        />
+      {/* 展开区：未完成 → tips + Mark/Locked */}
+      {isOpen && !done && (
+        <div className="border-t border-line-soft px-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
+          {step.tips.map((t, j) => (
+            <div
+              key={j}
+              className="grid font-zh text-sm text-muted leading-relaxed mb-1"
+              style={{ gridTemplateColumns: '24px 1fr' }}
+            >
+              <span className="font-mono text-xs text-accent tracking-[0.10em]">
+                {String(j + 1).padStart(2, '0')}
+              </span>
+              <span>{t}</span>
+            </div>
+          ))}
+
+          {/* mixerParams（如有）*/}
+          {step.mixerParams && (
+            <div className="mt-3 pt-3 border-t border-line-soft">
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mb-1.5">
+                Mixer · 厨师机
+              </div>
+              {Object.entries(step.mixerParams).map(([key, p]) => (
+                <div key={key} className="font-zh text-sm text-muted">
+                  · 速度 {p.speed} / {p.time} — <span className="text-ink">{p.goal}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Cold retard 计时器插入（仅 phase='cold'）*/}
+          {coldSlot && <div className="mt-3">{coldSlot}</div>}
+
+          {locked ? (
+            <div className="mt-3 px-3 py-2 border border-line-soft border-dashed">
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mb-1">
+                Locked · 需先完成
+              </div>
+              <div className="font-zh text-xs text-muted">
+                请先完成步骤：
+                <strong className="text-ink ml-1">{prevIncomplete.title}</strong>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onComplete(); }}
+              className="mt-2.5 px-4 py-2 bg-ink text-bg font-mono text-xs uppercase tracking-[0.30em] cursor-pointer hover:bg-accent-ink transition-colors duration-fast"
+            >
+              Mark complete ✓
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 展开区：已完成 → Undo */}
+      {isOpen && done && (
+        <div className="border-t border-line-soft px-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mb-2">
+            ✓ Completed · 已完成
+          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onUndo(); }}
+            className="px-3 py-1.5 bg-transparent text-ink border border-ink font-mono text-2xs uppercase tracking-[0.30em] cursor-pointer hover:bg-ink hover:text-bg transition-colors duration-fast"
+          >
+            ↶ Undo
+          </button>
+        </div>
       )}
     </div>
   );
