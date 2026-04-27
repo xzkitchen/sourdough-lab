@@ -13,9 +13,11 @@ import React from 'react';
  *   index        在 FLAVORS 列表中的序号
  *   hydration    数字 0-1
  */
+// 注意：sticky 由父级 (App.jsx 中 nav+bar 合并后的 sticky 包裹) 统一处理，
+//       本组件自己不做 sticky/top/z，避免和 nav 之间出现像素缝隙。
 export function ActiveFlavorBar({ flavor, index, hydration }) {
   return (
-    <div className="sticky top-[80px] sm:top-[90px] z-20 bg-bg/95 backdrop-blur-sm border-b border-ink">
+    <div className="border-b border-ink bg-bg">
       <div className="grid items-center gap-3 sm:gap-4 py-2.5 sm:py-3 px-3 sm:px-4 grid-cols-[40px_1fr_auto] sm:grid-cols-[44px_1fr_auto]">
         {/* 编号牌：1px 实线方形 + 大号 mono 数字（清晰、编辑器风）*/}
         <div className="border border-ink flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11">

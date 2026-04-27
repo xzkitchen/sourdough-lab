@@ -76,15 +76,6 @@ function App() {
   const activeFlavor = useMemo(() => matchFlavor(selected) || FLAVORS[0], [selected]);
   const activeIndex = FLAVORS.findIndex(f => f.id === activeFlavor.id);
 
-  // 主刊头日期：MM / DD / YY 格式，编辑器风
-  const dateStr = useMemo(() => {
-    const d = new Date();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const yy = String(d.getFullYear()).slice(-2);
-    return `${mm} / ${dd} / ${yy}`;
-  }, []);
-
   // 冷藏步骤插入计时器
   const coldStep = steps.find(s => s.phase === 'cold');
   const coldSlot = coldStep ? <ColdRetardTracker stepId={coldStep.id} /> : null;
@@ -93,7 +84,7 @@ function App() {
     <div className="min-h-screen relative ledger-side-rules">
       <div className="max-w-2xl mx-auto px-4 py-5 sm:px-8 sm:py-10 relative z-10 space-y-5 sm:space-y-6">
 
-        {/* ── Masthead ── 对齐 v2-ledger 设计：两行标题（第二行斜体）+ 右侧日期 */}
+        {/* ── Masthead ── 两行标题（第二行斜体）+ 右侧发刊号 */}
         <header className="border-b-2 border-ink pb-4 sm:pb-5">
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
@@ -108,7 +99,7 @@ function App() {
                   fontVariationSettings: "'opsz' 96, 'SOFT' 30, 'wght' 500",
                 }}
               >
-                Sourdough
+                The Bakery
               </h1>
               <div
                 className="font-display font-medium italic text-ink leading-[0.95] mt-0.5"
@@ -118,42 +109,44 @@ function App() {
                   fontVariationSettings: "'opsz' 96, 'SOFT' 30, 'wght' 500",
                 }}
               >
-                Lab.
+                Ledger.
               </div>
             </div>
             <div className="text-right shrink-0 pb-1">
               <div className="font-mono text-2xs text-faint uppercase tracking-[0.25em]">
-                Date
+                Issue
               </div>
               <div className="font-mono text-[11px] sm:text-xs text-ink mt-1 tabular-nums whitespace-nowrap">
-                {dateStr}
+                № 04 · 2026
               </div>
             </div>
           </div>
           <p className="font-zh text-xs text-muted mt-3 italic">— 手作酸面包实验室</p>
         </header>
 
-        {/* ── Tab nav ── 1px hairline 编辑器风（不再 2px 块状） */}
-        <nav
-          className="grid grid-cols-3 border border-ink sticky top-0 z-30 bg-bg"
-          role="tablist"
-          aria-label="页面切换"
-        >
-          {TABS.map((t, i) => {
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  'py-3.5 sm:py-4 transition-colors ease-editorial duration-fast cursor-pointer',
-                  'active:bg-sunken active:scale-[0.98] transition-transform',
-                  i > 0 ? 'border-l border-ink' : '',
-                  active ? 'bg-ink text-bg active:bg-ink' : 'bg-bg text-ink hover:bg-surface',
-                )}
+        {/* ── Sticky 头部容器 ── nav + ActiveFlavorBar 合并 sticky，
+              避免两个独立 sticky 之间出现像素级缝隙（透明带漏内容）。 */}
+        <div className="sticky top-0 z-30 bg-bg">
+          <nav
+            className="grid grid-cols-3 border border-ink"
+            role="tablist"
+            aria-label="页面切换"
+          >
+            {TABS.map((t, i) => {
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    'py-3.5 sm:py-4 transition-colors ease-editorial duration-fast cursor-pointer',
+                    'active:bg-sunken active:scale-[0.98] transition-transform',
+                    i > 0 ? 'border-l border-ink' : '',
+                    active ? 'bg-ink text-bg active:bg-ink' : 'bg-bg text-ink hover:bg-surface',
+                  )}
               >
                 <div className={cn(
                   'font-mono text-2xs uppercase tracking-[0.30em]',
@@ -172,15 +165,17 @@ function App() {
           })}
         </nav>
 
-        {/* ── ActiveFlavorBar：仅在 Formula tab 显示，必须在 motion.section 之外
-              否则 framer-motion 在 section 上写入的 transform 会让它 sticky 失效 ── */}
-        {tab === 'formula' && (
-          <ActiveFlavorBar
-            flavor={activeFlavor}
-            index={activeIndex >= 0 ? activeIndex : 0}
-            hydration={calculated.actualHydration}
-          />
-        )}
+          {/* ── ActiveFlavorBar：仅在 Formula tab 显示。
+                和 nav 共用同一个 sticky 包裹，避免缝隙；
+                也必须在 motion.section 之外（否则 framer-motion 的 transform 会破坏 sticky）。 ── */}
+          {tab === 'formula' && (
+            <ActiveFlavorBar
+              flavor={activeFlavor}
+              index={activeIndex >= 0 ? activeIndex : 0}
+              hydration={calculated.actualHydration}
+            />
+          )}
+        </div>
 
         <AnimatePresence mode="wait">
           <motion.section
