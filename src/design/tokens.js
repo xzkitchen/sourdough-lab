@@ -68,18 +68,18 @@ export const radii = {
 };
 
 /**
- * 字体栈
- *  display — EB Garamond（编辑器衬线，主标题、数字大字）
- *  serif   — Cormorant Garamond（拉丁副标题、引号字体）
+ * 字体栈 —— 与 index.html 加载的 Google Fonts 对齐
+ *  display — Fraunces（可变字体，opsz/SOFT/wght 三轴；编辑器衬线，主标题、数字大字）
+ *  serif   — Fraunces italic（拉丁副标题、引号字体；与 display 同一字体不同 ital 轴）
  *  zh      — Noto Serif SC（中文标题）
- *  body    — Noto Sans SC（中文正文）
+ *  body    — Inter + Noto Sans SC（正文）
  *  mono    — IBM Plex Mono（编号、克数、间距字符）
  */
 export const fontFamily = {
-  display: ['"EB Garamond"', 'Georgia', 'serif'],
-  serif:   ['"Cormorant Garamond"', '"EB Garamond"', 'Georgia', 'serif'],
+  display: ['Fraunces', '"Noto Serif SC"', 'Georgia', 'serif'],
+  serif:   ['Fraunces', '"Noto Serif SC"', 'Georgia', 'serif'],
   zh:      ['"Noto Serif SC"', '"Source Han Serif SC"', 'serif'],
-  body:    ['"Noto Sans SC"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+  body:    ['Inter', '"Noto Sans SC"', 'system-ui', '-apple-system', 'sans-serif'],
   mono:    ['"IBM Plex Mono"', 'ui-monospace', 'SF Mono', 'monospace'],
 };
 

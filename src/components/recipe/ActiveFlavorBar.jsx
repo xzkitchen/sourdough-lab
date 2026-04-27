@@ -17,9 +17,9 @@ import { StampRadial } from '../ledger/index.js';
 export function ActiveFlavorBar({ flavor, index, hydration }) {
   return (
     <div className="sticky top-0 z-20 bg-bg/95 backdrop-blur-sm border-b border-ink">
-      <div className="grid items-center gap-3 py-3" style={{ gridTemplateColumns: '40px 1fr auto' }}>
+      <div className="grid items-center gap-2 sm:gap-3 py-2.5 sm:py-3 grid-cols-[36px_1fr_auto] sm:grid-cols-[40px_1fr_auto]">
         {/* 圆章 + 编号 */}
-        <div className="relative w-10 h-10">
+        <div className="relative w-9 h-9 sm:w-10 sm:h-10">
           <div className="absolute inset-0 opacity-60 text-ink">
             <StampRadial size={40} />
           </div>
@@ -33,22 +33,22 @@ export function ActiveFlavorBar({ flavor, index, hydration }) {
           <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
             Active · 当前
           </div>
-          <div className="flex items-baseline gap-2 mt-0.5 min-w-0">
-            <div className="font-display text-md font-medium text-ink leading-none truncate" style={{ letterSpacing: '-0.015em' }}>
+          <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 min-w-0">
+            <div className="font-display text-[15px] sm:text-md font-medium text-ink leading-none truncate" style={{ letterSpacing: '-0.015em' }}>
               {flavor.nameLatin}
             </div>
-            <div className="font-zh text-xs text-muted whitespace-nowrap">
+            <div className="font-zh text-[11px] sm:text-xs text-muted truncate">
               {flavor.name}
             </div>
           </div>
         </div>
 
         {/* 数据 */}
-        <div className="text-right border-l border-line-soft pl-3">
-          <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
+        <div className="text-right border-l border-line-soft pl-2 sm:pl-3">
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] sm:tracking-[0.24em] whitespace-nowrap">
             H · {flavor.modifiers.length} mod
           </div>
-          <div className="font-mono text-base font-semibold text-ink leading-tight tabular-nums mt-0.5">
+          <div className="font-mono text-[15px] sm:text-base font-semibold text-ink leading-tight tabular-nums mt-0.5">
             {Math.round(hydration * 100)}%
           </div>
         </div>

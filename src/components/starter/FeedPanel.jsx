@@ -18,8 +18,7 @@ function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh,
   const inc = () => onChange(value + step);
   return (
     <div
-      className="grid border border-ink bg-surface"
-      style={{ gridTemplateColumns: '56px 1fr 56px' }}
+      className="grid border border-ink bg-surface grid-cols-[48px_1fr_48px] sm:grid-cols-[56px_1fr_56px]"
       role="group"
       aria-label={ariaLabel}
     >
@@ -27,25 +26,25 @@ function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh,
         type="button"
         onClick={dec}
         aria-label="decrease"
-        className="font-display text-2xl text-ink border-r border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer"
+        className="font-display text-2xl text-ink border-r border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer min-h-[48px]"
       >
         −
       </button>
-      <div className="px-4 py-3 flex items-center justify-between">
-        <div className="font-display font-medium text-4xl text-ink leading-none tabular-nums" style={{ letterSpacing: '-0.04em' }}>
+      <div className="px-3 sm:px-4 py-3 flex items-center justify-between gap-2 min-w-0">
+        <div className="font-display font-medium text-3xl sm:text-4xl text-ink leading-none tabular-nums" style={{ letterSpacing: '-0.04em' }}>
           {value}
           {suffix && (
-            <span className="font-mono text-base text-faint ml-1.5">{suffix}</span>
+            <span className="font-mono text-sm sm:text-base text-faint ml-1 sm:ml-1.5">{suffix}</span>
           )}
         </div>
-        <div className="text-right">
+        <div className="text-right min-w-0">
           {labelEn && (
-            <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
+            <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] sm:tracking-[0.24em] truncate">
               {labelEn}
             </div>
           )}
           {labelZh && (
-            <div className="font-zh text-xs text-muted mt-0.5">{labelZh}</div>
+            <div className="font-zh text-xs text-muted mt-0.5 truncate">{labelZh}</div>
           )}
         </div>
       </div>
@@ -53,7 +52,7 @@ function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh,
         type="button"
         onClick={inc}
         aria-label="increase"
-        className="font-display text-2xl text-ink border-l border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer"
+        className="font-display text-2xl text-ink border-l border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer min-h-[48px]"
       >
         +
       </button>

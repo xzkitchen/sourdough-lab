@@ -19,10 +19,7 @@ export function IngredientTable({ ingredients, totalWeight }) {
   return (
     <div className="border-t-2 border-b-2 border-ink">
       {/* 表头 */}
-      <div
-        className="grid gap-1 pt-2 pb-1 border-b border-ink"
-        style={{ gridTemplateColumns: '1fr 50px 60px 38px' }}
-      >
+      <div className="grid gap-x-2 sm:gap-x-3 pt-2 pb-1 border-b border-ink grid-cols-[1fr_44px_56px_28px] sm:grid-cols-[1fr_50px_60px_38px]">
         <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">Ingredient</div>
         <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] text-right">Bak%</div>
         <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] text-right">Gram</div>
@@ -43,15 +40,12 @@ export function IngredientTable({ ingredients, totalWeight }) {
       ))}
 
       {/* 总重行 */}
-      <div
-        className="grid gap-1 py-2 border-t border-ink bg-surface"
-        style={{ gridTemplateColumns: '1fr 50px 60px 38px' }}
-      >
-        <div className="font-mono text-xs text-ink uppercase tracking-[0.20em]">
+      <div className="grid gap-x-2 sm:gap-x-3 py-2 border-t border-ink bg-surface grid-cols-[1fr_44px_56px_28px] sm:grid-cols-[1fr_50px_60px_38px]">
+        <div className="font-mono text-[11px] sm:text-xs text-ink uppercase tracking-[0.20em]">
           Total · 总重
         </div>
         <div></div>
-        <div className="font-mono text-base font-semibold text-ink text-right tabular-nums">
+        <div className="font-mono text-[15px] sm:text-base font-semibold text-ink text-right tabular-nums">
           {totalWeight}
           <span className="text-2xs text-faint ml-0.5">g</span>
         </div>

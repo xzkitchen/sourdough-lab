@@ -82,7 +82,7 @@ function App() {
 
   return (
     <div className="min-h-screen relative">
-      <div className="max-w-2xl mx-auto px-5 py-7 sm:px-8 sm:py-10 relative z-10 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-5 sm:px-8 sm:py-10 relative z-10 space-y-5 sm:space-y-6">
 
         {/* ── Masthead ── */}
         <header className="border-b-2 border-ink pb-4">
@@ -91,7 +91,14 @@ function App() {
               <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
                 № 001 · Vol. 2026
               </div>
-              <h1 className="font-display font-medium text-3xl text-ink leading-none mt-1.5" style={{ letterSpacing: '-0.025em' }}>
+              <h1
+                className="font-display font-medium text-ink leading-none mt-1.5"
+                style={{
+                  fontSize: 'clamp(28px, 7.5vw, 44px)',
+                  letterSpacing: '-0.025em',
+                  fontVariationSettings: "'opsz' 96, 'SOFT' 30, 'wght' 500",
+                }}
+              >
                 Sourdough Lab
               </h1>
               <p className="font-zh text-xs text-muted mt-1">手作酸面包实验室</p>
@@ -118,9 +125,10 @@ function App() {
                 aria-selected={active}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  'py-2.5 transition-colors ease-editorial duration-fast cursor-pointer',
+                  'py-3.5 sm:py-4 transition-colors ease-editorial duration-fast cursor-pointer',
+                  'active:bg-sunken active:scale-[0.98] transition-transform',
                   i > 0 ? 'border-l-2 border-ink' : '',
-                  active ? 'bg-ink text-bg' : 'bg-bg text-ink hover:bg-surface',
+                  active ? 'bg-ink text-bg active:bg-ink' : 'bg-bg text-ink hover:bg-surface',
                 )}
               >
                 <div className={cn(

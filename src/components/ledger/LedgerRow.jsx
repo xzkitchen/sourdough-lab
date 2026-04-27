@@ -21,21 +21,20 @@ export function LedgerRow({ name, en, pct, grams, src, last = false }) {
 
   return (
     <div
-      className={`grid items-baseline gap-1 py-2 ${last ? '' : 'border-b border-line-soft'}`}
-      style={{ gridTemplateColumns: '1fr 50px 60px 38px' }}
+      className={`grid items-baseline gap-x-2 sm:gap-x-3 py-2 grid-cols-[1fr_44px_56px_28px] sm:grid-cols-[1fr_50px_60px_38px] ${last ? '' : 'border-b border-line-soft'}`}
     >
       <div className="min-w-0">
-        <div className="font-zh text-base text-ink leading-tight truncate">{name}</div>
+        <div className="font-zh text-[15px] sm:text-base text-ink leading-tight truncate">{name}</div>
         {en && (
-          <div className="font-serif text-xs text-muted italic mt-0.5 leading-tight truncate">
+          <div className="font-serif text-[11px] sm:text-xs text-muted italic mt-0.5 leading-tight truncate">
             {en}
           </div>
         )}
       </div>
-      <div className="font-mono text-xs text-muted text-right tabular-nums whitespace-nowrap">
+      <div className="font-mono text-[11px] sm:text-xs text-muted text-right tabular-nums whitespace-nowrap">
         {pct}
       </div>
-      <div className="font-mono text-base text-ink text-right tabular-nums whitespace-nowrap">
+      <div className="font-mono text-[15px] sm:text-base text-ink text-right tabular-nums whitespace-nowrap">
         {grams}
         <span className="text-2xs text-faint ml-0.5">g</span>
       </div>

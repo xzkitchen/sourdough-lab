@@ -14,6 +14,8 @@
     -webkit-text-size-adjust: 100%;
     /* 给所有 scrollIntoView 留出 sticky Tab nav 的空间（~60px）+ 呼吸 */
     scroll-padding-top: 80px;
+    /* iOS Safari 底部地址栏 ~44px + 呼吸 —— 防止 sticky/fixed 元素被遮挡 */
+    scroll-padding-bottom: 80px;
   }
 
   body {
@@ -25,12 +27,14 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior-y: none;
+    /* iOS notch + home indicator 安全区适配 */
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Display 标题默认使用 Fraunces */
+  /* Display 标题默认使用 Fraunces — 中等 opsz + 略柔 */
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
-    font-variation-settings: 'opsz' 28, 'SOFT' 50;
+    font-variation-settings: 'opsz' 28, 'SOFT' 50, 'wght' 500;
     font-feature-settings: 'ss01', 'ss02';
   }
 
@@ -54,6 +58,36 @@
   ::selection {
     background-color: #D9C3A8;
     color: #1A1815;
+  }
+}
+
+@layer components {
+  /* ─── Fraunces 可变字体 opsz 按字号绑定 ─────────────
+   * Fraunces 设计上小字应该走低 opsz（更"实用"、笔画更稳），
+   * 大字走高 opsz（笔画对比拉大、肌理出来）。
+   * 没有这层绑定，所有大小都用 opsz=28 看起来会"扁"。
+   * 通过 .font-display 与 size 类组合命中。
+   */
+  .font-display.text-2xs,
+  .font-display.text-xs,
+  .font-display.text-sm {
+    font-variation-settings: 'opsz' 9, 'SOFT' 100, 'wght' 500;
+  }
+  .font-display.text-base,
+  .font-display.text-md {
+    font-variation-settings: 'opsz' 14, 'SOFT' 60, 'wght' 500;
+  }
+  .font-display.text-lg,
+  .font-display.text-xl {
+    font-variation-settings: 'opsz' 28, 'SOFT' 40, 'wght' 500;
+  }
+  .font-display.text-2xl,
+  .font-display.text-3xl {
+    font-variation-settings: 'opsz' 60, 'SOFT' 30, 'wght' 500;
+  }
+  .font-display.text-4xl,
+  .font-display.text-5xl {
+    font-variation-settings: 'opsz' 96, 'SOFT' 20, 'wght' 500;
   }
 }
 

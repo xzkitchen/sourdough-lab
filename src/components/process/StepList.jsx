@@ -158,7 +158,7 @@ function StepRow({
         done && !isOpen ? 'opacity-40' : 'opacity-100',
       ].join(' ')}
     >
-      <div className="grid items-stretch" style={{ gridTemplateColumns: '52px 1fr 72px' }}>
+      <div className="grid items-stretch grid-cols-[44px_1fr_64px] sm:grid-cols-[52px_1fr_72px]">
         {/* 编号格 */}
         <div
           className={[
@@ -166,15 +166,15 @@ function StepRow({
             done || isCurrent ? 'bg-ink text-bg' : 'text-ink',
           ].join(' ')}
         >
-          <div className="font-display font-medium text-xl">
+          <div className="font-display font-medium text-lg sm:text-xl">
             {String(index + 1).padStart(2, '0')}
           </div>
         </div>
 
         {/* 标题 + 标签 */}
-        <div className="px-3.5 py-3">
+        <div className="px-3 sm:px-3.5 py-3 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <div className={`font-zh text-base font-medium ${done ? 'line-through' : ''}`}>
+            <div className={`font-zh text-[15px] sm:text-base font-medium ${done ? 'line-through' : ''}`}>
               {step.title}
             </div>
             {isCurrent && (
@@ -188,14 +188,14 @@ function StepRow({
               </span>
             )}
           </div>
-          <div className="font-mono text-xs text-faint uppercase tracking-[0.18em] mt-1">
+          <div className="font-mono text-[11px] sm:text-xs text-faint uppercase tracking-[0.18em] mt-1 truncate">
             {step.subtitle}
           </div>
         </div>
 
         {/* 右侧时间 */}
-        <div className="px-3.5 py-3 text-right border-l border-line-soft border-dashed">
-          <div className="font-mono text-xs font-semibold text-ink tabular-nums">
+        <div className="px-2 sm:px-3.5 py-3 text-right border-l border-line-soft border-dashed">
+          <div className="font-mono text-[11px] sm:text-xs font-semibold text-ink tabular-nums">
             {step.timeValue}
           </div>
           <div className="font-mono text-2xs text-faint uppercase tracking-[0.15em] mt-0.5">
@@ -206,7 +206,7 @@ function StepRow({
 
       {/* 展开区：未完成 → tips + Mark/Locked */}
       {isOpen && !done && (
-        <div className="border-t border-line-soft px-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
+        <div className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
           {step.tips.map((t, j) => (
             <div
               key={j}
@@ -261,7 +261,7 @@ function StepRow({
 
       {/* 展开区：已完成 → Undo */}
       {isOpen && done && (
-        <div className="border-t border-line-soft px-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
+        <div className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
           <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mb-2">
             ✓ Completed · 已完成
           </div>

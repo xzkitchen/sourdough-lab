@@ -17,7 +17,7 @@ import { MODIFIERS_BY_ID } from '../../domain/modifiers/index.js';
  */
 export function FlavorPresets({ flavors, activeId, onApply }) {
   return (
-    <div className="grid grid-cols-2 border border-ink">
+    <div className="grid grid-cols-1 sm:grid-cols-2 border border-ink">
       {flavors.map((f, i) => {
         const sel = activeId === f.id;
         const col = i % 2;
@@ -38,17 +38,24 @@ export function FlavorPresets({ flavors, activeId, onApply }) {
             onClick={() => onApply(f)}
             aria-pressed={sel}
             className={[
-              'text-left p-3 cursor-pointer transition-colors duration-fast ease-editorial',
-              sel ? 'bg-ink text-bg' : 'bg-surface text-ink hover:bg-sunken',
-              col > 0 ? 'border-l border-ink' : '',
-              row > 0 ? 'border-t border-ink' : '',
+              'text-left px-4 py-3.5 sm:p-3 cursor-pointer transition-colors duration-fast ease-editorial',
+              'active:bg-sunken',
+              sel ? 'bg-ink text-bg active:bg-ink' : 'bg-surface text-ink hover:bg-sunken',
+              // mobile: 单列，每一项之间用 top border 分隔（首项除外）
+              i > 0 ? 'border-t border-ink' : '',
+              // sm: 切换到 2 列，列分隔靠 left border
+              col > 0 ? 'sm:border-l sm:border-ink' : '',
+              // sm: 第一行右侧 cell（i=1）在 mobile 已加 top border，桌面端要消掉
+              i === 1 ? 'sm:border-t-0' : '',
+              // sm: 行分隔用 top border（row > 0 全部）
+              row > 0 ? 'sm:border-t sm:border-ink' : '',
             ].join(' ')}
-            style={{ minHeight: 78 }}
+            style={{ minHeight: 64 }}
           >
             <div className={`font-mono text-2xs tracking-[0.22em] ${sel ? 'opacity-65' : 'text-faint'}`}>
               № {String(i + 1).padStart(2, '0')}
             </div>
-            <div className="font-display text-sm font-medium mt-1 leading-tight" style={{ letterSpacing: '-0.01em' }}>
+            <div className="font-display text-base sm:text-sm font-medium mt-1 leading-tight" style={{ letterSpacing: '-0.01em' }}>
               {f.nameLatin}
             </div>
             <div className={`font-zh text-xs mt-0.5 ${sel ? 'opacity-85' : 'text-muted'}`}>

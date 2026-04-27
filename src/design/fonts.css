@@ -1,19 +1,19 @@
 /**
  * Sourdough Lab — V2 Ledger Font Stack
  *
- * Google Fonts CSS 变量。配合 index.html 中 <link> 预加载使用。
+ * 与 index.html 中 <link> 加载的 Google Fonts 对齐：
  *
- *   --font-display  EB Garamond              主标题、克数、大字数字
- *   --font-serif    Cormorant Garamond       拉丁副标题、引号
- *   --font-zh       Noto Serif SC            中文标题
- *   --font-body     Noto Sans SC + system    中文正文
- *   --font-mono     IBM Plex Mono            编号、间距字符、tabular nums
+ *   --font-display  Fraunces (variable: opsz/SOFT/wght)  主标题、克数、大字数字
+ *   --font-serif    Fraunces italic                       拉丁副标题、引号
+ *   --font-zh       Noto Serif SC                         中文标题
+ *   --font-body     Inter + Noto Sans SC                  正文
+ *   --font-mono     IBM Plex Mono                         编号、间距字符、tabular nums
  */
 
 :root {
-  --font-display: 'EB Garamond', Georgia, serif;
-  --font-serif:   'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-display: 'Fraunces', 'Noto Serif SC', Georgia, serif;
+  --font-serif:   'Fraunces', 'Noto Serif SC', Georgia, serif;
   --font-zh:      'Noto Serif SC', 'Source Han Serif SC', serif;
-  --font-body:    'Noto Sans SC', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body:    'Inter', 'Noto Sans SC', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }

@@ -15,20 +15,20 @@ import React from 'react';
  */
 export function SecHead({ n, label, zhLabel, right, className = '' }) {
   return (
-    <div className={`pt-3 mb-3 border-t border-ink ${className}`}>
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-3 min-w-0">
-          <span className="font-mono text-2xs text-muted uppercase tracking-[0.24em] whitespace-nowrap">
+    <div className={`pt-2 mb-2 sm:pt-3 sm:mb-3 border-t border-ink ${className}`}>
+      <div className="flex items-baseline justify-between gap-2 sm:gap-3">
+        <div className="flex items-baseline gap-2 sm:gap-3 min-w-0">
+          <span className="font-mono text-2xs text-muted uppercase tracking-[0.20em] sm:tracking-[0.24em] whitespace-nowrap">
             № {String(n).padStart(2, '0')}
           </span>
-          <span className="font-mono text-xs text-ink uppercase tracking-[0.18em] whitespace-nowrap">
+          <span className="font-mono text-[11px] sm:text-xs text-ink uppercase tracking-[0.16em] sm:tracking-[0.18em] whitespace-nowrap">
             {label}
           </span>
         </div>
         {right && <div className="flex-shrink-0">{right}</div>}
       </div>
       {zhLabel && (
-        <div className="font-zh text-sm text-muted mt-0.5">{zhLabel}</div>
+        <div className="font-zh text-[13px] sm:text-sm text-muted mt-0.5">{zhLabel}</div>
       )}
     </div>
   );
