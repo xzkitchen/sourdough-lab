@@ -173,8 +173,10 @@ function StepRow({
             </div>
           )}
 
-          {/* Cold retard 计时器插入（仅 phase='cold'）*/}
-          {coldSlot && <div className="mt-3">{coldSlot}</div>}
+          {/* Cold retard 计时器插入（仅 phase='cold' 且未被 lock）。
+              locked 时不渲染——让下方的 "Locked · 需先完成 X" 面板单独说话，
+              避免用户绕过流程顺序在 cold-retard 上误点 Start。*/}
+          {coldSlot && !locked && <div className="mt-3">{coldSlot}</div>}
 
           {locked ? (
             <div className="mt-3 px-3 py-2 border border-line-soft border-dashed">
