@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
- * ColdRetardTracker — 冷藏后熟计时器
+ * ColdRetardTracker — 冷藏后熟倒计时器
  *
- * 编辑器 ledger 风格的"打卡条"：
- *   - 顶部：标签 + 推荐窗口 / Fraunces 斜体大号 HH:MM
- *   - 启动前：Window picker（12/14/16/20/24h）让用户决定目标小时数
- *   - 启动后：状态行（剩余时间提示）+ 右侧 Reset
+ *   未启动: 显示目标小时数 (picker 选 16h → 大字显示 16:00)
+ *   启动后: 倒计时 16:00 → 00:00
+ *   到 0:   "Ready" 状态，超过显示 Overdue
+ *
+ * 编辑器 ledger 风格：Fraunces 斜体大字 + 小秒数 ticker 验证活性。
  *
  * Props:
- *   stepId        步骤 id（用作 storage key 一部分）
+ *   stepId        步骤 id（用作 storage key）
  *   minHours      推荐最短小时数（默认 8）
- *   maxHours      推荐最长小时数 —— 默认 14，但用户可在 picker 里改成 12/16/20/24
- *   storageKey    可选：自定义 localStorage key（默认 sdl.cold.<stepId>）
+ *   maxHours      默认目标小时数（默认 14；用户可在 picker 里改）
+ *   storageKey    可选自定义 key
  */
 const WINDOW_OPTIONS = [12, 14, 16, 20, 24];
 
@@ -20,7 +21,6 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
   const key = storageKey || `sdl.cold.${stepId}`;
   const winKey = `${key}.window`;
 
-  // 起始时间戳（ms）；null 表示未启动
   const [startedAt, setStartedAt] = useState(() => {
     try {
       const raw = localStorage.getItem(key);
@@ -28,7 +28,6 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
     } catch { return null; }
   });
 
-  // 用户选择的目标 max 小时数（可在 picker 里调）
   const [maxHours, setMaxHours] = useState(() => {
     try {
       const raw = localStorage.getItem(winKey);
@@ -37,11 +36,9 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
     } catch { return defaultMaxHours; }
   });
 
-  // Reset 二步确认
   const [resetState, setResetState] = useState('idle');
   const resetTimerRef = useRef(null);
 
-  // 1s tick
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!startedAt) return;
@@ -85,29 +82,37 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
     try { localStorage.setItem(winKey, String(h)); } catch {}
   }, [winKey]);
 
-  // 计算 elapsed 与状态
-  const elapsed = startedAt ? Math.max(0, now - startedAt) : 0;
-  const totalMin = Math.floor(elapsed / 60000);
-  const totalSec = Math.floor(elapsed / 1000) % 60;
-  const hh = Math.floor(totalMin / 60);
-  const mm = totalMin % 60;
+  // ─── 倒计时计算 ────────────────────────────────
+  const targetMs = maxHours * 3600000;
+  const minMs = minHours * 3600000;
+  const elapsedMs = startedAt ? Math.max(0, now - startedAt) : 0;
+  const remainingMs = startedAt ? Math.max(0, targetMs - elapsedMs) : targetMs;
 
+  // 大字显示的内容：未启动 = 目标，启动后 = 剩余
+  const displaySec = Math.floor(remainingMs / 1000);
+  const dispHh = Math.floor(displaySec / 3600);
+  const dispMm = Math.floor((displaySec % 3600) / 60);
+  const dispSs = displaySec % 60;
+
+  // 状态判断（基于 elapsed 而非 remaining）
   let status = 'idle';
   let statusEn = 'Standing by';
   let statusZh = '待启动';
   if (startedAt) {
-    if (hh < minHours) {
+    if (elapsedMs < minMs) {
       status = 'early';
-      statusEn = `Resting · ${minHours - hh}h to window`;
-      statusZh = `静置中 · 距下限 ${minHours - hh}h`;
-    } else if (hh <= maxHours) {
+      const toWindowH = Math.ceil((minMs - elapsedMs) / 3600000);
+      statusEn = `Resting · ${toWindowH}h to window`;
+      statusZh = `静置中 · 距下限 ${toWindowH}h`;
+    } else if (elapsedMs <= targetMs) {
       status = 'window';
       statusEn = 'In window · ready to bake';
       statusZh = '可烤窗口';
     } else {
       status = 'over';
-      statusEn = `Overdue · ${hh - maxHours}h past max`;
-      statusZh = `已超过 ${hh - maxHours}h`;
+      const overH = Math.ceil((elapsedMs - targetMs) / 3600000);
+      statusEn = `Overdue · ${overH}h past max`;
+      statusZh = `已超过 ${overH}h`;
     }
   }
 
@@ -116,6 +121,8 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
     : status === 'over'
       ? 'var(--cold-over)'
       : 'var(--cold-rest)';
+
+  const timeLabel = startedAt ? 'remaining · 剩余' : 'target · 目标';
 
   return (
     <div
@@ -126,7 +133,7 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
         .ldr-status::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px; vertical-align: middle; background: var(--dot, #1A1715); border-radius: 9999px; }
       `}</style>
 
-      {/* 顶部：标签 / 时间（Fraunces 斜体，3xl，更编辑器、不死板） */}
+      {/* 顶部：标签 / 倒计时大字 */}
       <div className="flex justify-between items-baseline gap-3">
         <div className="min-w-0">
           <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
@@ -145,13 +152,12 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
               fontVariationSettings: "'opsz' 80, 'SOFT' 60, 'wght' 500",
             }}
           >
-            {String(hh).padStart(2, '0')}
+            {String(dispHh).padStart(2, '0')}
             <span className="text-faint">:</span>
-            {String(mm).padStart(2, '0')}
+            {String(dispMm).padStart(2, '0')}
           </div>
-          {/* 副行：未启动时不显示，启动后显示秒数（验证计时确实在跑） */}
           <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] mt-1 tabular-nums">
-            {startedAt ? `${String(totalSec).padStart(2, '0')}s · elapsed` : 'elapsed'}
+            {startedAt ? `${String(dispSs).padStart(2, '0')}s · ${timeLabel}` : timeLabel}
           </div>
         </div>
       </div>
@@ -197,7 +203,6 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
           <div className="font-zh text-xs text-muted truncate mt-0.5">{statusZh}</div>
         </div>
 
-        {/* 右侧：未启动 → Start；启动后 → Reset（两步确认）*/}
         <div className="shrink-0">
           {!startedAt ? (
             <button

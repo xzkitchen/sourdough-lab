@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 
 /**
  * StepList — V2 Ledger 流程清单
@@ -9,29 +9,22 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
  *   - Mark complete → 自动展开下一未完成步骤 + 平滑滚到 sticky 头部下方
  *   - Locked 守卫：未到的步骤可以预读，但不能"跳着"标完成
  *   - 已完成的步骤可以再次点开 → "↶ Undo" 撤销该步
- *   - 所有步骤之后的 footer 行右侧有 Reset 按钮（不在 sticky 头部抢戏）
+ *
+ * 注：Reset 按钮在 ProcessProgress（sticky 头部）里，不在这里——单一来源。
  *
  * Props:
  *   steps             enhanceSteps() 输出
  *   completedIds      Set<string>
  *   currentStepId     string | null
  *   onToggle(stepId)
- *   onReset()
  *   coldSlot          可选：ColdRetardTracker 的 React 节点
  */
-export function StepList({ steps, completedIds, currentStepId, onToggle, onReset, coldSlot }) {
+export function StepList({ steps, completedIds, currentStepId, onToggle, coldSlot }) {
   const [openId, setOpenId] = useState(null);
 
-  // Reset 二步确认状态：'idle' → 'confirming' → reset/timeout 回 'idle'
-  const [resetState, setResetState] = useState('idle');
-  const resetTimerRef = useRef(null);
-
-  const completed = steps.filter(s => completedIds.has(s.id)).length;
-
   // 完成步骤后自动滚到下一步：scrollIntoView + scroll-mt 已在 StepRow 上设
-  // sticky 头部高度 ~150px (mobile) / ~160px (desktop)。
+  // sticky 头部高度 ~150-170px (mobile) / ~165-180px (desktop)。
   const scrollToStep = useCallback((stepId) => {
-    // setTimeout 让 React 先 render 出展开区再滚动，避免位置跳动
     setTimeout(() => {
       const el = document.querySelector(`[data-step-id="${stepId}"]`);
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -40,7 +33,6 @@ export function StepList({ steps, completedIds, currentStepId, onToggle, onReset
 
   const markComplete = useCallback((stepId) => {
     onToggle(stepId);
-    // 找下一个未完成（排除刚 toggle 的这一步）
     const idx = steps.findIndex(s => s.id === stepId);
     const next = steps.slice(idx + 1).find(s => !completedIds.has(s.id));
     setOpenId(next ? next.id : null);
@@ -51,32 +43,6 @@ export function StepList({ steps, completedIds, currentStepId, onToggle, onReset
     onToggle(stepId);
     setOpenId(stepId);
   }, [onToggle]);
-
-  const handleReset = useCallback(() => {
-    if (completed === 0) return;
-    if (resetState === 'idle') {
-      // 第一次点：进入待确认态，3 秒未二次点则静默回滚
-      setResetState('confirming');
-      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-      resetTimerRef.current = setTimeout(() => {
-        setResetState('idle');
-        resetTimerRef.current = null;
-      }, 3000);
-    } else {
-      // 第二次点：执行重置
-      if (resetTimerRef.current) {
-        clearTimeout(resetTimerRef.current);
-        resetTimerRef.current = null;
-      }
-      setResetState('idle');
-      onReset();
-      setOpenId(steps[0]?.id || null);
-    }
-  }, [completed, onReset, steps, resetState]);
-
-  useEffect(() => () => {
-    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-  }, []);
 
   return (
     <div className="space-y-0">
@@ -97,27 +63,8 @@ export function StepList({ steps, completedIds, currentStepId, onToggle, onReset
         />
       ))}
 
-      {/* 末尾 footer：左侧 — end —，右侧 Reset 按钮（低调、不抢戏） */}
-      <div className="flex items-center justify-between gap-3 py-7 mt-2 border-t border-line-soft">
-        <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
-          — end —
-        </div>
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={completed === 0}
-          aria-pressed={resetState === 'confirming'}
-          className={[
-            'font-mono text-2xs uppercase tracking-[0.24em] px-2.5 py-1.5 border whitespace-nowrap transition-colors duration-fast',
-            completed === 0
-              ? 'border-line-soft text-faint cursor-not-allowed'
-              : resetState === 'confirming'
-                ? 'border-accent bg-accent text-bg cursor-pointer'
-                : 'border-ink text-ink hover:bg-ink hover:text-bg active:bg-sunken cursor-pointer',
-          ].join(' ')}
-        >
-          {resetState === 'confirming' ? '↻ Tap again to confirm' : '↻ Reset progress'}
-        </button>
+      <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em] text-center py-7">
+        — end —
       </div>
     </div>
   );
