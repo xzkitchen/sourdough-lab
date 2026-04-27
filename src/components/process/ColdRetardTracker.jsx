@@ -16,6 +16,28 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
  *   storageKey    可选自定义 key
  */
 const WINDOW_OPTIONS = [12, 14, 16, 20, 24];
+const PREHEAT_MIN = 45; // 烤箱 + 铸铁锅预热 45 分钟（行业惯例）
+
+/** 把时间戳格式化成 HH:MM */
+function fmtClock(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** "今日 / 明日 / 后天 / +Xd" */
+function fmtDayHint(ts) {
+  if (!ts) return '';
+  const eventDay = new Date(ts); eventDay.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.round((eventDay - today) / 86400000);
+  if (diff === 0) return '今日 · today';
+  if (diff === 1) return '明日 · tmr';
+  if (diff === 2) return '后天 · +2d';
+  if (diff > 2) return `+${diff}d`;
+  if (diff < 0) return `${diff}d`;
+  return '';
+}
 
 export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHours = 14, storageKey }) {
   const key = storageKey || `sdl.cold.${stepId}`;
@@ -87,6 +109,10 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
   const minMs = minHours * 3600000;
   const elapsedMs = startedAt ? Math.max(0, now - startedAt) : 0;
   const remainingMs = startedAt ? Math.max(0, targetMs - elapsedMs) : targetMs;
+
+  // 关键时刻（绝对时间）：开烤 = 起算 + 选定时长；预热 = 开烤前 PREHEAT_MIN 分钟
+  const bakeAt = startedAt ? startedAt + targetMs : null;
+  const preheatAt = bakeAt ? bakeAt - PREHEAT_MIN * 60000 : null;
 
   // 大字显示的内容：未启动 = 目标，启动后 = 剩余
   const displaySec = Math.floor(remainingMs / 1000);
@@ -187,6 +213,56 @@ export function ColdRetardTracker({ stepId, minHours = 8, maxHours: defaultMaxHo
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Schedule · 时间表：启动后显示具体的预热 / 入炉时间点（绝对时间） */}
+      {startedAt && (
+        <div className="mt-3 pt-3 border-t border-line-soft">
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] mb-2">
+            Schedule · 时间表
+          </div>
+          <div className="space-y-2">
+            {/* Preheat */}
+            <div className="flex items-baseline justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-mono text-2xs text-ink uppercase tracking-[0.18em]">
+                  Preheat oven
+                </div>
+                <div className="font-zh text-[11px] text-muted mt-0.5">
+                  预热烤箱 · 烤前 {PREHEAT_MIN} 分钟
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="font-mono text-base sm:text-lg font-semibold text-ink tabular-nums leading-none">
+                  {fmtClock(preheatAt)}
+                </div>
+                <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] mt-1">
+                  {fmtDayHint(preheatAt)}
+                </div>
+              </div>
+            </div>
+
+            {/* Bake */}
+            <div className="flex items-baseline justify-between gap-3 pt-1.5 border-t border-line-soft border-dashed">
+              <div className="min-w-0">
+                <div className="font-mono text-2xs text-ink uppercase tracking-[0.18em]">
+                  Start baking
+                </div>
+                <div className="font-zh text-[11px] text-muted mt-0.5">
+                  开始烘烤 · 入炉时间
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="font-mono text-base sm:text-lg font-semibold text-ink tabular-nums leading-none">
+                  {fmtClock(bakeAt)}
+                </div>
+                <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] mt-1">
+                  {fmtDayHint(bakeAt)}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
