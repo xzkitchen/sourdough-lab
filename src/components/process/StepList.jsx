@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 
 /**
  * StepList — V2 Ledger 流程清单
@@ -10,20 +10,20 @@ import React, { useState, useCallback } from 'react';
  *   - Locked 守卫：未到的步骤可以预读，但不能"跳着"标完成
  *   - 已完成的步骤可以再次点开 → "↶ Undo" 撤销该步
  *
- * 注：Reset 按钮在 ProcessProgress（sticky 头部）里，不在这里——单一来源。
+ * 注：Reset 按钮在 ProcessProgress（sticky 头部）里。
+ * openId 已抬到 App 层，让 reset 能同时弹回第一步。
  *
  * Props:
  *   steps             enhanceSteps() 输出
  *   completedIds      Set<string>
  *   currentStepId     string | null
+ *   openId            string | null  当前展开的 step（受控）
+ *   onOpenChange(id)  展开 step 切换
  *   onToggle(stepId)
  *   coldSlot          可选：ColdRetardTracker 的 React 节点
  */
-export function StepList({ steps, completedIds, currentStepId, onToggle, coldSlot }) {
-  const [openId, setOpenId] = useState(null);
-
+export function StepList({ steps, completedIds, currentStepId, openId, onOpenChange, onToggle, coldSlot }) {
   // 完成步骤后自动滚到下一步：scrollIntoView + scroll-mt 已在 StepRow 上设
-  // sticky 头部高度 ~150-170px (mobile) / ~165-180px (desktop)。
   const scrollToStep = useCallback((stepId) => {
     setTimeout(() => {
       const el = document.querySelector(`[data-step-id="${stepId}"]`);
@@ -35,14 +35,14 @@ export function StepList({ steps, completedIds, currentStepId, onToggle, coldSlo
     onToggle(stepId);
     const idx = steps.findIndex(s => s.id === stepId);
     const next = steps.slice(idx + 1).find(s => !completedIds.has(s.id));
-    setOpenId(next ? next.id : null);
+    onOpenChange(next ? next.id : null);
     if (next) scrollToStep(next.id);
-  }, [onToggle, steps, completedIds, scrollToStep]);
+  }, [onToggle, onOpenChange, steps, completedIds, scrollToStep]);
 
   const undoStep = useCallback((stepId) => {
     onToggle(stepId);
-    setOpenId(stepId);
-  }, [onToggle]);
+    onOpenChange(stepId);
+  }, [onToggle, onOpenChange]);
 
   return (
     <div className="space-y-0">
@@ -55,7 +55,7 @@ export function StepList({ steps, completedIds, currentStepId, onToggle, coldSlo
           done={completedIds.has(s.id)}
           isCurrent={s.id === currentStepId}
           isOpen={openId === s.id}
-          onOpen={() => setOpenId(openId === s.id ? null : s.id)}
+          onOpen={() => onOpenChange(openId === s.id ? null : s.id)}
           onComplete={() => markComplete(s.id)}
           onUndo={() => undoStep(s.id)}
           prevIncomplete={steps.slice(0, i).find(p => !completedIds.has(p.id))}

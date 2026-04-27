@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from './lib/cn.js';
 import { useStickyState } from './hooks/useStickyState.js';
@@ -43,6 +43,8 @@ function App() {
   const [selected, setSelected] = useStickyState([], 'sdlv2_selected_modifiers');
   const [seedStarter, setSeedStarter] = useStickyState(60, 'sdlv2_seed_starter');
   const [completedList, setCompletedList] = useStickyState([], 'sdlv2_completed_steps');
+  // 当前展开的步骤 id —— 抬到 App 是为了让 resetProgress 能一并重置展开态
+  const [openStepId, setOpenStepId] = useState(null);
 
   const base = DEFAULT_BASE;
 
@@ -76,7 +78,16 @@ function App() {
 
   const resetProgress = useCallback(() => {
     setCompletedList([]);
-  }, [setCompletedList]);
+    // 一并把展开态拨回第一步 + 平滑滚动到它（让用户视觉上"回到原点"）
+    const firstId = steps[0]?.id || null;
+    setOpenStepId(firstId);
+    if (firstId) {
+      setTimeout(() => {
+        const el = document.querySelector(`[data-step-id="${firstId}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+  }, [setCompletedList, steps]);
 
   const activeFlavor = useMemo(() => matchFlavor(selected) || FLAVORS[0], [selected]);
   const activeIndex = FLAVORS.findIndex(f => f.id === activeFlavor.id);
@@ -222,6 +233,8 @@ function App() {
                   steps={steps}
                   completedIds={completedIds}
                   currentStepId={currentStepId}
+                  openId={openStepId}
+                  onOpenChange={setOpenStepId}
                   onToggle={toggleStep}
                   coldSlot={coldSlot}
                 />
