@@ -191,6 +191,48 @@
     border-color: #EFEADF;
   }
 
+  /* ─── 装饰性侧栏细线（v2-ledger 报刊感）─────────────
+   * 在视口左右各画一条 1px 极淡墨色竖线，给整页一种"账册装订"的
+   * 视觉感。位置贴近内容容器的内边距（mobile 16px / desktop 32px）。
+   * 透明度刻意做得很低，是底纹不是装饰。
+   */
+  .ledger-side-rules {
+    position: relative;
+  }
+  .ledger-side-rules::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(to right,
+        transparent 14px,
+        rgba(26, 23, 21, 0.06) 14px,
+        rgba(26, 23, 21, 0.06) 15px,
+        transparent 15px),
+      linear-gradient(to right,
+        transparent calc(100% - 15px),
+        rgba(26, 23, 21, 0.06) calc(100% - 15px),
+        rgba(26, 23, 21, 0.06) calc(100% - 14px),
+        transparent calc(100% - 14px));
+  }
+  @media (min-width: 640px) {
+    .ledger-side-rules::after {
+      background-image:
+        linear-gradient(to right,
+          transparent 30px,
+          rgba(26, 23, 21, 0.08) 30px,
+          rgba(26, 23, 21, 0.08) 31px,
+          transparent 31px),
+        linear-gradient(to right,
+          transparent calc(100% - 31px),
+          rgba(26, 23, 21, 0.08) calc(100% - 31px),
+          rgba(26, 23, 21, 0.08) calc(100% - 30px),
+          transparent calc(100% - 30px));
+    }
+  }
+
   /* ─── Hide scrollbar 完全（保持可滚但不显示 bar） ─── */
   ::-webkit-scrollbar {
     display: none;

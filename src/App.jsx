@@ -76,42 +76,66 @@ function App() {
   const activeFlavor = useMemo(() => matchFlavor(selected) || FLAVORS[0], [selected]);
   const activeIndex = FLAVORS.findIndex(f => f.id === activeFlavor.id);
 
+  // 主刊头日期：MM / DD / YY 格式，编辑器风
+  const dateStr = useMemo(() => {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${mm} / ${dd} / ${yy}`;
+  }, []);
+
   // 冷藏步骤插入计时器
   const coldStep = steps.find(s => s.phase === 'cold');
   const coldSlot = coldStep ? <ColdRetardTracker stepId={coldStep.id} /> : null;
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative ledger-side-rules">
       <div className="max-w-2xl mx-auto px-4 py-5 sm:px-8 sm:py-10 relative z-10 space-y-5 sm:space-y-6">
 
-        {/* ── Masthead ── */}
-        <header className="border-b-2 border-ink pb-4">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
+        {/* ── Masthead ── 对齐 v2-ledger 设计：两行标题（第二行斜体）+ 右侧日期 */}
+        <header className="border-b-2 border-ink pb-4 sm:pb-5">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em] mb-1.5">
                 № 001 · Vol. 2026
               </div>
               <h1
-                className="font-display font-medium text-ink leading-none mt-1.5"
+                className="font-display font-medium text-ink leading-[0.95]"
                 style={{
-                  fontSize: 'clamp(28px, 7.5vw, 44px)',
-                  letterSpacing: '-0.025em',
+                  fontSize: 'clamp(34px, 9vw, 56px)',
+                  letterSpacing: '-0.03em',
                   fontVariationSettings: "'opsz' 96, 'SOFT' 30, 'wght' 500",
                 }}
               >
-                Sourdough Lab
+                Sourdough
               </h1>
-              <p className="font-zh text-xs text-muted mt-1">手作酸面包实验室</p>
+              <div
+                className="font-display font-medium italic text-ink leading-[0.95] mt-0.5"
+                style={{
+                  fontSize: 'clamp(34px, 9vw, 56px)',
+                  letterSpacing: '-0.03em',
+                  fontVariationSettings: "'opsz' 96, 'SOFT' 30, 'wght' 500",
+                }}
+              >
+                Lab.
+              </div>
             </div>
-            <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em] text-right hidden sm:block">
-              Modular<br/>edition
+            <div className="text-right shrink-0 pb-1">
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.25em]">
+                Date
+              </div>
+              <div className="font-mono text-[11px] sm:text-xs text-ink mt-1 tabular-nums whitespace-nowrap">
+                {dateStr}
+              </div>
             </div>
           </div>
+          <p className="font-zh text-xs text-muted mt-3 italic">— 手作酸面包实验室</p>
         </header>
 
-        {/* ── Tab nav ── */}
+        {/* ── Tab nav ── 1px hairline 编辑器风（不再 2px 块状） */}
         <nav
-          className="grid grid-cols-3 border-2 border-ink sticky top-0 z-30 bg-bg"
+          className="grid grid-cols-3 border border-ink sticky top-0 z-30 bg-bg"
           role="tablist"
           aria-label="页面切换"
         >
@@ -127,7 +151,7 @@ function App() {
                 className={cn(
                   'py-3.5 sm:py-4 transition-colors ease-editorial duration-fast cursor-pointer',
                   'active:bg-sunken active:scale-[0.98] transition-transform',
-                  i > 0 ? 'border-l-2 border-ink' : '',
+                  i > 0 ? 'border-l border-ink' : '',
                   active ? 'bg-ink text-bg active:bg-ink' : 'bg-bg text-ink hover:bg-surface',
                 )}
               >
@@ -198,13 +222,20 @@ function App() {
           </motion.section>
         </AnimatePresence>
 
-        {/* ── Colophon ── */}
-        <footer className="border-t-2 border-ink pt-3 mt-10">
-          <div className="flex justify-between items-baseline">
-            <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
-              Sourdough Lab · 2026
+        {/* ── Colophon ── 编辑器收尾：1px 软线 + 斜体小字（对齐 v2-ledger / editorial 风格）*/}
+        <footer className="border-t border-line-soft pt-5 mt-12">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="font-display italic text-muted text-sm" style={{ fontVariationSettings: "'opsz' 14, 'wght' 400" }}>
+                Sourdough Lab · 酸种创意实验室
+              </div>
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">
+                Est. 2026 · Set in Fraunces &amp; Inter · Printed on warm paper
+              </div>
             </div>
-            <div className="font-zh text-xs text-faint">编辑器 · ledger ed.</div>
+            <div className="font-display italic text-faint text-xs" style={{ fontVariationSettings: "'opsz' 12, 'wght' 400" }}>
+              — Flour, water, salt, time.
+            </div>
           </div>
         </footer>
       </div>

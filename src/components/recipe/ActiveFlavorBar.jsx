@@ -16,7 +16,7 @@ import { StampRadial } from '../ledger/index.js';
  */
 export function ActiveFlavorBar({ flavor, index, hydration }) {
   return (
-    <div className="sticky top-[76px] sm:top-[88px] z-20 bg-bg/95 backdrop-blur-sm border-b border-ink">
+    <div className="sticky top-[80px] sm:top-[90px] z-20 bg-bg/95 backdrop-blur-sm border-b border-ink">
       <div className="grid items-center gap-2 sm:gap-3 py-2.5 sm:py-3 grid-cols-[36px_1fr_auto] sm:grid-cols-[40px_1fr_auto]">
         {/* 圆章 + 编号 */}
         <div className="relative w-9 h-9 sm:w-10 sm:h-10">

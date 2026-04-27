@@ -22,11 +22,11 @@ export const colors = {
   line:     '#3A3530',   // 1px 实线 —— 跟 ink 同色系，比之前的 #E5DED0 重很多（编辑器风）
   lineSoft: '#C9BFAE',   // 弱分隔（虚线、软线）
 
-  // Accent — 唯一焦土色
-  accent:     '#B85A3E',  // 焦土红（V2 logo 章）
+  // Accent — 唯一焦土色（对齐 v2-ledger.jsx 的 burnt sienna）
+  accent:     '#b94a20',  // 烧赭（v2 ledger 章印色，比 #B85A3E 更暖更沉）
   accentSoft: '#E8C9B8',  // hover / 淡底
-  accentInk:  '#7A2E1A',  // 焦土上的深色文字
-  accentLine: '#D08060',  // 焦土线条
+  accentInk:  '#6e3a1a',  // 焦土上的深色文字（略偏暖、降饱和）
+  accentLine: '#c46a3a',  // 焦土线条
 
   // Semantic
   warn:   '#A04530',
