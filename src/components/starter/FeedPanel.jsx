@@ -104,7 +104,7 @@ export function FeedPanel({
         <Stepper
           value={seedStarter}
           onChange={onSeedChange}
-          step={5}
+          step={1}
           min={5}
           suffix="g"
           labelEn="Existing"
