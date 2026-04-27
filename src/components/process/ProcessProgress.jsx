@@ -53,7 +53,9 @@ export function ProcessProgress({ steps, completedIds, currentStepId, onReset })
 
   return (
     <div className="border-b border-line-soft bg-bg">
-      <div className="flex items-start gap-3 sm:gap-4 py-3 sm:py-3.5 px-3 sm:px-4">
+      {/* py-2 sm:py-2.5 (比 ActiveFlavorBar 的 py-3 小 8px) 抵消下方 segment bar 9px 高度，
+          让两个 sticky bar 总高度对齐 */}
+      <div className="flex items-center gap-3 sm:gap-4 py-2 sm:py-2.5 px-3 sm:px-4">
         {/* 左：双语标签 + 计数 */}
         <div className="flex-1 min-w-0">
           <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] whitespace-nowrap">
@@ -64,15 +66,8 @@ export function ProcessProgress({ steps, completedIds, currentStepId, onReset })
           </div>
         </div>
 
-        {/* 右：% 大字 + Reset 按钮（竖排，紧凑） */}
-        <div className="shrink-0 flex flex-col items-end gap-2">
-          <div
-            className="font-display font-medium text-ink tabular-nums leading-none"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            <span className="text-2xl sm:text-3xl">{percent}</span>
-            <span className="font-mono text-sm sm:text-base font-normal text-faint ml-0.5">%</span>
-          </div>
+        {/* 右：Reset + % 大字（同一行，items-center 对齐）*/}
+        <div className="shrink-0 flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={handleReset}
@@ -89,6 +84,13 @@ export function ProcessProgress({ steps, completedIds, currentStepId, onReset })
           >
             {resetState === 'confirming' ? '↻ Confirm?' : '↻ Reset'}
           </button>
+          <div
+            className="font-display font-medium text-ink tabular-nums leading-none"
+            style={{ letterSpacing: '-0.02em' }}
+          >
+            <span className="text-2xl">{percent}</span>
+            <span className="font-mono text-sm font-normal text-faint ml-0.5">%</span>
+          </div>
         </div>
       </div>
 
