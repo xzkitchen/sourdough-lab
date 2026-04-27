@@ -16,7 +16,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
  *   storageKey    可选自定义 key
  */
 const WINDOW_OPTIONS = [12, 14, 16, 20, 24];
-const PREHEAT_MIN = 45; // 烤箱 + 铸铁锅预热 45 分钟（行业惯例）
+const PREHEAT_MIN = 60; // 烤箱 + 铸铁锅预热 1 小时（与 step 13"预热烘烤"描述一致）
 
 /** 把时间戳格式化成 HH:MM */
 function fmtClock(ts) {
