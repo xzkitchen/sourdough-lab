@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 
 /**
  * StepList — V2 Ledger 流程清单
@@ -9,29 +9,19 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
  *   - Mark complete → 自动展开下一未完成步骤
  *   - Locked 守卫：未到的步骤可以预读，但不能"跳着"标完成
  *   - 已完成的步骤可以再次点开 → "↶ Undo" 撤销该步
- *   - 顶部进度条 + Reset 按钮（confirm 二次确认）
+ *
+ * 注：进度条 / Reset 按钮 / segment bar 已抽出到 ProcessProgress 组件，
+ * 由 App.jsx 在 sticky 头部渲染。
  *
  * Props:
  *   steps             enhanceSteps() 输出
  *   completedIds      Set<string>
+ *   currentStepId     string | null  外部传入（避免重复计算）
  *   onToggle(stepId)
- *   onReset()
  *   coldSlot          可选：ColdRetardTracker 的 React 节点，会被插入到 phase='cold' 的步骤展开区
  */
-export function StepList({ steps, completedIds, onToggle, onReset, coldSlot }) {
+export function StepList({ steps, completedIds, currentStepId, onToggle, coldSlot }) {
   const [openId, setOpenId] = useState(null);
-
-  // Reset 二步确认状态：'idle' → 'confirming' → reset/timeout 回 'idle'
-  // 不用 window.confirm()，因为 iOS Safari standalone PWA 模式会静默拦截原生对话框。
-  const [resetState, setResetState] = useState('idle');
-  const resetTimerRef = useRef(null);
-
-  const completed = steps.filter(s => completedIds.has(s.id)).length;
-  const total = steps.length;
-  const percent = total > 0 ? Math.round(completed / total * 100) : 0;
-
-  // 当前可推进的下一步：第一个未完成
-  const currentStepId = steps.find(s => !completedIds.has(s.id))?.id || null;
 
   const markComplete = useCallback((stepId) => {
     onToggle(stepId);
@@ -46,94 +36,8 @@ export function StepList({ steps, completedIds, onToggle, onReset, coldSlot }) {
     setOpenId(stepId);
   }, [onToggle]);
 
-  const handleReset = useCallback(() => {
-    if (completed === 0) return;
-    if (resetState === 'idle') {
-      // 第一次点：进入待确认态，3 秒未二次点则回滚
-      setResetState('confirming');
-      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-      resetTimerRef.current = setTimeout(() => {
-        setResetState('idle');
-        resetTimerRef.current = null;
-      }, 3000);
-    } else {
-      // 第二次点：执行重置
-      if (resetTimerRef.current) {
-        clearTimeout(resetTimerRef.current);
-        resetTimerRef.current = null;
-      }
-      setResetState('idle');
-      onReset();
-      setOpenId(steps[0]?.id || null);
-    }
-  }, [completed, onReset, steps, resetState]);
-
-  // unmount 清理
-  useEffect(() => () => {
-    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-  }, []);
-
   return (
     <div className="space-y-0">
-      {/* 进度头条 */}
-      <div className="border-t-2 border-b-2 border-ink py-3 mb-6">
-        <div className="flex justify-between items-end">
-          <div>
-            <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
-              Progress · 进度
-            </div>
-            <div className="font-mono text-xs text-muted mt-1">
-              {completed} / {total} steps
-            </div>
-          </div>
-          <div className="flex items-end gap-3">
-            <button
-              type="button"
-              onClick={handleReset}
-              disabled={completed === 0}
-              aria-pressed={resetState === 'confirming'}
-              className={[
-                'self-center font-mono text-2xs uppercase tracking-[0.30em] px-2.5 py-1.5 border transition-colors duration-fast whitespace-nowrap',
-                completed === 0
-                  ? 'border-line-soft text-faint cursor-not-allowed'
-                  : resetState === 'confirming'
-                    ? 'border-accent bg-accent text-bg cursor-pointer animate-pulse'
-                    : 'border-ink text-ink hover:bg-ink hover:text-bg cursor-pointer',
-              ].join(' ')}
-            >
-              {resetState === 'confirming' ? '↻ Confirm?' : '↻ Reset'}
-            </button>
-            <div className="font-display font-medium text-4xl text-ink leading-none tabular-nums" style={{ letterSpacing: '-0.04em' }}>
-              {percent}
-              <span className="font-mono text-base text-faint">%</span>
-            </div>
-          </div>
-        </div>
-        {/* 段位条 */}
-        <div className="flex mt-2.5 border border-ink">
-          {steps.map(s => {
-            const done = completedIds.has(s.id);
-            const isCurrent = s.id === currentStepId;
-            return (
-              <div
-                key={s.id}
-                className="flex-1 h-2 border-r border-line-soft last:border-r-0"
-                style={{
-                  background: done
-                    ? 'var(--seg-done)'
-                    : isCurrent
-                      ? 'var(--seg-current)'
-                      : 'transparent',
-                }}
-              />
-            );
-          })}
-        </div>
-        <style>{`
-          :root { --seg-done: #1A1715; --seg-current: #B85A3E; }
-        `}</style>
-      </div>
-
       {/* 步骤列表 */}
       {steps.map((s, i) => (
         <StepRow

@@ -20,7 +20,7 @@ import {
   FlavorSource,
 } from './components/recipe/index.js';
 import { FeedPanel } from './components/starter/index.js';
-import { StepList, ColdRetardTracker } from './components/process/index.js';
+import { StepList, ProcessProgress, ColdRetardTracker } from './components/process/index.js';
 import { SecHead } from './components/ledger/index.js';
 
 const TABS = [
@@ -58,6 +58,11 @@ function App() {
   const steps = useMemo(() => enhanceSteps(baseSteps, calculated), [baseSteps, calculated]);
 
   const completedIds = useMemo(() => new Set(completedList), [completedList]);
+  // Bake tab 当前可推进的步骤：第一个未完成（ProcessProgress + StepList 都用）
+  const currentStepId = useMemo(
+    () => steps.find(s => !completedIds.has(s.id))?.id || null,
+    [steps, completedIds]
+  );
 
   const applyFlavor = useCallback((flavor) => {
     setSelected(flavor.modifiers.map(m => ({ id: m.id, dose: m.dose })));
@@ -128,7 +133,7 @@ function App() {
               避免两个独立 sticky 之间出现像素级缝隙（透明带漏内容）。 */}
         <div className="sticky top-0 z-30 bg-bg">
           <nav
-            className="grid grid-cols-3 border border-ink"
+            className="grid grid-cols-3 border-b border-ink"
             role="tablist"
             aria-label="页面切换"
           >
@@ -165,14 +170,22 @@ function App() {
           })}
         </nav>
 
-          {/* ── ActiveFlavorBar：仅在 Formula tab 显示。
+          {/* ── 第二行 sticky 内容：根据当前 tab 决定展示什么 ──
                 和 nav 共用同一个 sticky 包裹，避免缝隙；
-                也必须在 motion.section 之外（否则 framer-motion 的 transform 会破坏 sticky）。 ── */}
+                也必须在 motion.section 之外（否则 framer-motion 的 transform 会破坏 sticky）。 */}
           {tab === 'formula' && (
             <ActiveFlavorBar
               flavor={activeFlavor}
               index={activeIndex >= 0 ? activeIndex : 0}
               hydration={calculated.actualHydration}
+            />
+          )}
+          {tab === 'bake' && (
+            <ProcessProgress
+              steps={steps}
+              completedIds={completedIds}
+              currentStepId={currentStepId}
+              onReset={resetProgress}
             />
           )}
         </div>
@@ -208,8 +221,8 @@ function App() {
                 <StepList
                   steps={steps}
                   completedIds={completedIds}
+                  currentStepId={currentStepId}
                   onToggle={toggleStep}
-                  onReset={resetProgress}
                   coldSlot={coldSlot}
                 />
               </div>
@@ -222,7 +235,7 @@ function App() {
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div className="space-y-0.5">
               <div className="font-display italic text-muted text-sm" style={{ fontVariationSettings: "'opsz' 14, 'wght' 400" }}>
-                Sourdough Lab · 酸种创意实验室
+                The Bakery Ledger · 酸种创意实验室
               </div>
               <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">
                 Est. 2026 · Set in Fraunces &amp; Inter · Printed on warm paper

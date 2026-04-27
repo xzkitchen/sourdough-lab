@@ -9,11 +9,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Sourdough Lab - Artisan Baking Assistant',
-        short_name: 'Sourdough Lab',
-        description: '专业的酸面包制作助手，支持乡村酸种包和奶盐吐司配方',
-        theme_color: '#f97316',
-        background_color: '#0c0a09',
+        name: 'The Bakery Ledger — 手作酸面包实验室',
+        short_name: 'Bakery Ledger',
+        description: 'The Bakery Ledger · 模块化酸种配方助手，可叠加色粉与混入料，自动重算水合度与发酵时间。',
+        theme_color: '#F5F1EA',
+        background_color: '#F5F1EA',
         display: 'standalone',
         icons: [
           {
