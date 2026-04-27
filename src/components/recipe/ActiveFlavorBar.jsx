@@ -16,7 +16,7 @@ import { StampRadial } from '../ledger/index.js';
  */
 export function ActiveFlavorBar({ flavor, index, hydration }) {
   return (
-    <div className="sticky top-0 z-20 bg-bg/95 backdrop-blur-sm border-b border-ink">
+    <div className="sticky top-[76px] sm:top-[88px] z-20 bg-bg/95 backdrop-blur-sm border-b border-ink">
       <div className="grid items-center gap-2 sm:gap-3 py-2.5 sm:py-3 grid-cols-[36px_1fr_auto] sm:grid-cols-[40px_1fr_auto]">
         {/* 圆章 + 编号 */}
         <div className="relative w-9 h-9 sm:w-10 sm:h-10">
@@ -28,13 +28,13 @@ export function ActiveFlavorBar({ flavor, index, hydration }) {
           </div>
         </div>
 
-        {/* 名称 */}
+        {/* 名称：移动端竖排（Latin 一行 + zh 一行），sm: 横排 */}
         <div className="min-w-0">
           <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
             Active · 当前
           </div>
-          <div className="flex items-baseline gap-1.5 sm:gap-2 mt-0.5 min-w-0">
-            <div className="font-display text-[15px] sm:text-md font-medium text-ink leading-none truncate" style={{ letterSpacing: '-0.015em' }}>
+          <div className="mt-0.5 min-w-0 sm:flex sm:items-baseline sm:gap-2">
+            <div className="font-display text-base sm:text-md font-medium text-ink leading-tight truncate" style={{ letterSpacing: '-0.015em' }}>
               {flavor.nameLatin}
             </div>
             <div className="font-zh text-[11px] sm:text-xs text-muted truncate">

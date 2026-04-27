@@ -148,6 +148,16 @@ function App() {
           })}
         </nav>
 
+        {/* ── ActiveFlavorBar：仅在 Formula tab 显示，必须在 motion.section 之外
+              否则 framer-motion 在 section 上写入的 transform 会让它 sticky 失效 ── */}
+        {tab === 'formula' && (
+          <ActiveFlavorBar
+            flavor={activeFlavor}
+            index={activeIndex >= 0 ? activeIndex : 0}
+            hydration={calculated.actualHydration}
+          />
+        )}
+
         <AnimatePresence mode="wait">
           <motion.section
             key={tab}
@@ -160,7 +170,6 @@ function App() {
             {tab === 'formula' && (
               <FormulaTab
                 activeFlavor={activeFlavor}
-                activeIndex={activeIndex}
                 calculated={calculated}
                 onApplyFlavor={applyFlavor}
               />
@@ -204,16 +213,11 @@ function App() {
 }
 
 // ── Formula Tab ─────────────────────────────────────────────
-function FormulaTab({ activeFlavor, activeIndex, calculated, onApplyFlavor }) {
+// 注意：ActiveFlavorBar 已被抬到 App 顶层（兄弟节点），
+// 这里只渲染下方滚动区内容。
+function FormulaTab({ activeFlavor, calculated, onApplyFlavor }) {
   return (
     <div className="space-y-7">
-      {/* Active bar */}
-      <ActiveFlavorBar
-        flavor={activeFlavor}
-        index={activeIndex >= 0 ? activeIndex : 0}
-        hydration={calculated.actualHydration}
-      />
-
       {/* №01 Choose flavor */}
       <section>
         <SecHead n={1} label="Flavor" zhLabel="风味预设" />

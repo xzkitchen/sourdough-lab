@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 /**
  * StepList — V2 Ledger 流程清单
@@ -20,6 +20,11 @@ import React, { useState, useCallback } from 'react';
  */
 export function StepList({ steps, completedIds, onToggle, onReset, coldSlot }) {
   const [openId, setOpenId] = useState(null);
+
+  // Reset 二步确认状态：'idle' → 'confirming' → reset/timeout 回 'idle'
+  // 不用 window.confirm()，因为 iOS Safari standalone PWA 模式会静默拦截原生对话框。
+  const [resetState, setResetState] = useState('idle');
+  const resetTimerRef = useRef(null);
 
   const completed = steps.filter(s => completedIds.has(s.id)).length;
   const total = steps.length;
@@ -43,11 +48,30 @@ export function StepList({ steps, completedIds, onToggle, onReset, coldSlot }) {
 
   const handleReset = useCallback(() => {
     if (completed === 0) return;
-    if (window.confirm('重置所有流程进度？\nReset all step progress?')) {
+    if (resetState === 'idle') {
+      // 第一次点：进入待确认态，3 秒未二次点则回滚
+      setResetState('confirming');
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = setTimeout(() => {
+        setResetState('idle');
+        resetTimerRef.current = null;
+      }, 3000);
+    } else {
+      // 第二次点：执行重置
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+      setResetState('idle');
       onReset();
       setOpenId(steps[0]?.id || null);
     }
-  }, [completed, onReset, steps]);
+  }, [completed, onReset, steps, resetState]);
+
+  // unmount 清理
+  useEffect(() => () => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+  }, []);
 
   return (
     <div className="space-y-0">
@@ -67,14 +91,17 @@ export function StepList({ steps, completedIds, onToggle, onReset, coldSlot }) {
               type="button"
               onClick={handleReset}
               disabled={completed === 0}
+              aria-pressed={resetState === 'confirming'}
               className={[
-                'self-center font-mono text-2xs uppercase tracking-[0.30em] px-2.5 py-1.5 border transition-colors duration-fast',
+                'self-center font-mono text-2xs uppercase tracking-[0.30em] px-2.5 py-1.5 border transition-colors duration-fast whitespace-nowrap',
                 completed === 0
                   ? 'border-line-soft text-faint cursor-not-allowed'
-                  : 'border-ink text-ink hover:bg-ink hover:text-bg cursor-pointer',
+                  : resetState === 'confirming'
+                    ? 'border-accent bg-accent text-bg cursor-pointer animate-pulse'
+                    : 'border-ink text-ink hover:bg-ink hover:text-bg cursor-pointer',
               ].join(' ')}
             >
-              ↻ Reset
+              {resetState === 'confirming' ? '↻ Confirm?' : '↻ Reset'}
             </button>
             <div className="font-display font-medium text-4xl text-ink leading-none tabular-nums" style={{ letterSpacing: '-0.04em' }}>
               {percent}
