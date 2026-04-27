@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sourdough Lab — Editorial</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg:        '#F5F1EA',
+        'bg-warm': '#EFE8DB',
+        ink:       '#1A1815',
+        muted:     '#5C5650',
+        faint:     '#9A9286',
+        'accent-ink':  '#6E4F2F',
+        'accent-line': '#B08968',
+        line:        '#D4CBB9',
+        'line-soft': '#E5DED0',
+      },
+      fontFamily: {
+        display: ['Fraunces','Noto Serif SC','serif'],
+        body: ['Inter','Noto Sans SC','system-ui','sans-serif'],
+        mono: ['IBM Plex Mono','monospace'],
+      },
+      borderRadius: { pill: '999px' },
+      spacing: { section: '5.5rem' },
+      transitionDuration: { base: '280ms' },
+    }
+  }
+};
+</script>
+
+<style>
+  html, body { background:#F5F1EA; color:#1A1815; overflow-x: hidden; }
+  body {
+    font-family: 'Inter','Noto Sans SC',system-ui,sans-serif;
+    font-feature-settings: "ss01","cv11";
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 10% 0%,  rgba(176,137,104,0.04) 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(110,79,47,0.03) 0%, transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .font-display { font-family:'Fraunces','Noto Serif SC',serif; }
+  .font-body    { font-family:'Inter','Noto Sans SC',sans-serif; }
+  .font-mono    { font-family:'IBM Plex Mono',monospace; }
+
+  /* paper grain overlay */
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:1;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.08  0 0 0 0.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+    mix-blend-mode: multiply; opacity: 0.22;
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display:none; }
+  .no-scrollbar { scrollbar-width: none; }
+
+  .sdl-slider { -webkit-appearance:none; appearance:none; width:100%; height:2px; background:#D4CBB9; outline:none; }
+  .sdl-slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none;
+    width:18px; height:18px; border-radius:50%; background:#F5F1EA; border:1.5px solid #1A1815; cursor:pointer;
+    transition: transform 200ms ease; }
+  .sdl-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+
+  /* Specsheet row — responsive grid columns */
+  .sdl-ing-row {
+    grid-template-columns: 20px 1fr 56px 84px;
+  }
+  @media (min-width: 640px){
+    .sdl-ing-row { grid-template-columns: 28px 1fr 80px 120px; }
+  }
+  /* Feed row (Starter view) */
+  .sdl-feed-row {
+    grid-template-columns: 20px 1fr 92px;
+  }
+  @media (min-width: 640px){
+    .sdl-feed-row { grid-template-columns: 28px 1fr 120px; }
+  }
+  /* Bake timeline row */
+  .sdl-bake-row {
+    grid-template-columns: 44px 1fr 72px;
+    gap: 0.75rem 1rem;
+  }
+  @media (min-width: 640px){
+    .sdl-bake-row { grid-template-columns: 64px 1fr 100px; gap: 1rem 1.5rem; }
+  }
+
+  /* flavor tint animates on selection */
+  .tint-layer {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    transition: background 900ms cubic-bezier(.2,.8,.2,1), opacity 900ms;
+    opacity: 0.45;
+  }
+</style>
+</head>
+<body class="relative">
+
+<!-- SVG defs (reusable grain) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="orbGrain"><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.12  0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0.6 0"/></filter>
+  </defs>
+</svg>
+
+<div id="tint" class="tint-layer"></div>
+
+<div id="root" class="relative" style="z-index:2"></div>
+
+<!-- data + engine -->
+<script src="app/data.js"></script>
+<script src="app/engine.js"></script>
+
+<!-- React -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- JSX components -->
+<script type="text/babel" src="app/primitives.jsx"></script>
+<script type="text/babel" src="app/formula.jsx"></script>
+<script type="text/babel" src="app/other-views.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+function App(){
+  const [flavorId, setFlavorId] = useState(() => localStorage.getItem('sdl.flavor') || 'plain');
+  const [tab, setTab] = useState(() => (location.hash||'#formula').replace('#',''));
+  const [numUnits, setNumUnits] = useState(() => +(localStorage.getItem('sdl.units')||3));
+  const [cook, setCook] = useState(false);
+
+  const flavor = window.FLAVORS.find(f => f.id===flavorId) || window.FLAVORS[0];
+
+  useEffect(() => { localStorage.setItem('sdl.flavor', flavorId); }, [flavorId]);
+  useEffect(() => { localStorage.setItem('sdl.units', String(numUnits)); }, [numUnits]);
+  useEffect(() => {
+    const h = () => setTab((location.hash||'#formula').replace('#',''));
+    window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h);
+  }, []);
+  useEffect(() => {
+    // animate tint background to match selected flavor
+    const p = Engine.predictBreadColor(window.BASE, flavor.modifiers);
+    const c = p.base;
+    const bg = `radial-gradient(ellipse 1400px 900px at 50% -10%, hsla(${c.h}, ${Math.min(40,c.s)}%, ${Math.min(85,c.l+5)}%, 0.55) 0%, transparent 65%)`;
+    document.getElementById('tint').style.background = bg;
+  }, [flavor]);
+
+  const go = (t) => { location.hash = '#' + t; setTab(t); };
+  const setFlavor = (f) => setFlavorId(f.id);
+
+  return (
+    <div className="min-h-screen">
+      <Masthead flavor={flavor} />
+      <Nav tab={tab} go={go} />
+
+      <main className="max-w-6xl mx-auto px-6 sm:px-12 pb-24">
+        {tab === 'formula' && <FormulaView flavor={flavor} numUnits={numUnits} setNumUnits={setNumUnits} setFlavor={setFlavor} />}
+        {tab === 'starter' && <StarterView flavor={flavor} numUnits={numUnits} />}
+        {tab === 'bake'    && <BakeView flavor={flavor} onCookMode={()=>setCook(true)} />}
+      </main>
+
+      <Colophon />
+      <CookMode open={cook} onClose={()=>setCook(false)} />
+    </div>
+  );
+}
+
+function Masthead({ flavor }){
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+  return (
+    <header className="max-w-6xl mx-auto px-6 sm:px-12 pt-10 pb-6">
+      <div className="flex items-start justify-between border-b border-ink pb-6">
+        <div className="flex items-baseline gap-4 flex-wrap">
+          <h1 className="font-display text-ink tracking-tight leading-none"
+              style={{ fontSize: 'clamp(32px, 5vw, 54px)', fontWeight: 400, fontVariationSettings: "'opsz' 54, 'SOFT' 80, 'wght' 400" }}>
+            Sourdough Lab
+          </h1>
+          <span className="font-display italic text-muted text-base pl-1"
+                style={{ fontVariationSettings: "'opsz' 16, 'wght' 400" }}>
+            — a creative bakery
+          </span>
+        </div>
+        <div className="hidden sm:block text-right space-y-1 pt-2">
+          <div className="font-mono text-[10px] tracking-[0.22em] text-muted">ISSUE 07 · {dateStr}</div>
+          <div className="font-display italic text-faint text-xs" style={{ fontVariationSettings: "'opsz' 12, 'wght' 400" }}>
+            酸种创意实验室
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 pt-4">
+        <span className="font-mono text-[10px] text-faint tracking-widest">N°</span>
+        <span className="font-display tabular-nums text-ink"
+              style={{ fontSize: 14, fontVariationSettings: "'opsz' 14, 'wght' 500" }}>
+          {String(window.FLAVORS.indexOf(flavor)+1).padStart(2,'0')}
+        </span>
+        <span className="h-px bg-line flex-1 max-w-24"/>
+        <span className="font-display italic text-muted text-sm" style={{ fontVariationSettings: "'opsz' 14, 'wght' 400" }}>
+          {flavor.name} · {flavor.nameLatin}
+        </span>
+      </div>
+    </header>
+  );
+}
+
+function Nav({ tab, go }){
+  const tabs = [
+    { id:'formula', zh:'配方', en:'Formula' },
+    { id:'starter', zh:'养种', en:'Starter' },
+    { id:'bake',    zh:'流程', en:'Bake'    },
+  ];
+  return (
+    <nav className="max-w-6xl mx-auto px-6 sm:px-12 pb-8">
+      <ul className="flex gap-10">
+        {tabs.map(t => {
+          const active = tab === t.id;
+          return (
+            <li key={t.id}>
+              <button onClick={() => go(t.id)} className="group flex items-baseline gap-2 py-2">
+                <span className={`font-mono text-[10px] tabular-nums transition-colors duration-base ${active?'text-accent-ink':'text-faint'}`}>
+                  {String(tabs.indexOf(t)+1).padStart(2,'0')}
+                </span>
+                <span className={`font-display transition-colors duration-base ${active?'text-ink':'text-muted group-hover:text-ink'}`}
+                      style={{ fontSize: 20, fontWeight: 400, fontVariationSettings: `'opsz' 20, 'wght' ${active?500:400}` }}>
+                  {t.zh}
+                </span>
+                <span className={`font-display italic text-xs transition-colors duration-base ${active?'text-accent-ink':'text-faint'}`}
+                      style={{ fontVariationSettings: "'opsz' 12, 'wght' 400" }}>
+                  {t.en}
+                </span>
+                {active && <span className="ml-1 w-1 h-1 rounded-full bg-accent-ink"/>}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="h-px bg-line-soft mt-1"/>
+    </nav>
+  );
+}
+
+function Colophon(){
+  return (
+    <footer className="max-w-6xl mx-auto px-6 sm:px-12 py-12 border-t border-line-soft relative" style={{zIndex:2}}>
+      <div className="flex flex-wrap items-baseline justify-between gap-6">
+        <div className="space-y-1">
+          <div className="font-display italic text-muted text-sm" style={{ fontVariationSettings: "'opsz' 14, 'wght' 400" }}>
+            Sourdough Lab · 酸种创意实验室
+          </div>
+          <div className="font-mono text-[10px] text-faint tracking-wider">
+            Est. 2026 · Set in Fraunces & Inter · Printed on warm paper
+          </div>
+        </div>
+        <div className="font-display italic text-faint text-xs" style={{ fontVariationSettings: "'opsz' 12, 'wght' 400" }}>
+          — Flour, water, salt, time.
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// Wait for all scripts to load, then render
+function boot(){
+  if (!window.FormulaView || !window.StarterView || !window.BakeView || !window.ColorOrb) {
+    return setTimeout(boot, 50);
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+}
+boot();
+</script>
+</body>
+</html>
