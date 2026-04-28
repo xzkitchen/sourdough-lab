@@ -42,6 +42,7 @@ function App() {
   const [numUnits, setNumUnits] = useStickyState(3, 'sdlv2_num_units');
   const [selected, setSelected] = useStickyState([], 'sdlv2_selected_modifiers');
   const [seedStarter, setSeedStarter] = useStickyState(60, 'sdlv2_seed_starter');
+  const [revivalMode, setRevivalMode] = useStickyState(false, 'sdlv2_revival_mode');
   const [completedList, setCompletedList] = useStickyState([], 'sdlv2_completed_steps');
   // 当前展开的步骤 id —— 抬到 App 是为了让 resetProgress 能一并重置展开态
   const [openStepId, setOpenStepId] = useState(null);
@@ -224,6 +225,8 @@ function App() {
                 seedStarter={seedStarter}
                 onSeedChange={setSeedStarter}
                 feed={feed}
+                revivalMode={revivalMode}
+                onRevivalModeChange={setRevivalMode}
               />
             )}
             {tab === 'bake' && (
