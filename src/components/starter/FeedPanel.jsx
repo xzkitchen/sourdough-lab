@@ -54,19 +54,24 @@ function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh,
 /**
  * 复活喂养比例：1:5:5（种 : 粉 : 水），总质量 = 11x 种。
  * 用一次大稀释解决疲弱种的双重问题（食物耗尽 + pH 过低），
- * 8–12h 室温后单次达 3 倍峰。详见对话设计讨论。
+ * 8–12h 室温后单次达 3 倍峰。
+ *
+ * 关键假设：进入 Revival 模式时，罐内现存量 = targetTotal（上次正常
+ * 喂养后的总量；这是用户的典型场景——"先按 1:1:1 喂到 300g 但没爆好，
+ * 现在要复活"）。所以 discard = targetTotal - newSeed，不依赖 §02
+ * 的 seedStarter 输入（那个字段在 Std 模式才有意义，是"下次喂养的
+ * 火种基量"）。
  */
 const REVIVAL_RATIO = 5;
 const REVIVAL_TOTAL_MULT = 1 + REVIVAL_RATIO * 2; // 11
 
-function calcRevival(targetTotal, existingSeed) {
+function calcRevival(targetTotal) {
   const newSeed = Math.max(1, Math.round(targetTotal / REVIVAL_TOTAL_MULT));
   const flour = newSeed * REVIVAL_RATIO;
   const water = newSeed * REVIVAL_RATIO;
   const total = newSeed + flour + water;
-  const discard = Math.max(0, existingSeed - newSeed);
-  const insufficient = existingSeed < newSeed;
-  return { newSeed, flour, water, total, discard, insufficient };
+  const discard = Math.max(0, targetTotal - newSeed);
+  return { newSeed, flour, water, total, discard, jarAssumed: targetTotal };
 }
 
 /** 模式切换分段控件（Std / Revival） */
@@ -125,7 +130,7 @@ export function FeedPanel({
 
   // 复活模式的目标总量 = 配方需要 + 下次火种留量
   const targetTotal = feed.needed + feed.buffer;
-  const revival = calcRevival(targetTotal, seedStarter);
+  const revival = calcRevival(targetTotal);
 
   // 选择当前模式下要展示的数据
   const displayFlour = revivalMode ? revival.flour : feed.flour;
@@ -246,22 +251,15 @@ export function FeedPanel({
             <div className="font-mono text-2xs text-accent-ink uppercase tracking-[0.30em] mb-1.5">
               Memo · 复活操作
             </div>
-            {revival.insufficient ? (
-              <p className="font-zh text-sm text-muted leading-relaxed">
-                现有种仅 <strong className="font-mono text-ink font-semibold">{seedStarter}g</strong>，
-                少于复活所需的 <strong className="font-mono text-ink font-semibold">{revival.newSeed}g</strong>。
-                建议先按 1:1:1 喂养一次（4–6h）让种量恢复，再切换到 Revival 模式。
-              </p>
-            ) : (
-              <p className="font-zh text-sm text-muted leading-relaxed">
-                从罐里取 <strong className="font-mono text-ink font-semibold">{revival.newSeed}g</strong> 旧种，
-                其余 <strong className="font-mono text-ink font-semibold">{revival.discard}g</strong> 丢弃。
-                加 <strong className="font-mono text-ink font-semibold">{revival.flour}g</strong> 粉
-                + <strong className="font-mono text-ink font-semibold">{revival.water}g</strong> 水（1:5:5 强稀释）。
-                室温 25°C 静置 <strong className="font-mono text-ink font-semibold">8–12h</strong> 达 3 倍峰即可揉面；
-                夏天高温缩短到 6–8h，冬天延长到 12–16h。
-              </p>
-            )}
+            <p className="font-zh text-sm text-muted leading-relaxed">
+              假设罐内有 <strong className="font-mono text-ink font-semibold">{revival.jarAssumed}g</strong> 旧种
+              （上次正常喂养后的总量）。从中取 <strong className="font-mono text-ink font-semibold">{revival.newSeed}g</strong>，
+              其余 <strong className="font-mono text-ink font-semibold">{revival.discard}g</strong> 丢弃。
+              加 <strong className="font-mono text-ink font-semibold">{revival.flour}g</strong> 粉
+              + <strong className="font-mono text-ink font-semibold">{revival.water}g</strong> 水（1:5:5 强稀释）。
+              室温 25°C 静置 <strong className="font-mono text-ink font-semibold">8–12h</strong> 达 3 倍峰即可揉面；
+              夏天高温缩短到 6–8h，冬天延长到 12–16h。
+            </p>
           </div>
         ) : (
           <div className="mt-4 px-4 py-3 bg-surface border border-line-soft border-l-[3px] border-l-accent">
