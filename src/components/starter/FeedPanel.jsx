@@ -56,11 +56,8 @@ function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh,
  * 用一次大稀释解决疲弱种的双重问题（食物耗尽 + pH 过低），
  * 8–12h 室温后单次达 3 倍峰。
  *
- * 关键假设：进入 Revival 模式时，罐内现存量 = targetTotal（上次正常
- * 喂养后的总量；这是用户的典型场景——"先按 1:1:1 喂到 300g 但没爆好，
- * 现在要复活"）。所以 discard = targetTotal - newSeed，不依赖 §02
- * 的 seedStarter 输入（那个字段在 Std 模式才有意义，是"下次喂养的
- * 火种基量"）。
+ * 用户操作就三件事：取 X g 旧种 → 加 5X g 粉 + 5X g 水 → 等。
+ * 罐里实际有多少不重要（取完剩下的全丢），所以不计算/不显示 discard。
  */
 const REVIVAL_RATIO = 5;
 const REVIVAL_TOTAL_MULT = 1 + REVIVAL_RATIO * 2; // 11
@@ -70,8 +67,7 @@ function calcRevival(targetTotal) {
   const flour = newSeed * REVIVAL_RATIO;
   const water = newSeed * REVIVAL_RATIO;
   const total = newSeed + flour + water;
-  const discard = Math.max(0, targetTotal - newSeed);
-  return { newSeed, flour, water, total, discard, jarAssumed: targetTotal };
+  return { newSeed, flour, water, total };
 }
 
 /** 模式切换分段控件（Std / Revival） */
@@ -177,58 +173,47 @@ export function FeedPanel({
           right={<ModeToggle revivalMode={revivalMode} onChange={onRevivalModeChange} />}
         />
 
-        {/* Revival 模式：先显示丢弃 / 保留种量 */}
-        {revivalMode && (
-          <div className="grid grid-cols-2 border border-ink mb-px">
-            <div className="p-4 sm:p-5 bg-surface">
-              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
-                Discard
+        {/* 加粉 / 加水 +（Revival 模式额外的"取种"行）*/}
+        <div className="border border-ink">
+          {revivalMode && (
+            <div className="p-4 sm:p-5 bg-surface flex items-baseline justify-between gap-3 border-b border-ink">
+              <div>
+                <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
+                  Take from jar
+                </div>
+                <div className="font-zh text-xs text-muted mt-0.5">从罐里取（其余丢弃）</div>
               </div>
-              <div className="font-zh text-xs text-muted mt-0.5">丢弃</div>
-              <div className="font-display font-medium text-4xl text-ink leading-none mt-3 tabular-nums" style={{ letterSpacing: '-0.03em' }}>
-                {revival.discard}
-              </div>
-              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mt-1">
-                grams
-              </div>
-            </div>
-            <div className="p-4 sm:p-5 bg-surface border-l border-ink">
-              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
-                Keep seed
-              </div>
-              <div className="font-zh text-xs text-muted mt-0.5">保留种量</div>
-              <div className="font-display font-medium text-4xl text-ink leading-none mt-3 tabular-nums" style={{ letterSpacing: '-0.03em' }}>
+              <div
+                className="font-display font-medium text-4xl text-ink leading-none tabular-nums"
+                style={{ letterSpacing: '-0.03em' }}
+              >
                 {revival.newSeed}
-              </div>
-              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mt-1">
-                grams
+                <span className="font-mono text-sm text-faint ml-1.5">g</span>
               </div>
             </div>
+          )}
+          <div className="grid grid-cols-2">
+            {[
+              { label: 'Add flour', zh: '加 T65', v: displayFlour },
+              { label: 'Add water', zh: '加 水',  v: displayWater },
+            ].map((x, i) => (
+              <div
+                key={x.label}
+                className={`p-4 sm:p-5 bg-surface ${i > 0 ? 'border-l border-ink' : ''}`}
+              >
+                <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
+                  {x.label}
+                </div>
+                <div className="font-zh text-xs text-muted mt-0.5">{x.zh}</div>
+                <div className="font-display font-medium text-4xl text-ink leading-none mt-3 tabular-nums" style={{ letterSpacing: '-0.03em' }}>
+                  {x.v}
+                </div>
+                <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mt-1">
+                  grams
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* 加粉 / 加水（两种模式共用同一布局，数据按模式切换） */}
-        <div className="grid grid-cols-2 border border-ink">
-          {[
-            { label: 'Add flour', zh: '加 T65', v: displayFlour },
-            { label: 'Add water', zh: '加 水',  v: displayWater },
-          ].map((x, i) => (
-            <div
-              key={x.label}
-              className={`p-4 sm:p-5 bg-surface ${i > 0 ? 'border-l border-ink' : ''}`}
-            >
-              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
-                {x.label}
-              </div>
-              <div className="font-zh text-xs text-muted mt-0.5">{x.zh}</div>
-              <div className="font-display font-medium text-4xl text-ink leading-none mt-3 tabular-nums" style={{ letterSpacing: '-0.03em' }}>
-                {x.v}
-              </div>
-              <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mt-1">
-                grams
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* 总量 */}
@@ -252,10 +237,9 @@ export function FeedPanel({
               Memo · 复活操作
             </div>
             <p className="font-zh text-sm text-muted leading-relaxed">
-              假设罐内有 <strong className="font-mono text-ink font-semibold">{revival.jarAssumed}g</strong> 旧种
-              （上次正常喂养后的总量）。从中取 <strong className="font-mono text-ink font-semibold">{revival.newSeed}g</strong>，
-              其余 <strong className="font-mono text-ink font-semibold">{revival.discard}g</strong> 丢弃。
-              加 <strong className="font-mono text-ink font-semibold">{revival.flour}g</strong> 粉
+              从罐里取 <strong className="font-mono text-ink font-semibold">{revival.newSeed}g</strong> 旧种
+              （罐里其余全部丢弃），加
+              <strong className="font-mono text-ink font-semibold"> {revival.flour}g</strong> 粉
               + <strong className="font-mono text-ink font-semibold">{revival.water}g</strong> 水（1:5:5 强稀释）。
               室温 25°C 静置 <strong className="font-mono text-ink font-semibold">8–12h</strong> 达 3 倍峰即可揉面；
               夏天高温缩短到 6–8h，冬天延长到 12–16h。
