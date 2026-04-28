@@ -1,14 +1,17 @@
 /**
- * Flavors — 大师级创意预设（健康路线）
+ * Flavors — 大师级创意预设（健康路线，6 款精选）
  *
  * 设计约束（xizai 个人偏好）：
  *   1) 不含核桃（walnut）——任何涉及核桃的配方已剔除
- *   2) 不加糖——不使用巧克力豆（添加糖）、甜蔓越莓干（添加糖）等
- *   3) 健康优先——种子 / 香料 / 蔬菜色粉 / 橄榄 / 奶酪，避免糖和精炼甜味
+ *   2) 不加糖——不使用巧克力豆（添加糖）、甜蔓越莓干（添加糖）等；
+ *      也排除天然高糖干果（无花果干 ~48%、葡萄干 ~59% 天然糖）
+ *   3) 健康优先——种子 / 香料 / 蔬菜色粉 / 橄榄 / 坚果，避免糖和精炼甜味
+ *   4) 不重复——每个 modifier 在保留风味中尽量只出现一次
  *
- * 注：walnut / cranberry / chocolate-chips 等 modifier 仍保留在
- * addins.js / colorants.js 里（词汇表完整性 + 测试依赖），
- * 但不会出现在任何 FLAVOR 预设中。
+ * 注：walnut / cranberry / chocolate-chips / matcha / turmeric / beetroot /
+ *     fennel-seed / jalapeno / cheddar / fig / raisin 等 modifier 仍保留在
+ *     addins.js / colorants.js 里（词汇表完整性 + 测试依赖），
+ *     但不会出现在任何 FLAVOR 预设中。
  *
  * 每条都有可核查的权威来源（master 烘焙书 / 官方 URL / 成名博客）。
  *
@@ -51,23 +54,6 @@ export const FLAVORS = [
       url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',
     },
     note: '橄榄带盐，基础盐减 0.2%。橄榄油单元不饱和脂肪 + 迷迭香萜类抗氧化。',
-  },
-  {
-    id: 'jalapeno-cheddar',
-    name: '辣椒车达',
-    nameLatin: 'Jalapeño Cheddar',
-    description: '腌辣椒 24% + 车达 15%，咸鲜微辣。',
-    modifiers: [
-      { id: 'jalapeno', dose: 0.24 },
-      { id: 'cheddar', dose: 0.15 },
-    ],
-    heroHue: 50,
-    difficulty: 'intermediate',
-    source: {
-      name: 'King Arthur — Jalapeño-Cheddar Bread',
-      url: 'https://www.kingarthurbaking.com/recipes/jalapeno-cheddar-bread-recipe',
-    },
-    note: '奶酪一半磨碎 + 一半切块；辣椒含盐，基础盐减 0.2%。发酵奶酪提供钙与维生素 K2。',
   },
   {
     id: 'seeded',
@@ -115,43 +101,6 @@ export const FLAVORS = [
     note: '南瓜粉吸水大，水合度会升至约 75%。β-胡萝卜素 + 肉桂调节血糖。无添加糖。',
   },
   {
-    id: 'matcha-swirl',
-    name: '抹茶漩涡',
-    nameLatin: 'Matcha Swirl',
-    description: '抹茶 2.9%，sourdough 改编版（不加糖）。',
-    modifiers: [
-      { id: 'matcha', dose: 0.029 },
-    ],
-    heroHue: 90,
-    difficulty: 'advanced',
-    source: {
-      name: 'King Arthur — Marbled Matcha Milk Bread (adapted for sourdough)',
-      url: 'https://www.kingarthurbaking.com/recipes/marbled-matcha-milk-bread-recipe',
-    },
-    note: '原配方为奶油吐司；此处改编为 lean sourdough，去除糖与奶。抹茶 EGCG 抗氧化力强。',
-  },
-
-  // ── 以下 4 条：2026 补充·健康路线 ─────────────────────
-
-  {
-    id: 'turmeric-golden',
-    name: '金黄姜黄',
-    nameLatin: 'Golden Turmeric',
-    description: '姜黄 1.5% + 葵花籽 6%，抗炎金色谷物。',
-    modifiers: [
-      { id: 'turmeric', dose: 0.015 },
-      { id: 'sunflower-seed', dose: 0.06 },
-    ],
-    heroHue: 42,
-    difficulty: 'intermediate',
-    source: {
-      name: 'Full Proof Baking — Golden Turmeric Sourdough',
-      author: 'Kristen Dennis',
-      url: 'https://www.fullproofbaking.com/',
-    },
-    note: '姜黄素（curcumin）具抗炎活性；佐黑胡椒食用，piperine 可提升吸收率 ~2000%。',
-  },
-  {
     id: 'flax-multigrain',
     name: '亚麻多谷',
     nameLatin: 'Flax Multigrain',
@@ -171,39 +120,21 @@ export const FLAVORS = [
     note: '亚麻籽须前一晚等重量水浸泡 12h 成凝胶；α-亚麻酸 ω-3 + 芝麻木酚素，心血管友好。',
   },
   {
-    id: 'beetroot-earth',
-    name: '甜菜根',
-    nameLatin: 'Beetroot Levain',
-    description: '甜菜根粉 4%，亮玫瑰红乡村酸种，土香带微甜。',
+    id: 'pecan-country',
+    name: '山核桃乡村',
+    nameLatin: 'Pecan Country',
+    description: '美洲山核桃 10%，纯坚果乡村酸种。',
     modifiers: [
-      { id: 'beetroot', dose: 0.04 },
+      { id: 'pecan', dose: 0.10 },
     ],
-    heroHue: 340,
+    heroHue: 32,
     difficulty: 'intermediate',
     source: {
-      name: 'The Sourdough School — Beetroot Sourdough',
-      author: 'Vanessa Kimbell',
-      url: 'https://www.sourdough.co.uk/',
+      name: 'Tartine Bread — Walnut Country (pecan-substituted)',
+      author: 'Chad Robertson',
+      url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',
     },
-    note: '甜菜红素（betalain）遇高温易褪色，烤温 ≤ 220°C 保色。硝酸盐有助扩张血管、降血压。',
-  },
-  {
-    id: 'fennel-sesame',
-    name: '茴香芝麻',
-    nameLatin: 'Fennel & Sesame',
-    description: '茴香籽 0.8% + 芝麻 5%，托斯卡纳风格香草乡村。',
-    modifiers: [
-      { id: 'fennel-seed', dose: 0.008 },
-      { id: 'sesame', dose: 0.05 },
-    ],
-    heroHue: 48,
-    difficulty: 'intermediate',
-    source: {
-      name: "Jeffrey Hamelman — Bread: A Baker's Book of Techniques and Formulas",
-      author: 'Jeffrey Hamelman',
-      url: 'https://www.amazon.com/Bread-Bakers-Book-Techniques-Formulas/dp/0470380187',
-    },
-    note: '茴香籽轻压出香气；茴香 anethole 助消化缓胀气，芝麻提供钙与木酚素。',
+    note: '替换 Tartine 经典 walnut 为美洲山核桃，剂量保持 10%。山核桃 MUFA 单不饱和脂肪 + 镁 + 维 E。烤前轻烤坚果，最后一次折叠加入。',
   },
 ];
 
