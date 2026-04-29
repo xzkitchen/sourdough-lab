@@ -1,5 +1,6 @@
 import React from 'react';
 import { SecHead } from '../ledger/index.js';
+import { DISCARD_RECIPES } from '../../domain/discard-recipes.js';
 
 /**
  * Stepper — 大号 ± 步进器（编辑器风：1px 实线 + 大号 mono 数字）
@@ -257,6 +258,51 @@ export function FeedPanel({
             </p>
           </div>
         )}
+      </section>
+
+      {/* №04 Discard recipes —— 静态参考库，整行点击跳转 King Arthur 配方 */}
+      <section>
+        <SecHead n={4} label="Discard" zhLabel="弃种处理" />
+        <div className="border border-ink">
+          {DISCARD_RECIPES.map((r, i) => (
+            <a
+              key={r.id}
+              href={r.source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={[
+                'block px-4 py-3 sm:px-5 sm:py-3.5 transition-colors duration-fast',
+                'hover:bg-surface active:bg-sunken cursor-pointer',
+                i > 0 ? 'border-t border-line-soft' : '',
+              ].join(' ')}
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="min-w-0">
+                  <div
+                    className="font-display text-base font-medium text-ink leading-tight truncate"
+                    style={{ letterSpacing: '-0.015em' }}
+                  >
+                    {r.nameLatin}
+                  </div>
+                  <div className="font-zh text-xs text-muted leading-tight mt-0.5 truncate">
+                    {r.nameZh}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-mono text-xs text-ink tabular-nums leading-tight whitespace-nowrap">
+                    {r.discardG}g · {r.timeMin}min
+                  </div>
+                  <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] mt-0.5 whitespace-nowrap">
+                    {r.source.publisher} ↗
+                  </div>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+        <p className="font-zh text-xs text-muted mt-2 leading-relaxed italic">
+          — 弃种冷藏可存约一周；越老越酸，做脆饼/披萨饼底反而更香。
+        </p>
       </section>
     </div>
   );
