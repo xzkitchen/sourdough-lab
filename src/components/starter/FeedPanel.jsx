@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SecHead } from '../ledger/index.js';
 import { DISCARD_RECIPES } from '../../domain/discard-recipes.js';
 
@@ -128,6 +128,9 @@ export function FeedPanel({
   // 复活模式的目标总量 = 配方需要 + 下次火种留量
   const targetTotal = feed.needed + feed.buffer;
   const revival = calcRevival(targetTotal);
+
+  // 弃种食谱手风琴：当前展开的 id（同一时间只展开一个）
+  const [expandedDiscardId, setExpandedDiscardId] = useState(null);
 
   // 选择当前模式下要展示的数据
   const displayFlour = revivalMode ? revival.flour : feed.flour;
@@ -260,48 +263,109 @@ export function FeedPanel({
         )}
       </section>
 
-      {/* №04 Discard recipes —— 静态参考库，整行点击跳转 King Arthur 配方 */}
+      {/* №04 Discard recipes —— 手风琴：点行就地展开简版做法，原配方留底部链接 */}
       <section>
         <SecHead n={4} label="Discard" zhLabel="弃种处理" />
         <div className="border border-ink">
-          {DISCARD_RECIPES.map((r, i) => (
-            <a
-              key={r.id}
-              href={r.source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={[
-                'block px-4 py-3 sm:px-5 sm:py-3.5 transition-colors duration-fast',
-                'hover:bg-surface active:bg-sunken cursor-pointer',
-                i > 0 ? 'border-t border-line-soft' : '',
-              ].join(' ')}
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <div className="min-w-0">
-                  <div
-                    className="font-display text-base font-medium text-ink leading-tight truncate"
-                    style={{ letterSpacing: '-0.015em' }}
-                  >
-                    {r.nameLatin}
+          {DISCARD_RECIPES.map((r, i) => {
+            const isOpen = expandedDiscardId === r.id;
+            return (
+              <div key={r.id} className={i > 0 ? 'border-t border-line-soft' : ''}>
+                {/* 行头：整行点击切换展开 */}
+                <button
+                  type="button"
+                  onClick={() => setExpandedDiscardId(isOpen ? null : r.id)}
+                  aria-expanded={isOpen}
+                  className="block w-full text-left px-4 py-3 sm:px-5 sm:py-3.5 hover:bg-surface active:bg-sunken transition-colors duration-fast cursor-pointer"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div className="min-w-0">
+                      <div
+                        className="font-display text-base font-medium text-ink leading-tight truncate"
+                        style={{ letterSpacing: '-0.015em' }}
+                      >
+                        {r.nameLatin}
+                      </div>
+                      <div className="font-zh text-xs text-muted leading-tight mt-0.5 truncate">
+                        {r.nameZh}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-xs text-ink tabular-nums leading-tight whitespace-nowrap">
+                        {r.discardG}g · {r.timeMin}min
+                      </div>
+                      <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] mt-0.5 whitespace-nowrap">
+                        {isOpen ? 'Close ↑' : 'Open ↓'}
+                      </div>
+                    </div>
                   </div>
-                  <div className="font-zh text-xs text-muted leading-tight mt-0.5 truncate">
-                    {r.nameZh}
+                </button>
+
+                {/* 展开区：简介 + 用料 + 做法 + 完整配方链接 */}
+                {isOpen && (
+                  <div className="px-4 sm:px-5 pb-4 pt-3 bg-surface border-t border-line-soft">
+                    {/* 简介 */}
+                    <p className="font-zh text-sm text-muted leading-relaxed">
+                      {r.summary}
+                    </p>
+
+                    {/* 用料 */}
+                    <div className="mt-3 pt-3 border-t border-line-soft">
+                      <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mb-1.5">
+                        Ingredients · 用料
+                      </div>
+                      <ul className="space-y-1">
+                        {r.ingredients.map((ing, j) => (
+                          <li
+                            key={j}
+                            className="grid font-zh text-sm text-muted leading-relaxed"
+                            style={{ gridTemplateColumns: '14px 1fr' }}
+                          >
+                            <span className="font-mono text-2xs text-faint">·</span>
+                            <span>{ing}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* 做法 */}
+                    <div className="mt-3 pt-3 border-t border-line-soft">
+                      <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mb-1.5">
+                        Method · 做法
+                      </div>
+                      <ol className="space-y-1.5">
+                        {r.steps.map((step, j) => (
+                          <li
+                            key={j}
+                            className="grid font-zh text-sm text-muted leading-relaxed"
+                            style={{ gridTemplateColumns: '24px 1fr' }}
+                          >
+                            <span className="font-mono text-xs text-accent tracking-[0.10em]">
+                              {String(j + 1).padStart(2, '0')}
+                            </span>
+                            <span>{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    {/* 完整配方源链接 */}
+                    <a
+                      href={r.source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 pt-3 border-t border-line-soft block font-mono text-2xs text-accent-ink uppercase tracking-[0.24em] hover:underline"
+                    >
+                      完整配方与精确克数 → {r.source.publisher} ↗
+                    </a>
                   </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="font-mono text-xs text-ink tabular-nums leading-tight whitespace-nowrap">
-                    {r.discardG}g · {r.timeMin}min
-                  </div>
-                  <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] mt-0.5 whitespace-nowrap">
-                    {r.source.publisher} ↗
-                  </div>
-                </div>
+                )}
               </div>
-            </a>
-          ))}
+            );
+          })}
         </div>
         <p className="font-zh text-xs text-muted mt-2 leading-relaxed italic">
-          — 弃种冷藏可存约一周；越老越酸，做脆饼/披萨饼底反而更香。
+          — 弃种冷藏可存约一周；越老越酸，做脆饼反而更香。
         </p>
       </section>
     </div>
