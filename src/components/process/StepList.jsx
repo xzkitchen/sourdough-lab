@@ -143,9 +143,54 @@ function StepRow({
         </div>
       </div>
 
-      {/* 展开区：未完成 → tips + Mark/Locked */}
+      {/* 展开区：未完成 → 克数块 + tips + Mark/Locked */}
       {isOpen && !done && (
         <div className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
+
+          {/* 本阶段称量：base 食材克数（无标签前缀，每行一个，hairline 上下分隔）*/}
+          {step.stageBaseGrams && (
+            <div className="border-y border-line-soft py-1.5 mb-3">
+              {step.stageBaseGrams.map((g, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-baseline justify-between py-1"
+                >
+                  <span className="font-zh text-sm text-ink">{g.name}</span>
+                  <span className="font-mono text-sm text-ink tabular-nums whitespace-nowrap">
+                    {g.weight}
+                    <span className="text-2xs text-faint ml-0.5">g</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 分割预整：每团重 / 份数 / 总重 三行（同样的 hairline 块结构）*/}
+          {step.perLoafInfo && (
+            <div className="border-y border-line-soft py-1.5 mb-3">
+              <div className="flex items-baseline justify-between py-1">
+                <span className="font-zh text-sm text-ink">每个面团</span>
+                <span className="font-mono text-sm text-ink tabular-nums whitespace-nowrap">
+                  ~{step.perLoafInfo.perLoaf}
+                  <span className="text-2xs text-faint ml-0.5">g</span>
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between py-1">
+                <span className="font-zh text-sm text-muted">份数</span>
+                <span className="font-mono text-sm text-muted tabular-nums whitespace-nowrap">
+                  {step.perLoafInfo.numUnits}<span className="text-2xs text-faint ml-0.5">个</span>
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between py-1">
+                <span className="font-zh text-sm text-muted">总重</span>
+                <span className="font-mono text-sm text-muted tabular-nums whitespace-nowrap">
+                  {step.perLoafInfo.total}
+                  <span className="text-2xs text-faint ml-0.5">g</span>
+                </span>
+              </div>
+            </div>
+          )}
+
           {step.tips.map((t, j) => (
             <div
               key={j}

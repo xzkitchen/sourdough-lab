@@ -273,12 +273,15 @@ const STEP_TO_BASE_INGREDIENT_IDS = {
 };
 
 /**
- * 把 process steps 增强：注入对应阶段的 base 食材克数 + modifier 投料 + 每个面团分割重量
+ * 把 process steps 增强：附加本阶段称量信息 + modifier 投料 + 每个面团分割重量
  *
- * tips 顺序约定：
- *   1. 【本阶段克数】base 食材（投料前需称量的）—— prepend，最先看到
- *   2. baseTips 里的技术描述（搅拌、判断状态等）
- *   3. 【本阶段投料】modifier 食材（操作中追加的，如折叠时铺料）—— append
+ * 数据分离：
+ *   - stageBaseGrams: [{ name, weight }]   本阶段需称量的 base 食材（autolyse / salt）
+ *   - perLoafInfo:    { perLoaf, numUnits, total }  分割预整步骤的每团重
+ *   - tips:           只放技术描述（搅拌、判断状态等）+ modifier 投料
+ *
+ * UI 层把 stageBaseGrams 和 perLoafInfo 渲染成独立的"克数块"放在 tips 之上，
+ * 不再用"【本阶段克数】..."这种长前缀混入编号 tip 序列。
  */
 export function enhanceSteps(steps, calculated) {
   const byStage = groupModifiersByStage(calculated.ingredients);
@@ -288,27 +291,29 @@ export function enhanceSteps(steps, calculated) {
     const stageIngredients = byStage[step.id] || [];
     const enhancedTips = [...(step.baseTips || [])];
 
-    // 1. Prepend：本阶段需要称量的 base 食材克数
+    // 本阶段需要称量的 base 食材（autolyse / salt）—— 独立字段
+    let stageBaseGrams = null;
     const baseIds = STEP_TO_BASE_INGREDIENT_IDS[step.id];
     if (baseIds) {
       const baseAtStep = baseIds
         .map((id) => ingById[id])
         .filter((i) => i && i.weight > 0);
       if (baseAtStep.length) {
-        const text = baseAtStep.map((i) => `${i.name} ${i.weight}g`).join(' / ');
-        enhancedTips.unshift(`【本阶段克数】${text}`);
+        stageBaseGrams = baseAtStep.map((i) => ({ name: i.name, weight: i.weight }));
       }
     }
 
-    // 2. Prepend：分割预整步骤显示每个面团重量
+    // 分割预整步骤：每个面团重量 —— 独立字段
+    let perLoafInfo = null;
     if (step.id === 'preshape' && calculated.totalWeight && calculated.numUnits) {
-      const perLoaf = Math.round(calculated.totalWeight / calculated.numUnits);
-      enhancedTips.unshift(
-        `【本阶段克数】每个面团 ~${perLoaf}g（共 ${calculated.numUnits} 个 / 总重 ${calculated.totalWeight}g）`
-      );
+      perLoafInfo = {
+        perLoaf: Math.round(calculated.totalWeight / calculated.numUnits),
+        numUnits: calculated.numUnits,
+        total: calculated.totalWeight,
+      };
     }
 
-    // 3. Append：本阶段操作中投入的 modifier 食材（保留原有逻辑）
+    // modifier 投料保留原有 tips 注入（操作中追加，append 在 tips 末尾）
     if (stageIngredients.length) {
       const names = stageIngredients
         .map((i) => `${i.name} ${i.weight}g`)
@@ -320,6 +325,8 @@ export function enhanceSteps(steps, calculated) {
       ...step,
       tips: enhancedTips,
       stageIngredients,
+      stageBaseGrams,
+      perLoafInfo,
     };
   });
 }

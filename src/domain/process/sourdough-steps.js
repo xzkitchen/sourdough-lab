@@ -81,9 +81,11 @@ export const SOURDOUGH_STEPS = [
     timeValue: '8-10',
     timeUnit: '分钟',
     minutes: 10,
+    // 档位针对大宇大白象 6 档机：商用级电机揉面用最高档
+    // (软化黄油 1 档 / 揉面 6 档为厂家实测推荐) [新浪众测大评测]
     mixerParams: {
-      stage1: { speed: 3, time: '4分钟',   goal: '成团' },
-      stage2: { speed: 4, time: '4-6分钟', goal: '中等面筋' },
+      stage1: { speed: 4, time: '3-4分钟', goal: '成团' },
+      stage2: { speed: 6, time: '4-5分钟', goal: '中等面筋（半窗膜）' },
     },
     baseTips: [
       '目标状态：面团表面光滑，稍有粘性',
