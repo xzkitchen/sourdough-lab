@@ -261,15 +261,54 @@ export function groupModifiersByStage(ingredients) {
 }
 
 /**
- * 把 process steps 增强：注入对应阶段的 modifier 食材和调整过的 tips
+ * 步骤 → 该步骤需要展示克数的 base 食材 id（按读入顺序）
+ *
+ * - autolyse 取 'water-autolyse'（拆分后）或 'water'（未拆分时的 fallback）；
+ *   两个 id 不会同时存在，filter(Boolean) 自动只取实际存在的那个。
+ * - salt 仅在 reservedRatio > 0 时才有 'water-reserved'；不存在则只显示盐。
+ */
+const STEP_TO_BASE_INGREDIENT_IDS = {
+  autolyse: ['flour', 'water-autolyse', 'water', 'starter'],
+  salt:     ['water-reserved', 'salt'],
+};
+
+/**
+ * 把 process steps 增强：注入对应阶段的 base 食材克数 + modifier 投料 + 每个面团分割重量
+ *
+ * tips 顺序约定：
+ *   1. 【本阶段克数】base 食材（投料前需称量的）—— prepend，最先看到
+ *   2. baseTips 里的技术描述（搅拌、判断状态等）
+ *   3. 【本阶段投料】modifier 食材（操作中追加的，如折叠时铺料）—— append
  */
 export function enhanceSteps(steps, calculated) {
   const byStage = groupModifiersByStage(calculated.ingredients);
+  const ingById = Object.fromEntries(calculated.ingredients.map((i) => [i.id, i]));
+
   return steps.map((step) => {
     const stageIngredients = byStage[step.id] || [];
     const enhancedTips = [...(step.baseTips || [])];
 
-    // 阶段提示：加入此刻投料的 modifier
+    // 1. Prepend：本阶段需要称量的 base 食材克数
+    const baseIds = STEP_TO_BASE_INGREDIENT_IDS[step.id];
+    if (baseIds) {
+      const baseAtStep = baseIds
+        .map((id) => ingById[id])
+        .filter((i) => i && i.weight > 0);
+      if (baseAtStep.length) {
+        const text = baseAtStep.map((i) => `${i.name} ${i.weight}g`).join(' / ');
+        enhancedTips.unshift(`【本阶段克数】${text}`);
+      }
+    }
+
+    // 2. Prepend：分割预整步骤显示每个面团重量
+    if (step.id === 'preshape' && calculated.totalWeight && calculated.numUnits) {
+      const perLoaf = Math.round(calculated.totalWeight / calculated.numUnits);
+      enhancedTips.unshift(
+        `【本阶段克数】每个面团 ~${perLoaf}g（共 ${calculated.numUnits} 个 / 总重 ${calculated.totalWeight}g）`
+      );
+    }
+
+    // 3. Append：本阶段操作中投入的 modifier 食材（保留原有逻辑）
     if (stageIngredients.length) {
       const names = stageIngredients
         .map((i) => `${i.name} ${i.weight}g`)
