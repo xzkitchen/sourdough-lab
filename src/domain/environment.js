@@ -1,11 +1,27 @@
 /**
- * Environment adjustment — room temperature handling for sourdough.
+ * Environment adjustment — seasonal handling for sourdough.
  *
- * This keeps seasonal guidance in domain code so UI components only render the
- * calculator result.
+ * UI exposes a simple standard/summer mode. Domain keeps the actual numbers so
+ * components do not hard-code baking rules.
  */
 
-const BASE_ROOM_TEMP_C = 24;
+export const ENVIRONMENT_MODES = {
+  standard: {
+    id: 'standard',
+    label: '标准',
+    labelLatin: 'Standard',
+    roomTempC: 24,
+  },
+  summer: {
+    id: 'summer',
+    label: '夏季',
+    labelLatin: 'Summer',
+    roomTempC: 28,
+  },
+};
+
+const BASE_ROOM_TEMP_C = ENVIRONMENT_MODES.standard.roomTempC;
+const SUMMER_ROOM_TEMP_C = ENVIRONMENT_MODES.summer.roomTempC;
 const MIN_ROOM_TEMP_C = 16;
 const MAX_ROOM_TEMP_C = 34;
 
@@ -18,26 +34,32 @@ export function normalizeRoomTempC(value, fallback = BASE_ROOM_TEMP_C) {
   return Math.max(MIN_ROOM_TEMP_C, Math.min(MAX_ROOM_TEMP_C, round(normalized)));
 }
 
+export function normalizeEnvironmentMode(mode) {
+  return mode === ENVIRONMENT_MODES.summer.id
+    ? ENVIRONMENT_MODES.summer.id
+    : ENVIRONMENT_MODES.standard.id;
+}
+
 export function getFermentationFactor(roomTempC) {
   const temp = normalizeRoomTempC(roomTempC);
   return Math.max(0.5, Math.min(1.6, round1(1 - (temp - BASE_ROOM_TEMP_C) * 0.05)));
 }
 
 export function buildEnvironmentAdjustment(environment = {}, base = null) {
-  const roomTempC = normalizeRoomTempC(environment.roomTempC);
+  const mode = normalizeEnvironmentMode(
+    environment.mode || (Number(environment.roomTempC) >= 26 ? 'summer' : 'standard')
+  );
+  const roomTempC = mode === 'summer' ? SUMMER_ROOM_TEMP_C : BASE_ROOM_TEMP_C;
   const fermentationFactor = getFermentationFactor(roomTempC);
-  const warmDelta = Math.max(0, roomTempC - BASE_ROOM_TEMP_C);
-  const isWarm = roomTempC >= 26;
-  const isHot = roomTempC >= 28;
-  const isVeryHot = roomTempC >= 30;
+  const isSummer = mode === 'summer';
 
-  const targetDoughTempC = isVeryHot ? 23 : isHot ? 24 : isWarm ? 25 : 26;
-  const targetWaterTempC = isVeryHot ? 0 : isHot ? 2 : isWarm ? 6 : 18;
-  const bulkRiseTarget = isHot ? '30-50%' : isWarm ? '40-55%' : '50-75%';
-  const label = isVeryHot ? '酷热' : isHot ? '夏季高温' : isWarm ? '偏暖' : '标准室温';
+  const targetDoughTempC = isSummer ? 24 : 26;
+  const targetWaterTempC = isSummer ? 2 : 18;
+  const bulkRiseTarget = isSummer ? '30-50%' : '50-75%';
+  const label = ENVIRONMENT_MODES[mode].label;
 
   const defaultBulkMinutes = base?.defaultBulkMinutes || 240;
-  const bulkMinutesDelta = isWarm
+  const bulkMinutesDelta = isSummer
     ? round(defaultBulkMinutes * (fermentationFactor - 1))
     : 0;
 
@@ -45,9 +67,21 @@ export function buildEnvironmentAdjustment(environment = {}, base = null) {
   const warnings = [];
   const stepTips = {};
 
-  if (isWarm) {
+  const actions = isSummer
+    ? [
+        { id: 'water', label: '冰水', value: `${targetWaterTempC}-${targetWaterTempC + 2}°C` },
+        { id: 'dough', label: '面温', value: `${targetDoughTempC}-${targetDoughTempC + 1}°C` },
+        { id: 'bulk', label: '一发', value: bulkRiseTarget },
+      ]
+    : [
+        { id: 'water', label: '水温', value: '18-22°C' },
+        { id: 'dough', label: '面温', value: '≤26°C' },
+        { id: 'bulk', label: '一发', value: bulkRiseTarget },
+      ];
+
+  if (isSummer) {
     notes.push(
-      `室温 ${roomTempC}°C：配方水量不变，改用 ${targetWaterTempC}-${targetWaterTempC + 2}°C 冰水，揉面结束面温控制在 ${targetDoughTempC}-${targetDoughTempC + 1}°C。`
+      `夏季模式：配方克数不变；用 ${targetWaterTempC}-${targetWaterTempC + 2}°C 冰水，揉面结束面温控制在 ${targetDoughTempC}-${targetDoughTempC + 1}°C。`
     );
     notes.push(
       `发酵速度约为标准室温的 ${round(100 / fermentationFactor)}%，一发目标改看体积增长 ${bulkRiseTarget}，不要按固定时长等到原配方上限。`
@@ -70,17 +104,20 @@ export function buildEnvironmentAdjustment(environment = {}, base = null) {
   }
 
   return {
+    mode,
     roomTempC,
     baseRoomTempC: BASE_ROOM_TEMP_C,
     label,
-    isWarm,
+    isWarm: isSummer,
+    isSummer,
     fermentationFactor,
     targetDoughTempC,
     targetWaterTempC,
     bulkRiseTarget,
+    actions,
     bulkMinutesDelta,
     proofMinutesDelta: 0,
-    temperatureDelta: isWarm ? targetDoughTempC - 26 : 0,
+    temperatureDelta: isSummer ? targetDoughTempC - 26 : 0,
     notes,
     warnings,
     stepTips,

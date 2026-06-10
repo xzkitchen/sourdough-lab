@@ -43,7 +43,7 @@ function App() {
   const [tab, setTab] = useStickyState('formula', 'sdlv2_tab');
   const [numUnits, setNumUnits] = useStickyState(3, 'sdlv2_num_units');
   const [selected, setSelected] = useStickyState([], 'sdlv2_selected_modifiers');
-  const [roomTempC, setRoomTempC] = useStickyState(28, 'sdlv2_room_temp_c');
+  const [seasonMode, setSeasonMode] = useStickyState('summer', 'sdlv2_season_mode');
   const [seedStarter, setSeedStarter] = useStickyState(60, 'sdlv2_seed_starter');
   const [revivalMode, setRevivalMode] = useStickyState(false, 'sdlv2_revival_mode');
   const [completedList, setCompletedList] = useStickyState([], 'sdlv2_completed_steps');
@@ -57,9 +57,9 @@ function App() {
       base,
       numUnits,
       selectedModifiers: selected,
-      environment: { roomTempC },
+      environment: { mode: seasonMode },
     }),
-    [base, numUnits, selected, roomTempC]
+    [base, numUnits, selected, seasonMode]
   );
   const feed = useMemo(
     () => calculateFeed(calculated, seedStarter),
@@ -227,8 +227,8 @@ function App() {
               <FormulaTab
                 activeFlavor={activeFlavor}
                 calculated={calculated}
-                roomTempC={roomTempC}
-                onRoomTempChange={setRoomTempC}
+                seasonMode={seasonMode}
+                onSeasonModeChange={setSeasonMode}
                 onApplyFlavor={applyFlavor}
               />
             )}
@@ -284,7 +284,7 @@ function App() {
 // ── Formula Tab ─────────────────────────────────────────────
 // 注意：ActiveFlavorBar 已被抬到 App 顶层（兄弟节点），
 // 这里只渲染下方滚动区内容。
-function FormulaTab({ activeFlavor, calculated, roomTempC, onRoomTempChange, onApplyFlavor }) {
+function FormulaTab({ activeFlavor, calculated, seasonMode, onSeasonModeChange, onApplyFlavor }) {
   return (
     <div className="space-y-7">
       {/* №01 Choose flavor */}
@@ -299,10 +299,10 @@ function FormulaTab({ activeFlavor, calculated, roomTempC, onRoomTempChange, onA
 
       {/* №02 Room temperature */}
       <section>
-        <SecHead n={2} label="Room temp" zhLabel="环境温度" />
+        <SecHead n={2} label="Mode" zhLabel="制作模式" />
         <EnvironmentPanel
-          value={roomTempC}
-          onChange={onRoomTempChange}
+          mode={seasonMode}
+          onModeChange={onSeasonModeChange}
           environment={calculated.environment}
         />
       </section>

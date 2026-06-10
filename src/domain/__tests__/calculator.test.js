@@ -76,23 +76,39 @@ describe('calculateRecipe — 单 modifier', () => {
 });
 
 describe('calculateRecipe — environment', () => {
-  it('28°C 夏季环境不改原味配方克数，但给出控温和一发建议', () => {
+  it('夏季模式不改原味配方克数，但给出控温和一发建议', () => {
     const r = calculateRecipe({
       base: 'sourdough-classic',
       numUnits: 1,
-      environment: { roomTempC: 28 },
+      environment: { mode: 'summer' },
     });
 
     const byId = Object.fromEntries(r.ingredients.map((i) => [i.id, i]));
     expect(r.water).toBe(280);
     expect(byId['water-autolyse'].weight).toBe(240);
     expect(byId['water-reserved'].weight).toBe(40);
+    expect(r.environment.mode).toBe('summer');
     expect(r.environment.isWarm).toBe(true);
     expect(r.environment.targetWaterTempC).toBe(2);
     expect(r.environment.bulkRiseTarget).toBe('30-50%');
+    expect(r.environment.actions.map((a) => a.value)).toEqual(['2-4°C', '24-25°C', '30-50%']);
     expect(r.processAdjust.bulkMinutesDelta).toBeLessThan(0);
-    expect(r.notes.join(' ')).toContain('配方水量不变');
+    expect(r.notes.join(' ')).toContain('配方克数不变');
     expect(r.warnings.join(' ')).toContain('面温超过 26°C');
+  });
+
+  it('标准模式保持基础配方无额外提示', () => {
+    const r = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      environment: { mode: 'standard' },
+    });
+
+    expect(r.environment.mode).toBe('standard');
+    expect(r.environment.isWarm).toBe(false);
+    expect(r.water).toBe(280);
+    expect(r.notes).toHaveLength(0);
+    expect(r.warnings).toHaveLength(0);
   });
 });
 
@@ -181,7 +197,7 @@ describe('enhanceSteps — environment tips', () => {
     const calculated = calculateRecipe({
       base: 'sourdough-classic',
       numUnits: 1,
-      environment: { roomTempC: 28 },
+      environment: { mode: 'summer' },
     });
     const [step] = enhanceSteps([
       {
