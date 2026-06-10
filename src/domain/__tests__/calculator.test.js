@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateRecipe, calculateFeed, groupModifiersByStage } from '../calculator.js';
+import { calculateRecipe, calculateFeed, groupModifiersByStage, enhanceSteps, adjustStepsForTemp } from '../calculator.js';
 import { predictBreadColor } from '../breadColor.js';
 
 describe('calculateRecipe — base only', () => {
@@ -75,6 +75,27 @@ describe('calculateRecipe — 单 modifier', () => {
   });
 });
 
+describe('calculateRecipe — environment', () => {
+  it('28°C 夏季环境不改原味配方克数，但给出控温和一发建议', () => {
+    const r = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      environment: { roomTempC: 28 },
+    });
+
+    const byId = Object.fromEntries(r.ingredients.map((i) => [i.id, i]));
+    expect(r.water).toBe(280);
+    expect(byId['water-autolyse'].weight).toBe(240);
+    expect(byId['water-reserved'].weight).toBe(40);
+    expect(r.environment.isWarm).toBe(true);
+    expect(r.environment.targetWaterTempC).toBe(2);
+    expect(r.environment.bulkRiseTarget).toBe('30-50%');
+    expect(r.processAdjust.bulkMinutesDelta).toBeLessThan(0);
+    expect(r.notes.join(' ')).toContain('配方水量不变');
+    expect(r.warnings.join(' ')).toContain('面温超过 26°C');
+  });
+});
+
 describe('calculateRecipe — 多 modifier 叠加', () => {
   it('抹茶 + 核桃 + 蔓越莓 默认 dose', () => {
     const r = calculateRecipe({
@@ -134,6 +155,44 @@ describe('groupModifiersByStage', () => {
     expect(groups['fold-3']?.some((i) => i.id === 'walnut')).toBe(true);
     // raisin 在 fold-2
     expect(groups['fold-2']?.some((i) => i.id === 'raisin')).toBe(true);
+  });
+});
+
+describe('adjustStepsForTemp', () => {
+  it('按室温缩短 prep / bulk 步骤，并保留 mix 步骤', () => {
+    const steps = [
+      { id: 'feed', phase: 'prep', minutes: 300, timeValue: '4-6', timeUnit: '小时' },
+      { id: 'knead', phase: 'mix', minutes: 10, timeValue: '8-10', timeUnit: '分钟' },
+      { id: 'fold_1', phase: 'bulk', minutes: 30, timeValue: '30', timeUnit: '分钟后' },
+    ];
+
+    const adjusted = adjustStepsForTemp(steps, 28);
+    expect(adjusted[0].minutes).toBe(240);
+    expect(adjusted[0].timeValue).toBe('4');
+    expect(adjusted[1].minutes).toBe(10);
+    expect(adjusted[1].temperatureAdjusted).toBeUndefined();
+    expect(adjusted[2].minutes).toBe(24);
+    expect(adjusted[2].timeUnit).toBe('分钟后');
+  });
+});
+
+describe('enhanceSteps — environment tips', () => {
+  it('夏季环境替换一发体积目标，避免同时显示标准目标', () => {
+    const calculated = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      environment: { roomTempC: 28 },
+    });
+    const [step] = enhanceSteps([
+      {
+        id: 'bulk_final',
+        phase: 'bulk',
+        baseTips: ['体积膨胀：比初始高度增长 50%-75%'],
+      },
+    ], calculated);
+
+    expect(step.tips.join(' ')).toContain('30-50%');
+    expect(step.tips.join(' ')).not.toContain('50%-75%');
   });
 });
 

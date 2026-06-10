@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 /**
  * Marginalia — calculator 给出的 notes（透明计算说明）和 warnings（提示）
@@ -12,7 +13,7 @@ import React from 'react';
  *   notes      string[]   计算说明（如 "+ 10g 水（吸水补偿）"）
  *   warnings   string[]   注意事项 / 安全提示
  */
-const MARGIN_GLYPHS = ['†', '‡', '§', '¶', '*', '★'];
+const MARGIN_GLYPHS = ['†', '‡', '§', '¶', '*', '※'];
 
 export function Marginalia({ notes = [], warnings = [] }) {
   if (notes.length === 0 && warnings.length === 0) return null;
@@ -29,8 +30,8 @@ export function Marginalia({ notes = [], warnings = [] }) {
       ))}
       {warnings.map((w, i) => (
         <div key={`w${i}`} className="flex gap-2 items-baseline border-l border-accent pl-2.5">
-          <span className="font-display text-base text-accent-ink leading-none flex-shrink-0">
-            ⚠
+          <span className="text-accent-ink leading-none flex-shrink-0 translate-y-[2px]">
+            <AlertTriangle className="size-3.5" strokeWidth={1.7} />
           </span>
           <p className="font-zh text-sm text-accent-ink leading-relaxed flex-1">{w}</p>
         </div>

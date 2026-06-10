@@ -9,11 +9,13 @@ import {
   calculateRecipe,
   calculateFeed,
   enhanceSteps,
+  adjustStepsForTemp,
 } from './domain/calculator.js';
 import { getProcessSteps } from './domain/process/index.js';
 
 import {
   ActiveFlavorBar,
+  EnvironmentPanel,
   FlavorPresets,
   IngredientTable,
   Marginalia,
@@ -41,6 +43,7 @@ function App() {
   const [tab, setTab] = useStickyState('formula', 'sdlv2_tab');
   const [numUnits, setNumUnits] = useStickyState(3, 'sdlv2_num_units');
   const [selected, setSelected] = useStickyState([], 'sdlv2_selected_modifiers');
+  const [roomTempC, setRoomTempC] = useStickyState(28, 'sdlv2_room_temp_c');
   const [seedStarter, setSeedStarter] = useStickyState(60, 'sdlv2_seed_starter');
   const [revivalMode, setRevivalMode] = useStickyState(false, 'sdlv2_revival_mode');
   const [completedList, setCompletedList] = useStickyState([], 'sdlv2_completed_steps');
@@ -50,15 +53,24 @@ function App() {
   const base = DEFAULT_BASE;
 
   const calculated = useMemo(
-    () => calculateRecipe({ base, numUnits, selectedModifiers: selected }),
-    [base, numUnits, selected]
+    () => calculateRecipe({
+      base,
+      numUnits,
+      selectedModifiers: selected,
+      environment: { roomTempC },
+    }),
+    [base, numUnits, selected, roomTempC]
   );
   const feed = useMemo(
     () => calculateFeed(calculated, seedStarter),
     [calculated, seedStarter]
   );
   const baseSteps = useMemo(() => getProcessSteps(base.processRef), [base]);
-  const steps = useMemo(() => enhanceSteps(baseSteps, calculated), [baseSteps, calculated]);
+  const tempAdjustedSteps = useMemo(
+    () => adjustStepsForTemp(baseSteps, calculated.environment?.roomTempC),
+    [baseSteps, calculated.environment?.roomTempC]
+  );
+  const steps = useMemo(() => enhanceSteps(tempAdjustedSteps, calculated), [tempAdjustedSteps, calculated]);
 
   const completedIds = useMemo(() => new Set(completedList), [completedList]);
   // Bake tab 当前可推进的步骤：第一个未完成（ProcessProgress + StepList 都用）
@@ -215,6 +227,8 @@ function App() {
               <FormulaTab
                 activeFlavor={activeFlavor}
                 calculated={calculated}
+                roomTempC={roomTempC}
+                onRoomTempChange={setRoomTempC}
                 onApplyFlavor={applyFlavor}
               />
             )}
@@ -270,7 +284,7 @@ function App() {
 // ── Formula Tab ─────────────────────────────────────────────
 // 注意：ActiveFlavorBar 已被抬到 App 顶层（兄弟节点），
 // 这里只渲染下方滚动区内容。
-function FormulaTab({ activeFlavor, calculated, onApplyFlavor }) {
+function FormulaTab({ activeFlavor, calculated, roomTempC, onRoomTempChange, onApplyFlavor }) {
   return (
     <div className="space-y-7">
       {/* №01 Choose flavor */}
@@ -283,9 +297,19 @@ function FormulaTab({ activeFlavor, calculated, onApplyFlavor }) {
         />
       </section>
 
+      {/* №02 Room temperature */}
+      <section>
+        <SecHead n={2} label="Room temp" zhLabel="环境温度" />
+        <EnvironmentPanel
+          value={roomTempC}
+          onChange={onRoomTempChange}
+          environment={calculated.environment}
+        />
+      </section>
+
       {/* №02 Ingredient table */}
       <section>
-        <SecHead n={2} label="Ingredients" zhLabel="配方清单" />
+        <SecHead n={3} label="Ingredients" zhLabel="配方清单" />
         <IngredientTable
           ingredients={calculated.ingredients}
           totalWeight={calculated.totalWeight}

@@ -9,6 +9,12 @@
 
 import { getBaseRecipe } from './base-recipes/index.js';
 import { getModifier } from './modifiers/index.js';
+import {
+  buildEnvironmentAdjustment,
+  formatAdjustedStepTime,
+  getFermentationFactor,
+  normalizeRoomTempC,
+} from './environment.js';
 
 const round = (n) => Math.round(n);
 const round1 = (n) => Math.round(n * 10) / 10;
@@ -23,6 +29,7 @@ const pct = (r) => `${Math.round(r * 1000) / 10}%`;
  * @property {string | object} base       - base recipe id 或对象
  * @property {number} numUnits            - 份数（条数）
  * @property {SelectedModifier[]} [selectedModifiers] - 已选 modifier
+ * @property {Object} [environment]        - 环境参数，如 { roomTempC }
  *
  * @typedef {Object} CalculatorOutput
  * @property {Object} base
@@ -47,6 +54,7 @@ export function calculateRecipe(input) {
     base: baseInput,
     numUnits = 1,
     selectedModifiers = [],
+    environment = {},
   } = input;
 
   // 1. 解析 base
@@ -83,6 +91,7 @@ export function calculateRecipe(input) {
   let proofDelta = 0;
   let temperatureDelta = 0;
   let sugarBoost = 0;     // 单条基准，最后乘 numUnits
+  const environmentAdjust = buildEnvironmentAdjustment(environment, base);
 
   for (const sel of selectedModifiers) {
     const mod = getModifier(sel.id);
@@ -159,6 +168,15 @@ export function calculateRecipe(input) {
 
     // 3e. modifier 自带 warnings
     (mod.warnings || []).forEach((w) => warnings.push(`${mod.name}：${w}`));
+  }
+
+  // 3f. 环境温度调整：只影响流程建议，不改变基础克数
+  if (environmentAdjust.isWarm) {
+    bulkDelta += environmentAdjust.bulkMinutesDelta;
+    proofDelta += environmentAdjust.proofMinutesDelta;
+    temperatureDelta += environmentAdjust.temperatureDelta;
+    notes.push(...environmentAdjust.notes);
+    warnings.push(...environmentAdjust.warnings);
   }
 
   // 4. sugar boost 作为隐形食材（仅当总量 > 0）
@@ -242,6 +260,7 @@ export function calculateRecipe(input) {
       proofMinutesDelta: round(proofDelta),
       temperatureDelta: round(temperatureDelta),
     },
+    environment: environmentAdjust,
     warnings,
     notes,
   };
@@ -289,7 +308,16 @@ export function enhanceSteps(steps, calculated) {
 
   return steps.map((step) => {
     const stageIngredients = byStage[step.id] || [];
-    const enhancedTips = [...(step.baseTips || [])];
+    let baseTips = [...(step.baseTips || [])];
+    if (calculated.environment?.isWarm && step.id === 'bulk_final') {
+      baseTips = baseTips.map((tip) =>
+        tip.includes('体积膨胀')
+          ? `体积膨胀：比初始高度增长 ${calculated.environment.bulkRiseTarget}`
+          : tip
+      );
+    }
+    const environmentTips = calculated.environment?.stepTips?.[step.id] || [];
+    const enhancedTips = [...baseTips, ...environmentTips];
 
     // 本阶段需要称量的 base 食材（autolyse / salt）—— 独立字段
     let stageBaseGrams = null;
@@ -367,12 +395,23 @@ export function calculateFeed(calculated, seedStarter) {
  * @returns {Array}            minutes 字段被调整后的步骤
  */
 export function adjustStepsForTemp(steps, roomTempC) {
-  if (!roomTempC || roomTempC === 24) return steps;
-  const factor = Math.max(0.5, Math.min(1.6, 1 - (roomTempC - 24) * 0.05));
+  const temp = normalizeRoomTempC(roomTempC);
+  if (temp === 24) return steps;
+  const factor = getFermentationFactor(temp);
   return steps.map((s) => {
     const affected = s.phase === 'prep' || s.phase === 'bulk';
     if (!affected || !s.minutes) return s;
-    return { ...s, minutes: Math.round(s.minutes * factor) };
+    const minutes = Math.round(s.minutes * factor);
+    const adjustedTime = formatAdjustedStepTime(s, minutes);
+    return {
+      ...s,
+      ...adjustedTime,
+      minutes,
+      temperatureAdjusted: true,
+      originalMinutes: s.minutes,
+      originalTimeValue: s.timeValue,
+      originalTimeUnit: s.timeUnit,
+    };
   });
 }
 
