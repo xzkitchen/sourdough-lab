@@ -1,29 +1,44 @@
 import React, { useCallback } from 'react';
+import { StepTimer } from './StepTimer.jsx';
+
+// 哪些步骤需要内置倒计时：等待型步骤（喂种/静置/折叠间隔/一发）+ 自溶 + 预整松弛。
+// cold 有专属 ColdRetardTracker；bake/knead/shape 是持续操作，不需要计时器。
+function needsTimer(step) {
+  if (!step.minutes || step.minutes <= 0) return false;
+  if (step.phase === 'prep' || step.phase === 'bulk') return true;
+  return step.id === 'autolyse' || step.id === 'preshape';
+}
+
+/** 完成时刻 → "今日 14:32 / 昨日 / 周三 14:32" */
+function fmtDoneTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const day0 = new Date(d); day0.setHours(0, 0, 0, 0);
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const diff = Math.round((today0 - day0) / 86400000);
+  if (diff === 0) return `今日 ${hm}`;
+  if (diff === 1) return `昨日 ${hm}`;
+  return `${diff}天前 ${hm}`;
+}
 
 /**
  * StepList — V2 Ledger 流程清单
  *
  * 特性：
- *   - 编号步骤卡（NN/total），点击展开看 tips
- *   - "NOW" + "+ MOD" 标签
- *   - Mark complete → 自动展开下一未完成步骤 + 平滑滚到 sticky 头部下方
+ *   - 编号步骤卡（NN/total），点击展开看 tips（header 是 button，键盘可达）
+ *   - "NOW" + "+ 投料" 标签
+ *   - 完成 → 自动展开下一未完成步骤 + 平滑滚到 sticky 头部下方，并记录完成时刻
  *   - Locked 守卫：未到的步骤可以预读，但不能"跳着"标完成
- *   - 已完成的步骤可以再次点开 → "↶ Undo" 撤销该步
- *
- * 注：Reset 按钮在 ProcessProgress（sticky 头部）里。
- * openId 已抬到 App 层，让 reset 能同时弹回第一步。
+ *   - 已完成的步骤可以再次点开 → "↶ 撤销" 撤销该步
  *
  * Props:
- *   steps             enhanceSteps() 输出
- *   completedIds      Set<string>
- *   currentStepId     string | null
- *   openId            string | null  当前展开的 step（受控）
- *   onOpenChange(id)  展开 step 切换
- *   onToggle(stepId)
+ *   steps / completedIds / currentStepId
+ *   completedAt       { [stepId]: ts } 每步完成时刻
+ *   openId / onOpenChange(id) / onToggle(stepId)
  *   coldSlot          可选：ColdRetardTracker 的 React 节点
  */
-export function StepList({ steps, completedIds, currentStepId, openId, onOpenChange, onToggle, coldSlot }) {
-  // 完成步骤后自动滚到下一步：scrollIntoView + scroll-mt 已在 StepRow 上设
+export function StepList({ steps, completedIds, completedAt = {}, currentStepId, openId, onOpenChange, onToggle, coldSlot }) {
   const scrollToStep = useCallback((stepId) => {
     setTimeout(() => {
       const el = document.querySelector(`[data-step-id="${stepId}"]`);
@@ -46,13 +61,13 @@ export function StepList({ steps, completedIds, currentStepId, openId, onOpenCha
 
   return (
     <div className="space-y-0">
-      {/* 步骤列表 */}
       {steps.map((s, i) => (
         <StepRow
           key={s.id}
           step={s}
           index={i}
           done={completedIds.has(s.id)}
+          doneAt={completedAt[s.id]}
           isCurrent={s.id === currentStepId}
           isOpen={openId === s.id}
           onOpen={() => onOpenChange(openId === s.id ? null : s.id)}
@@ -74,6 +89,7 @@ function StepRow({
   step,
   index,
   done,
+  doneAt,
   isCurrent,
   isOpen,
   onOpen,
@@ -88,64 +104,80 @@ function StepRow({
   return (
     <div
       data-step-id={step.id}
-      onClick={onOpen}
       className={[
-        '-mb-px border border-ink cursor-pointer relative transition-opacity duration-fast',
-        // 滚动 offset：sticky nav (~80) + sticky progress (~70) + 12px 呼吸 ≈ 162
-        'scroll-mt-[150px] sm:scroll-mt-[162px]',
+        '-mb-px border border-ink relative transition-opacity duration-fast',
+        // 滚动 offset 来自 index.css 的 --sticky-offset（mobile 150 / sm 162，单一来源）
+        'scroll-mt-[var(--sticky-offset)]',
         done ? (isCurrent ? '' : 'bg-bg') : (isCurrent ? 'bg-surface' : 'bg-bg'),
         done && !isOpen ? 'opacity-40' : 'opacity-100',
       ].join(' ')}
     >
-      <div className="grid items-stretch grid-cols-[44px_1fr_64px] sm:grid-cols-[52px_1fr_72px]">
-        {/* 编号格 */}
-        <div
-          className={[
-            'border-r border-ink flex items-center justify-center',
-            done || isCurrent ? 'bg-ink text-bg' : 'text-ink',
-          ].join(' ')}
-        >
-          <div className="font-display font-medium text-lg sm:text-xl">
-            {String(index + 1).padStart(2, '0')}
-          </div>
-        </div>
-
-        {/* 标题 + 标签 */}
-        <div className="px-3 sm:px-3.5 py-3 min-w-0">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <div className={`font-zh text-[15px] sm:text-base font-medium ${done ? 'line-through' : ''}`}>
-              {step.title}
+      {/* Header — 整行是 button，键盘可聚焦/回车展开 */}
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-expanded={isOpen}
+        className="block w-full text-left cursor-pointer"
+      >
+        <div className="grid items-stretch grid-cols-[44px_1fr_64px] sm:grid-cols-[52px_1fr_72px]">
+          {/* 编号格 */}
+          <div
+            className={[
+              'border-r border-ink flex items-center justify-center',
+              done || isCurrent ? 'bg-ink text-bg' : 'text-ink',
+            ].join(' ')}
+          >
+            <div className="font-display font-medium text-lg sm:text-xl">
+              {String(index + 1).padStart(2, '0')}
             </div>
-            {isCurrent && (
-              <span className="font-mono text-2xs text-accent border border-accent px-1.5 py-0.5 tracking-[0.20em] leading-none">
-                NOW
-              </span>
-            )}
-            {hasModInjection && !done && (
-              <span className="font-mono text-2xs text-ink border border-ink px-1.5 py-0.5 tracking-[0.20em] leading-none">
-                + MOD
-              </span>
-            )}
           </div>
-          <div className="font-mono text-[11px] sm:text-xs text-faint uppercase tracking-[0.18em] mt-1 truncate">
-            {step.subtitle}
-          </div>
-        </div>
 
-        {/* 右侧时间 */}
-        <div className="px-2 sm:px-3.5 py-3 text-right border-l border-line-soft border-dashed">
-          <div className="font-mono text-[11px] sm:text-xs font-semibold text-ink tabular-nums">
-            {step.timeValue}
+          {/* 标题 + 标签 */}
+          <div className="px-3 sm:px-3.5 py-3 min-w-0">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <div className={`font-zh text-[15px] sm:text-base font-medium ${done ? 'line-through' : ''}`}>
+                {step.title}
+              </div>
+              {isCurrent && (
+                <span className="font-mono text-2xs text-accent border border-accent px-1.5 py-0.5 tracking-[0.20em] leading-none">
+                  NOW
+                </span>
+              )}
+              {hasModInjection && !done && (
+                <span
+                  className="font-zh text-2xs text-ink border border-ink px-1.5 py-0.5 leading-none"
+                  title="本步需要投入混入料"
+                >
+                  +投料
+                </span>
+              )}
+            </div>
+            <div className="font-mono text-[11px] sm:text-xs text-faint uppercase tracking-[0.18em] mt-1 truncate">
+              {step.subtitle}
+            </div>
+            {/* 完成时刻：跨天回看"上一步几点做的" */}
+            {done && doneAt && (
+              <div className="font-zh text-2xs text-muted mt-1">
+                ✓ {fmtDoneTime(doneAt)} 完成
+              </div>
+            )}
           </div>
-          <div className="font-mono text-2xs text-faint uppercase tracking-[0.15em] mt-0.5">
-            {step.timeUnit}
+
+          {/* 右侧时间 */}
+          <div className="px-2 sm:px-3.5 py-3 text-right border-l border-line-soft border-dashed">
+            <div className="font-mono text-[11px] sm:text-xs font-semibold text-ink tabular-nums">
+              {step.timeValue}
+            </div>
+            <div className="font-mono text-2xs text-faint uppercase tracking-[0.15em] mt-0.5">
+              {step.timeUnit}
+            </div>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* 展开区：未完成 → 克数块 + tips + Mark/Locked */}
       {isOpen && !done && (
-        <div className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface" onClick={(e) => e.stopPropagation()}>
+        <div className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface">
 
           {/* 本阶段称量：base 食材克数（无标签前缀，每行一个，hairline 上下分隔）*/}
           {step.stageBaseGrams && (
@@ -218,9 +250,12 @@ function StepRow({
             </div>
           )}
 
-          {/* Cold retard 计时器插入（仅 phase='cold' 且未被 lock）。
-              locked 时不渲染——让下方的 "Locked · 需先完成 X" 面板单独说话，
-              避免用户绕过流程顺序在 cold-retard 上误点 Start。*/}
+          {/* 等待型步骤的内置倒计时（fold 间隔 / 静置 / 一发 / 喂种）*/}
+          {!locked && needsTimer(step) && (
+            <StepTimer stepId={step.id} minutes={step.minutes} title={step.title} />
+          )}
+
+          {/* Cold retard 计时器插入（仅 phase='cold' 且未被 lock）*/}
           {coldSlot && !locked && <div className="mt-3">{coldSlot}</div>}
 
           {locked ? (
@@ -236,10 +271,10 @@ function StepRow({
           ) : (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onComplete(); }}
-              className="mt-2.5 px-4 py-2 bg-ink text-bg font-mono text-xs uppercase tracking-[0.30em] cursor-pointer hover:bg-accent-ink transition-colors duration-fast"
+              onClick={onComplete}
+              className="mt-2.5 px-4 py-2.5 min-h-[44px] bg-ink text-bg font-zh text-sm tracking-wide cursor-pointer hover:bg-accent-ink transition-colors duration-fast"
             >
-              Mark complete ✓
+              完成此步 ✓
             </button>
           )}
         </div>
@@ -247,19 +282,16 @@ function StepRow({
 
       {/* 展开区：已完成 → Undo（右对齐）*/}
       {isOpen && done && (
-        <div
-          className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface flex items-center justify-between gap-3"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
-            ✓ Completed · 已完成
+        <div className="border-t border-line-soft pl-4 sm:pl-14 pr-4 py-3 bg-surface flex items-center justify-between gap-3">
+          <div className="font-zh text-xs text-muted">
+            ✓ 已完成{doneAt ? ` · ${fmtDoneTime(doneAt)}` : ''}
           </div>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onUndo(); }}
-            className="px-3 py-1.5 bg-transparent text-ink border border-ink font-mono text-2xs uppercase tracking-[0.30em] cursor-pointer hover:bg-ink hover:text-bg active:bg-sunken transition-colors duration-fast whitespace-nowrap"
+            onClick={onUndo}
+            className="px-3 py-2.5 min-h-[44px] bg-transparent text-ink border border-ink font-zh text-xs cursor-pointer hover:bg-ink hover:text-bg active:bg-sunken transition-colors duration-fast whitespace-nowrap"
           >
-            ↶ Undo
+            ↶ 撤销
           </button>
         </div>
       )}

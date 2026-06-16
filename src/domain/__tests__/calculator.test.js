@@ -222,6 +222,74 @@ describe('calculateFeed (sourdough only)', () => {
   });
 });
 
+describe('calculateRecipe — saltAdjust', () => {
+  it('橄榄自动把盐减至 1.8% 并留批注，旧文字警告移除', () => {
+    const r = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'olive' }],
+    });
+    const salt = r.ingredients.find((i) => i.id === 'salt');
+    expect(salt.weight).toBeCloseTo(7.2, 1);        // 400 × 1.8%
+    expect(salt.bakersPct).toBeCloseTo(0.018, 4);
+    expect(r.notes.join(' ')).toContain('1.8%');
+    expect(r.notes.join(' ')).toContain('已计入');
+    // 旧的"基础盐可减至 1.8%"警告必须移除，避免与表格矛盾
+    expect(r.warnings.join(' ')).not.toContain('基础盐可减');
+  });
+
+  it('无 saltAdjust 的 modifier 不影响盐行', () => {
+    const r = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'matcha' }],
+    });
+    const salt = r.ingredients.find((i) => i.id === 'salt');
+    expect(salt.bakersPct).toBeCloseTo(0.02, 4);
+  });
+});
+
+describe('calculateRecipe — 批注口径（已计入）', () => {
+  it('吸水补偿批注注明"已计入"，避免用户照批注重复加水', () => {
+    const r = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'matcha' }],
+    });
+    const note = r.notes.find((n) => n.includes('吸水补偿'));
+    expect(note).toBeTruthy();
+    expect(note).toContain('已计入');
+  });
+
+  it('浸泡液与面筋补水批注同样注明已计入', () => {
+    const r = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'flax-seed' }, { id: 'cocoa' }],
+    });
+    expect(r.notes.find((n) => n.includes('浸泡液'))).toContain('已计入');
+    expect(r.notes.find((n) => n.includes('面筋'))).toContain('已计入');
+  });
+});
+
+describe('calculateFeed — 旧种充足', () => {
+  it('seed ≥ 需求+留种 时返回 sufficient 标志、0 喂养量与富余量', () => {
+    const r = calculateRecipe({ base: 'sourdough-classic', numUnits: 1 });
+    const feed = calculateFeed(r, 200);   // 需 80 + 留 60 = 140 < 200
+    expect(feed.sufficient).toBe(true);
+    expect(feed.flour).toBe(0);
+    expect(feed.water).toBe(0);
+    expect(feed.surplus).toBe(60);        // 200 - 140
+  });
+
+  it('seed 不足时 sufficient=false 且 surplus=0', () => {
+    const r = calculateRecipe({ base: 'sourdough-classic', numUnits: 1 });
+    const feed = calculateFeed(r, 60);
+    expect(feed.sufficient).toBe(false);
+    expect(feed.surplus).toBe(0);
+  });
+});
+
 describe('predictBreadColor', () => {
   it('无 modifier → 返回 base color', () => {
     const base = { breadColor: { h: 38, s: 25, l: 82 } };

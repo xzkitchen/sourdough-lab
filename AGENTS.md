@@ -1,4 +1,4 @@
-# Sourdough Lab — 项目级 Claude 约定
+# Sourdough Lab — 项目级 Codex 约定
 
 ## 项目定位
 **纯 Sourdough 创意实验室**。不做其他面包类型（如日式吐司）。所有"不同配方"都是同一 base recipe × 不同 modifier 组合。

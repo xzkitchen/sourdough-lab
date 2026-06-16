@@ -15,7 +15,8 @@ import { LedgerRow } from '../ledger/index.js';
  *   ingredients   calculator 输出的 ingredients 数组
  *   totalWeight   总重 g
  */
-export function IngredientTable({ ingredients, totalWeight }) {
+export function IngredientTable({ ingredients, totalWeight, numUnits }) {
+  const perLoaf = numUnits > 0 ? Math.round(totalWeight / numUnits) : null;
   return (
     <div className="border-t-2 border-b-2 border-ink">
       {/* 表头 */}
@@ -41,8 +42,15 @@ export function IngredientTable({ ingredients, totalWeight }) {
 
       {/* 总重行 */}
       <div className="grid gap-x-2 sm:gap-x-3 py-2 border-t border-ink bg-surface grid-cols-[1fr_44px_56px_28px] sm:grid-cols-[1fr_50px_60px_38px]">
-        <div className="font-mono text-[11px] sm:text-xs text-ink uppercase tracking-[0.20em]">
-          Total · 总重
+        <div className="min-w-0">
+          <div className="font-mono text-[11px] sm:text-xs text-ink uppercase tracking-[0.20em]">
+            Total · 总重
+          </div>
+          {perLoaf != null && numUnits > 1 && (
+            <div className="font-zh text-xs text-muted mt-0.5">
+              × {numUnits} 个 · 每个约 {perLoaf}g
+            </div>
+          )}
         </div>
         <div></div>
         <div className="font-mono text-[15px] sm:text-base font-semibold text-ink text-right tabular-nums">
@@ -50,6 +58,16 @@ export function IngredientTable({ ingredients, totalWeight }) {
           <span className="text-2xs text-faint ml-0.5">g</span>
         </div>
         <div></div>
+      </div>
+
+      {/* 缩写注 · legend —— 给 Bak% / Src 缩写一个脚注式解释（脚注在框内，text-2xs faint） */}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pt-2 pb-1.5">
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em]">
+          <span className="text-muted">Bak%</span> 烘焙百分比 · 以粉为 100%
+        </div>
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em]">
+          Src · 来源 — <span className="text-muted">·</span> 基础 / <span className="text-muted">mod</span> 配方变体 / <span className="text-muted">auto</span> 浸泡水 / <span className="text-muted">rsv</span> 后加水
+        </div>
       </div>
     </div>
   );

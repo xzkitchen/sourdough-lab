@@ -91,6 +91,8 @@ export function calculateRecipe(input) {
   let proofDelta = 0;
   let temperatureDelta = 0;
   let sugarBoost = 0;     // 单条基准，最后乘 numUnits
+  let saltTargetPct = null;   // modifier 要求的盐量上限（bp），取最低值
+  let saltAdjustSource = null;
   const environmentAdjust = buildEnvironmentAdjustment(environment, base);
 
   for (const sel of selectedModifiers) {
@@ -127,13 +129,13 @@ export function calculateRecipe(input) {
       const add = round(weight * mod.hydrationAdjust.ratio);
       if (add > 0) {
         water += add;
-        notes.push(`${mod.name} +${add}g 水（吸水补偿 ${pct(mod.hydrationAdjust.ratio)}）`);
+        notes.push(`${mod.name} 吸水补偿 +${add}g 水（已计入上表水量，无需另加）`);
       }
     } else if (mod.hydrationAdjust?.method === 'soaking-liquid') {
       const liquid = round(weight * mod.hydrationAdjust.ratio);
       if (liquid > 0) {
         water += liquid;
-        notes.push(`${mod.name} 浸泡液 +${liquid}g 并入总水`);
+        notes.push(`${mod.name} 浸泡液 +${liquid}g 水（已计入上表水量，无需另加）`);
       }
     }
 
@@ -155,7 +157,7 @@ export function calculateRecipe(input) {
     if (mod.glutenAdjust?.hydrationBonusPct) {
       const add = round(flour * (mod.glutenAdjust.hydrationBonusPct / 100));
       water += add;
-      notes.push(`${mod.name} 单宁收紧面筋 +${add}g 水`);
+      notes.push(`${mod.name} 单宁收紧面筋 +${add}g 水（已计入上表水量，无需另加）`);
     }
     if (mod.glutenAdjust?.tip) {
       warnings.push(`${mod.name}：${mod.glutenAdjust.tip}`);
@@ -164,6 +166,14 @@ export function calculateRecipe(input) {
     // 3d. 温度调整
     if (mod.temperatureAdjust) {
       temperatureDelta += mod.temperatureAdjust;
+    }
+
+    // 3d+. 盐量调整（如橄榄自带盐分）：多个 modifier 同时要求时取最低
+    if (mod.saltAdjust?.targetPct) {
+      if (saltTargetPct === null || mod.saltAdjust.targetPct < saltTargetPct) {
+        saltTargetPct = mod.saltAdjust.targetPct;
+        saltAdjustSource = mod.name;
+      }
     }
 
     // 3e. modifier 自带 warnings
@@ -177,6 +187,16 @@ export function calculateRecipe(input) {
     temperatureDelta += environmentAdjust.temperatureDelta;
     notes.push(...environmentAdjust.notes);
     warnings.push(...environmentAdjust.warnings);
+  }
+
+  // 3h. 盐行改写：直接改表格数字，而不是留一条"自己心算"的文字警告
+  if (saltTargetPct !== null) {
+    const salt = baseIngredients.find((i) => i.id === 'salt');
+    if (salt && saltTargetPct < salt.bakersPct) {
+      salt.weight = round1(flour * saltTargetPct);
+      salt.bakersPct = saltTargetPct;
+      notes.push(`${saltAdjustSource}含盐，盐已自动减至 ${pct(saltTargetPct)}（已计入上表，按表称即可）`);
+    }
   }
 
   // 4. sugar boost 作为隐形食材（仅当总量 > 0）
@@ -380,6 +400,9 @@ export function calculateFeed(calculated, seedStarter) {
     water: waterPart,
     total: seedStarter + flourPart + waterPart,
     buffer,
+    // 旧种已够（需求+留种），无需喂养；surplus 为富余克数
+    sufficient: mixtureNeeded === 0,
+    surplus: Math.max(0, seedStarter - totalBuildTarget),
   };
 }
 

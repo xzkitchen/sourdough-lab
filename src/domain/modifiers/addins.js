@@ -276,7 +276,8 @@ export const ADDINS = [
     flavor: ['briny', 'umami'],
     worksWith: ['rosemary', 'walnut'],
     addStage: 'fold-2',
-    warnings: ['橄榄本身含盐，基础盐可减至 1.8%'],
+    saltAdjust: { targetPct: 0.018 },   // 橄榄自带盐分，配方盐自动减至 1.8%
+    warnings: [],
     source: {
       name: 'Tartine Bread — Olive Country Bread',
       url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',

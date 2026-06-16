@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * Schema version
@@ -36,11 +36,17 @@ export function useStickyState(defaultValue, key) {
       }
 
       const raw = localStorage.getItem(key);
-      return raw !== null ? JSON.parse(raw) : defaultValue;
+      if (raw === null) return defaultValue;
+      const parsed = JSON.parse(raw);
+      // shape 校验：解析成功但类型与默认值不符 → 回退默认值（C35）
+      return isShapeCompatible(parsed, defaultValue) ? parsed : defaultValue;
     } catch {
       return defaultValue;
     }
   });
+
+  // 默认值快照：用 ref 固定，避免 inline []/{} 默认值导致 storage 监听每次渲染重绑
+  const defaultRef = useRef(defaultValue);
 
   useEffect(() => {
     try {
@@ -50,8 +56,36 @@ export function useStickyState(defaultValue, key) {
     }
   }, [key, value]);
 
+  // 跨标签页同步：另一个 tab 写同 key 时更新本 tab 状态（C36）
+  // 'storage' 事件只在“其他” tab 触发，不会响应自己的写入 → 无 write→event→write 回环
+  useEffect(() => {
+    function onStorage(e) {
+      if (e.key !== key) return;        // 只关心本 key
+      if (e.newValue === null) return;  // key 被移除/清空 → 不动当前编辑，保守处理
+      try {
+        const incoming = JSON.parse(e.newValue);
+        if (isShapeCompatible(incoming, defaultRef.current)) setValue(incoming);
+      } catch {
+        /* 忽略损坏的跨 tab 写入 */
+      }
+    }
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [key]);
+
   // 直接把 React 的 setValue 返回出去 —— 天然支持 updater function
   return [value, setValue];
+}
+
+/**
+ * shape 校验：localStorage 解析成功但类型与默认值不符（数组↔对象、对象↔基元等）→ 回退默认值。
+ * 默认值的类型即“期望形状”：[] 期望数组，{} 期望对象，'x'/0/false 期望同类基元，null 不约束。
+ */
+function isShapeCompatible(value, fallback) {
+  if (fallback === null || fallback === undefined) return true; // 无形状约束
+  if (Array.isArray(fallback)) return Array.isArray(value);
+  if (typeof fallback === 'object') return value !== null && typeof value === 'object' && !Array.isArray(value);
+  return typeof value === typeof fallback; // primitive：string/number/boolean 一致
 }
 
 /**

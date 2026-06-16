@@ -74,7 +74,7 @@ export function ProcessProgress({ steps, completedIds, currentStepId, onReset })
             disabled={completed === 0}
             aria-pressed={resetState === 'confirming'}
             className={[
-              'font-mono text-2xs uppercase tracking-[0.20em] px-2 py-0.5 border whitespace-nowrap transition-colors duration-fast leading-none',
+              'relative font-mono text-2xs uppercase tracking-[0.20em] px-2 py-0.5 border whitespace-nowrap transition-colors duration-fast leading-none before:absolute before:content-[""] before:-inset-x-2 before:-inset-y-3',
               completed === 0
                 ? 'border-line-soft text-faint cursor-not-allowed'
                 : resetState === 'confirming'
@@ -82,7 +82,7 @@ export function ProcessProgress({ steps, completedIds, currentStepId, onReset })
                   : 'border-ink text-ink hover:bg-ink hover:text-bg active:bg-sunken cursor-pointer',
             ].join(' ')}
           >
-            {resetState === 'confirming' ? '↻ Confirm?' : '↻ Reset'}
+            {resetState === 'confirming' ? '↻ 再点一次确认' : '↻ Reset'}
           </button>
           <div
             className="font-display font-medium text-ink tabular-nums leading-none"
@@ -99,17 +99,11 @@ export function ProcessProgress({ steps, completedIds, currentStepId, onReset })
         {steps.map((s) => {
           const done = completedIds.has(s.id);
           const isCurrent = s.id === currentStepId;
+          const fill = done ? 'bg-ink' : isCurrent ? 'bg-accent' : '';
           return (
             <div
               key={s.id}
-              className="flex-1 border-r border-line-soft last:border-r-0"
-              style={{
-                background: done
-                  ? '#1A1715'
-                  : isCurrent
-                    ? '#b94a20'
-                    : 'transparent',
-              }}
+              className={`flex-1 border-r border-line-soft last:border-r-0 ${fill}`}
             />
           );
         })}

@@ -16,7 +16,7 @@ export const colors = {
   // Ink — 墨色三阶
   ink:      '#1A1715',   // 主墨色（近黑非黑）
   muted:    '#5C544C',   // 次要文字
-  faint:    '#9C9387',   // 三级 / 占位 / disabled
+  faint:    '#746C5F',   // 三级 / 占位 / disabled — 从 #9C9387 加深至 #746C5F，对 #F5F1E5 达 WCAG 4.5:1；同暖棕墨色系，hierarchy faint<muted<ink 保持
 
   // Lines — hairline 主力（V2 比 V1 更清淡）
   line:     '#3A3530',   // 1px 实线 —— 跟 ink 同色系，比之前的 #E5DED0 重很多（编辑器风）
