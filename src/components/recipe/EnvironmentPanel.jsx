@@ -50,13 +50,14 @@ export function EnvironmentPanel({ mode, onModeChange, environment }) {
       </div>
 
       <div className="border-t border-line-soft px-3 py-2 flex items-baseline justify-between gap-3">
-        <div className="font-zh text-xs text-muted">
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">
+          Formula
+        </div>
+        <div className="font-zh text-xs text-muted text-center flex-1">
           配方克数不变
         </div>
-        <div className="font-zh text-xs text-muted text-right">
-          {activeMode === 'summer'
-            ? `发酵更快，用时约为标准的 ${timePct}%`
-            : '发酵按标准时长'}
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">
+          {activeMode === 'summer' ? `${timePct}% time` : 'std time'}
         </div>
       </div>
     </div>

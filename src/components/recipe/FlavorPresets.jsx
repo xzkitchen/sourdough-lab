@@ -1,13 +1,6 @@
 import React from 'react';
 import { MODIFIERS_BY_ID } from '../../domain/modifiers/index.js';
 
-/** dose 转中文百分比标注（0.10 → "10%"，0.012 → "1.2%"） */
-function doseLabel(dose) {
-  if (typeof dose !== 'number') return '';
-  const v = dose * 100;
-  return v < 10 ? `${Math.round(v * 10) / 10}%` : `${Math.round(v)}%`;
-}
-
 /**
  * FlavorPresets — 风味预设 2-列编号网格
  *
@@ -30,39 +23,35 @@ export function FlavorPresets({ flavors, activeId, onApply }) {
         const col = i % 2;
         const row = Math.floor(i / 2);
 
-        // 中文摘要：直接用 modifier 中文名 + 剂量（不再堆英文拉丁名）
         const modSummary = f.modifiers.length === 0
-          ? '纯基础配方 · 无添加'
+          ? '— pure base'
           : f.modifiers
-              .map(m => {
-                const mod = MODIFIERS_BY_ID[m.id];
-                const name = mod?.name || m.id;
-                const d = doseLabel(m.dose ?? mod?.dose?.default);
-                return d ? `${name} ${d}` : name;
-              })
+              .map(m => MODIFIERS_BY_ID[m.id]?.nameLatin
+                       || MODIFIERS_BY_ID[m.id]?.name
+                       || m.id)
               .join(' · ');
 
         return (
           <button
             key={f.id}
             type="button"
-            onClick={() => {
-              // 点已选中的卡片不做任何事（避免无谓滚动）
-              if (sel) return;
+            onClick={(e) => {
+              const el = e.currentTarget;
               onApply(f);
-              // 选完后把"配方清单"区滚进视野 —— 那才是发生变化的地方，
-              // 而不是停在预设网格让用户看不到新克数/新警告。
+              // 选完后把这张卡片平滑顶到 sticky 头部正下方
+              // sticky = nav (~76px) + ActiveFlavorBar (~58px) = ~134px
+              // scroll-mt-[140px] 是这个 offset；setTimeout 让 React 先 render
               setTimeout(() => {
-                document.getElementById('formula-ingredients')
-                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }, 60);
             }}
             aria-pressed={sel}
             className={[
               'text-left px-4 py-3.5 sm:p-3 cursor-pointer transition-colors duration-fast ease-editorial',
               'active:bg-sunken',
-              // 滚动 offset 来自 index.css 的 --sticky-offset（与 Bake sticky 栈同高，单一来源）
-              'scroll-mt-[var(--sticky-offset)]',
+              // 滚动 offset：抵消 sticky nav + ActiveFlavorBar 高度，
+              // 让选中的卡片落在 sticky 头部下方 ~10px 的位置
+              'scroll-mt-[140px] sm:scroll-mt-[150px]',
               sel ? 'bg-ink text-bg active:bg-ink' : 'bg-surface text-ink hover:bg-sunken',
               // mobile: 单列，每一项之间用 top border 分隔（首项除外）
               i > 0 ? 'border-t border-ink' : '',
@@ -84,7 +73,7 @@ export function FlavorPresets({ flavors, activeId, onApply }) {
             <div className={`font-zh text-xs mt-0.5 ${sel ? 'opacity-85' : 'text-muted'}`}>
               {f.name}
             </div>
-            <div className={`font-zh text-2xs leading-snug mt-1.5 ${sel ? 'opacity-70' : 'text-faint'}`}>
+            <div className={`font-mono text-2xs uppercase tracking-[0.18em] mt-1.5 ${sel ? 'opacity-55' : 'text-faint'}`}>
               {modSummary}
             </div>
           </button>

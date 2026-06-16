@@ -21,15 +21,12 @@ Base Recipe (sourdough-classic.js)
 
 - `src/design/` —— 设计 tokens + 字体 + 渐变引擎 + 纸纹
 - `src/domain/` —— 业务逻辑纯函数，零 React 导入
-- `src/components/primitives/` —— 通用 UI 原子（目前仅 `Stepper.jsx`：大号 ± 步进器，可点按键入）
+- `src/components/primitives/` —— 通用 UI（Card/Button/Pill/NumberField/Slider/...）
 - `src/components/{recipe,starter,process}/` —— 按 Tab 分包的业务组件
-- `src/components/ledger/` —— 古籍账本视觉原子（LedgerRow / SecHead）
-- `src/hooks/` —— React hooks（useStickyState 持久化 / useColdRetard 冷藏计时 / useWakeLock 屏幕常亮）
-- `src/lib/` —— 工具函数（cn 类名合并 / notify 通知 + 标题倒计时）
 
 ## 视觉 / UI 约定
 
-- **底色 `#F5F1E5` 暖米纸 + 单一焦土 accent `#b94a20`（burnt sienna）**，不加其他 accent（以 [src/design/tokens.js](src/design/tokens.js) 为准）
+- **底色 `#F5F1EA` 暖米纸 + 单一麦色 `#B08968`**，不加其他 accent
 - **禁用 emoji 作 UI 图标**（吴老师全局规则），用 lucide-react 线条图标
 - **禁用硬编码渐变颜色**，用 [design/gradient.js](src/design/gradient.js) 的 `buildGradientBackground(prediction, modifiers)` 生成多层 radial
 - **Tailwind palette 被彻底覆盖**，只有 tokens 里定义的颜色可用。**不要用 `bg-neutral-*` / `bg-orange-*` / `bg-gray-*`**，只能 `bg-bg / bg-surface / bg-sunken / bg-accent / bg-warn-bg / bg-ok-bg`
@@ -51,16 +48,16 @@ Schema 参考 README.md 的"扩展指南"章节。
 ```bash
 npm run dev      # 本地开发
 npm run build    # 生产构建（gzip ~122KB）
-npm test         # vitest，calculator 单元测试（23 用例）
+npm test         # vitest，calculator 单元测试（14 用例）
 ```
 
 `npm test` **必须全绿**后才能改 calculator / modifiers / breadColor。
 
 ## 新增 modifier 后的自检清单
 
-1. `npm test` 全绿（现有 23 个 calculator 测试不应被破坏）
+1. `npm test` 全绿（现有 14 个 calculator 测试不应被破坏）
 2. dev server 打开，在 Formula Tab 选中新 modifier → 确认：
-   - ActiveFlavorBar 水合度 delta / 警告角标随选中变化
+   - BreadPreview 椭圆颗粒/色有变化
    - IngredientTable 出现新行 + 对应克数
    - 水合度 delta 合理（差值在 0~10% 内）
    - warnings 弹出（如设了 fermentation/gluten 影响）

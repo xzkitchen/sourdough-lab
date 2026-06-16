@@ -84,7 +84,7 @@ export function buildEnvironmentAdjustment(environment = {}, base = null) {
       `夏季模式：配方克数不变；用 ${targetWaterTempC}-${targetWaterTempC + 2}°C 冰水，揉面结束面温控制在 ${targetDoughTempC}-${targetDoughTempC + 1}°C。`
     );
     notes.push(
-      `发酵更快，用时约为标准室温的 ${round(fermentationFactor * 100)}%；一发目标改看体积增长 ${bulkRiseTarget}，不要按固定时长等到原配方上限。`
+      `发酵速度约为标准室温的 ${round(100 / fermentationFactor)}%，一发目标改看体积增长 ${bulkRiseTarget}，不要按固定时长等到原配方上限。`
     );
     warnings.push(
       `夏季高温：若面温超过 26°C，停机把面团摊薄冷藏 10-15 分钟；继续高速打面会让面筋更松、更粘。`

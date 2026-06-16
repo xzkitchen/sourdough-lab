@@ -6,7 +6,7 @@
 
 /* ─────────────────────────────────────────────
  * Sourdough Lab — 2026 Warm Editorial
- * 底色：暖米纸 #F5F1E5   强调：焦土 #b94a20（以 design/tokens.js 为准）
+ * 底色：暖米纸 #F5F1EA   强调：麦色 #B08968
  * ───────────────────────────────────────────── */
 
 @layer base {
@@ -16,19 +16,13 @@
     scroll-padding-top: 80px;
     /* iOS Safari 底部地址栏 ~44px + 呼吸 —— 防止 sticky/fixed 元素被遮挡 */
     scroll-padding-bottom: 80px;
-    /* sticky 栈高度（nav + 进度/风味条）唯一来源：StepList / FlavorPresets / App 的
-       scroll-mt 全部引用 var(--sticky-offset)，改这里一处即可重调所有锚点 */
-    --sticky-offset: 150px;
-  }
-  @media (min-width: 640px) {
-    html { --sticky-offset: 162px; }
   }
 
   body {
     font-family: var(--font-body);
     font-feature-settings: 'ss01';
-    background-color: #F5F1E5; /* = colors.bg（之前 #F5F1EA 与 token 差一位）*/
-    color: #1A1715; /* = colors.ink（之前 #1A1815 差一位）*/
+    background-color: #F5F1EA;
+    color: #1A1815;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -55,7 +49,7 @@
     outline: none;
   }
   *:focus-visible {
-    outline: 1.5px solid #b94a20; /* = colors.accent（#B08968 是 V2 前旧麦色，已废弃）*/
+    outline: 1.5px solid #B08968;
     outline-offset: 2px;
     border-radius: 2px;
   }
@@ -63,7 +57,7 @@
   /* 选中文本 */
   ::selection {
     background-color: #D9C3A8;
-    color: #1A1715; /* = colors.ink */
+    color: #1A1815;
   }
 }
 
@@ -256,18 +250,5 @@
   /* ─── Motion 工具类 ─── */
   .ease-editorial {
     transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  /* ─── prefers-reduced-motion：全局安全网（兜住任何后加的 CSS/framer 动画）─── *
-   * 只压时长/迭代，不动颜色/opacity 终态 —— hover 变色等功能反馈仍即时生效。*/
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
   }
 }

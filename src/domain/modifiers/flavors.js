@@ -53,7 +53,7 @@ export const FLAVORS = [
       author: 'Chad Robertson',
       url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',
     },
-    note: '橄榄带盐，配方已自动减盐至 1.8%（按表称即可）。橄榄油单元不饱和脂肪 + 迷迭香萜类抗氧化。',
+    note: '橄榄带盐，基础盐减 0.2%。橄榄油单元不饱和脂肪 + 迷迭香萜类抗氧化。',
   },
   {
     id: 'seeded',

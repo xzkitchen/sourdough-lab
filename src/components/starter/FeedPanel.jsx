@@ -1,7 +1,56 @@
 import React, { useState } from 'react';
 import { SecHead } from '../ledger/index.js';
-import { Stepper } from '../primitives/Stepper.jsx';
 import { DISCARD_RECIPES } from '../../domain/discard-recipes.js';
+
+/**
+ * Stepper — 大号 ± 步进器（编辑器风：1px 实线 + 大号 mono 数字）
+ */
+function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh, ariaLabel }) {
+  const dec = () => onChange(Math.max(min, value - step));
+  const inc = () => onChange(value + step);
+  return (
+    <div
+      className="grid border border-ink bg-surface grid-cols-[48px_1fr_48px] sm:grid-cols-[56px_1fr_56px]"
+      role="group"
+      aria-label={ariaLabel}
+    >
+      <button
+        type="button"
+        onClick={dec}
+        aria-label="decrease"
+        className="font-display text-2xl text-ink border-r border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer min-h-[48px]"
+      >
+        −
+      </button>
+      <div className="px-3 sm:px-4 py-3 flex items-center justify-between gap-2 min-w-0">
+        <div className="font-display font-medium text-3xl sm:text-4xl text-ink leading-none tabular-nums" style={{ letterSpacing: '-0.04em' }}>
+          {value}
+          {suffix && (
+            <span className="font-mono text-sm sm:text-base text-faint ml-1 sm:ml-1.5">{suffix}</span>
+          )}
+        </div>
+        <div className="text-right min-w-0">
+          {labelEn && (
+            <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] sm:tracking-[0.24em] truncate">
+              {labelEn}
+            </div>
+          )}
+          {labelZh && (
+            <div className="font-zh text-xs text-muted mt-0.5 truncate">{labelZh}</div>
+          )}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={inc}
+        aria-label="increase"
+        className="font-display text-2xl text-ink border-l border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer min-h-[48px]"
+      >
+        +
+      </button>
+    </div>
+  );
+}
 
 /**
  * 复活喂养比例：1:5:5（种 : 粉 : 水），总质量 = 11x 种。
@@ -22,10 +71,10 @@ function calcRevival(targetTotal) {
   return { newSeed, flour, water, total };
 }
 
-/** 模式切换分段控件（日常 / 复活）—— 触控目标 ≥40px */
+/** 模式切换分段控件（Std / Revival） */
 function ModeToggle({ revivalMode, onChange }) {
-  const btn = (active) => [
-    'font-mono text-2xs uppercase tracking-[0.16em] px-3 py-2 min-h-[40px] transition-colors duration-fast leading-none whitespace-nowrap',
+  const btn = (active, label) => [
+    'font-mono text-2xs uppercase tracking-[0.18em] px-2 py-1 transition-colors duration-fast leading-none whitespace-nowrap',
     active ? 'bg-ink text-bg cursor-default' : 'bg-bg text-muted hover:bg-sunken active:bg-sunken cursor-pointer',
   ].join(' ');
   return (
@@ -36,7 +85,7 @@ function ModeToggle({ revivalMode, onChange }) {
         aria-pressed={!revivalMode}
         className={btn(!revivalMode)}
       >
-        日常 Std
+        Std
       </button>
       <button
         type="button"
@@ -44,7 +93,7 @@ function ModeToggle({ revivalMode, onChange }) {
         aria-pressed={revivalMode}
         className={`${btn(revivalMode)} border-l border-ink`}
       >
-        复活 Revival
+        Revival
       </button>
     </div>
   );
@@ -74,21 +123,14 @@ export function FeedPanel({
   revivalMode = false,
   onRevivalModeChange,
 }) {
-  // 弃种食谱手风琴：当前展开的 id（同一时间只展开一个）
-  // 必须在任何条件 return 之前调用（Hooks 规则）
-  const [expandedDiscardId, setExpandedDiscardId] = useState(null);
-
   if (!feed) return null;
 
   // 复活模式的目标总量 = 配方需要 + 下次火种留量
   const targetTotal = feed.needed + feed.buffer;
   const revival = calcRevival(targetTotal);
 
-  // Std 模式下种:粉:水 的实际比例（differs from 1:1:1——差额补足算法）
-  const feedRatio = !revivalMode && feed.seed > 0 && feed.flour > 0
-    ? `1 : ${Math.round((feed.flour / feed.seed) * 10) / 10} : ${Math.round((feed.water / feed.seed) * 10) / 10}`
-    : null;
-  const stdSufficient = !revivalMode && feed.sufficient;
+  // 弃种食谱手风琴：当前展开的 id（同一时间只展开一个）
+  const [expandedDiscardId, setExpandedDiscardId] = useState(null);
 
   // 选择当前模式下要展示的数据
   const displayFlour = revivalMode ? revival.flour : feed.flour;
@@ -105,76 +147,37 @@ export function FeedPanel({
           onChange={onNumUnitsChange}
           step={1}
           min={1}
-          max={8}
           labelEn="Loaves"
-          labelZh="个 · 与配方页同步"
+          labelZh="个"
           ariaLabel="面包数量"
         />
       </section>
 
-      {/* №02 Seed amount —— Revival 模式不依赖现有量，改为说明 */}
+      {/* №02 Seed amount */}
       <section>
         <SecHead n={2} label="Seed amount" zhLabel="旧种数量" />
-        {revivalMode ? (
-          <div className="border border-ink p-4 bg-surface">
-            <div className="font-zh text-sm text-muted leading-relaxed">
-              复活模式按配方目标量大稀释，<strong className="text-ink">与罐里现有多少无关</strong>。
-              下面 №03 会直接告诉你取多少旧种、加多少粉水。
-            </div>
-          </div>
-        ) : (
-          <Stepper
-            value={seedStarter}
-            onChange={onSeedChange}
-            step={5}
-            min={5}
-            max={500}
-            suffix="g"
-            labelEn="Existing"
-            labelZh="现有量 · 点数字可直接输入"
-            ariaLabel="旧种数量"
-          />
-        )}
+        <Stepper
+          value={seedStarter}
+          onChange={onSeedChange}
+          step={1}
+          min={5}
+          suffix="g"
+          labelEn="Existing"
+          labelZh="现有量"
+          ariaLabel="旧种数量"
+        />
       </section>
 
       {/* №03 Feed —— 模式切换 */}
       <section>
         <SecHead
           n={3}
-          label={revivalMode ? 'Revival feed' : 'Top-up feed'}
-          zhLabel={revivalMode ? '复活喂养 · 1:5:5' : '补足喂养 · 喂到目标量'}
+          label={revivalMode ? 'Revival feed' : '1:1 Feed'}
+          zhLabel={revivalMode ? '复活喂养 · 1:5:5' : '喂养方案 · 1:1:1'}
           right={<ModeToggle revivalMode={revivalMode} onChange={onRevivalModeChange} />}
         />
 
-        {/* 模式说明：日常 vs 复活，切换前就能看懂 */}
-        <p className="font-zh text-xs text-muted leading-relaxed mb-3">
-          {revivalMode
-            ? '复活：种偏弱/偏酸时用 1:5:5 大稀释，一次喂养重新激活。'
-            : '日常：种状态正常，按配方所需补足喂养即可；种偏弱时切到「复活」。'}
-        </p>
-
-        {/* 旧种已够：不渲染 0/0 的喂养格，直接给结论 */}
-        {stdSufficient && (
-          <div className="border border-ink p-4 sm:p-5 bg-surface">
-            <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
-              No feed needed
-            </div>
-            <div className="font-zh text-base font-medium text-ink mt-1">
-              现有 {feed.seed}g 已经够用，无需喂养
-            </div>
-            <p className="font-zh text-sm text-muted leading-relaxed mt-2">
-              配方需要 <strong className="font-mono text-ink font-semibold">{feed.needed}g</strong>
-              + 留种 <strong className="font-mono text-ink font-semibold">{feed.buffer}g</strong>
-              {feed.surplus > 0 && (
-                <>，富余 <strong className="font-mono text-ink font-semibold">{feed.surplus}g</strong>（可做下方弃种食谱）</>
-              )}
-              。种处于峰值即可直接使用；若已回落，按 Revival 模式重新激活。
-            </p>
-          </div>
-        )}
-
         {/* 加粉 / 加水 +（Revival 模式额外的"取种"行）*/}
-        {!stdSufficient && (
         <div className="border border-ink">
           {revivalMode && (
             <div className="p-4 sm:p-5 bg-surface flex items-baseline justify-between gap-3 border-b border-ink">
@@ -216,28 +219,23 @@ export function FeedPanel({
             ))}
           </div>
         </div>
-        )}
 
         {/* 总量 */}
-        {!stdSufficient && (
         <div className="flex justify-between items-baseline border-t-2 border-b-2 border-ink py-3 mt-4">
           <div>
             <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
               Total after feed
             </div>
-            <div className="font-zh text-xs text-muted mt-0.5">
-              喂养后总量{feedRatio ? ` · 本次比例约 ${feedRatio}（种:粉:水）` : ''}
-            </div>
+            <div className="font-zh text-xs text-muted mt-0.5">喂养后总量</div>
           </div>
           <div className="font-display font-medium text-3xl text-ink tabular-nums" style={{ letterSpacing: '-0.03em' }}>
             {displayTotal}
             <span className="font-mono text-sm text-faint ml-1.5">g</span>
           </div>
         </div>
-        )}
 
         {/* Memo —— 不同模式不同提示 */}
-        {stdSufficient ? null : revivalMode ? (
+        {revivalMode ? (
           <div className="mt-4 px-4 py-3 bg-surface border border-line-soft border-l-[3px] border-l-accent">
             <div className="font-mono text-2xs text-accent-ink uppercase tracking-[0.30em] mb-1.5">
               Memo · 复活操作
@@ -257,9 +255,7 @@ export function FeedPanel({
               Memo · 操作提示
             </div>
             <p className="font-zh text-sm text-muted leading-relaxed">
-              取 <strong className="font-mono text-ink font-semibold">{seedStarter}g</strong> 旧种，
-              加 <strong className="font-mono text-ink font-semibold">{feed.flour}g</strong> 粉
-              + <strong className="font-mono text-ink font-semibold">{feed.water}g</strong> 水拌匀。
+              取 <strong className="font-mono text-ink font-semibold">{seedStarter}g</strong> 旧种，加粉和水。
               静置至峰值（4–6h），取 <strong className="font-mono text-ink font-semibold">{feed.needed}g</strong> 用于配方，
               剩 <strong className="font-mono text-ink font-semibold">{feed.buffer}g</strong> 作下次火种。
             </p>
@@ -297,9 +293,6 @@ export function FeedPanel({
                     <div className="text-right shrink-0">
                       <div className="font-mono text-xs text-ink tabular-nums leading-tight whitespace-nowrap">
                         {r.discardG}g · {r.timeMin}min
-                      </div>
-                      <div className="font-zh text-2xs text-faint leading-tight mt-0.5 whitespace-nowrap">
-                        弃种量 · 用时
                       </div>
                       <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em] mt-0.5 whitespace-nowrap">
                         {isOpen ? 'Close ↑' : 'Open ↓'}
