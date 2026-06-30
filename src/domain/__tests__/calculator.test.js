@@ -146,6 +146,59 @@ describe('calculateRecipe — 多 modifier 叠加', () => {
   });
 });
 
+describe('calculateRecipe — 浸泡水单列 (water-soak)', () => {
+  it('亚麻籽浸泡水拆成独立 water-soak 行，不再灌进 autolyse 水', () => {
+    const r = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'flax-seed', dose: 0.06 }], // 24g 籽 → 24g 浸泡水
+    });
+    const byId = Object.fromEntries(r.ingredients.map((i) => [i.id, i]));
+
+    // 浸泡水单列成一行
+    expect(byId['water-soak']).toBeTruthy();
+    expect(byId['water-soak'].weight).toBe(24);
+
+    // autolyse 水 = 总水 304 − 预留 40 − 浸泡 24 = 240（旧实现会被抬到 264）
+    expect(byId['water-autolyse'].weight).toBe(240);
+    expect(byId['water-reserved'].weight).toBe(40);
+
+    // 三行水相加 == 总水，无水丢失
+    expect(
+      byId['water-autolyse'].weight +
+        byId['water-reserved'].weight +
+        byId['water-soak'].weight
+    ).toBe(r.water);
+
+    // 总水 / 水合度不变（只是显示拆分，不改计算结果）
+    expect(r.water).toBe(304);
+  });
+
+  it('无浸泡类 modifier 时不产生 water-soak 行，autolyse 不回归', () => {
+    const r = calculateRecipe({ base: 'sourdough-classic', numUnits: 1 });
+    expect(r.ingredients.find((i) => i.id === 'water-soak')).toBeFalsy();
+    const byId = Object.fromEntries(r.ingredients.map((i) => [i.id, i]));
+    expect(byId['water-autolyse'].weight).toBe(240);
+  });
+});
+
+describe('enhanceSteps — 浸泡水不进喂种(feed)步骤', () => {
+  it('feed(激活鲁邦种) 不把浸泡水当作"本阶段加水"显示', () => {
+    // 浸泡水是提前单独泡籽用的，不能渲染成第一步往鲁邦种里加 48g 水。
+    const calculated = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'flax-seed', dose: 0.06 }],
+    });
+    const [feedStep] = enhanceSteps(
+      [{ id: 'feed', phase: 'prep', baseTips: [] }],
+      calculated
+    );
+    const soakRow = (feedStep.stageBaseGrams || []).find((g) => /浸泡/.test(g.name));
+    expect(soakRow).toBeFalsy();
+  });
+});
+
 describe('calculateRecipe — dose 边界', () => {
   it('dose 超出 max 时被 clamp 并 warn', () => {
     const r = calculateRecipe({
@@ -160,17 +213,48 @@ describe('calculateRecipe — dose 边界', () => {
 });
 
 describe('groupModifiersByStage', () => {
-  it('按 addStage 分组 modifier', () => {
+  it('按流程 step id 分组 modifier，兼容 addStage 的连字符写法', () => {
     const r = calculateRecipe({
       base: 'sourdough-classic',
       numUnits: 1,
       selectedModifiers: [{ id: 'matcha' }, { id: 'walnut' }, { id: 'raisin' }],
     });
     const groups = groupModifiersByStage(r.ingredients);
-    expect(groups.mix?.some((i) => i.id === 'matcha')).toBe(true);
-    expect(groups['fold-3']?.some((i) => i.id === 'walnut')).toBe(true);
-    // raisin 在 fold-2
-    expect(groups['fold-2']?.some((i) => i.id === 'raisin')).toBe(true);
+    expect(groups.autolyse?.some((i) => i.id === 'matcha')).toBe(true);
+    expect(groups.fold_3?.some((i) => i.id === 'walnut')).toBe(true);
+    expect(groups.fold_2?.some((i) => i.id === 'raisin')).toBe(true);
+  });
+});
+
+describe('enhanceSteps — modifier 投料显示', () => {
+  it('mix / fold-2 / fold-3 modifier 会注入到真实 Bake step id', () => {
+    const calculated = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'matcha' }, { id: 'walnut' }, { id: 'raisin' }],
+    });
+    const steps = enhanceSteps([
+      { id: 'autolyse', baseTips: [] },
+      { id: 'fold_2', baseTips: [] },
+      { id: 'fold_3', baseTips: [] },
+    ], calculated);
+
+    expect(steps[0].tips.join(' ')).toContain('抹茶粉');
+    expect(steps[1].tips.join(' ')).toContain('葡萄干');
+    expect(steps[2].tips.join(' ')).toContain('核桃');
+  });
+
+  it('泡籽类 modifier 在 feed 步骤给提前预处理提示，但不进入 stageBaseGrams', () => {
+    const calculated = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'flax-seed', dose: 0.06 }],
+    });
+    const [feedStep] = enhanceSteps([{ id: 'feed', baseTips: [] }], calculated);
+
+    expect(feedStep.tips.join(' ')).toContain('提前约 12h');
+    expect(feedStep.tips.join(' ')).toContain('亚麻籽');
+    expect(feedStep.stageBaseGrams).toBeNull();
   });
 });
 

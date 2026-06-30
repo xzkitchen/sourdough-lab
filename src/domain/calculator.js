@@ -91,6 +91,8 @@ export function calculateRecipe(input) {
   let proofDelta = 0;
   let temperatureDelta = 0;
   let sugarBoost = 0;     // 单条基准，最后乘 numUnits
+  let soakWater = 0;      // 浸泡类 modifier（如亚麻籽）的浸泡水，单列展示
+  const soakSources = []; // [{ name, weight }] 贡献浸泡水的 modifier
   const environmentAdjust = buildEnvironmentAdjustment(environment, base);
 
   for (const sel of selectedModifiers) {
@@ -133,7 +135,9 @@ export function calculateRecipe(input) {
       const liquid = round(weight * mod.hydrationAdjust.ratio);
       if (liquid > 0) {
         water += liquid;
-        notes.push(`${mod.name} 浸泡液 +${liquid}g 并入总水`);
+        soakWater += liquid;
+        soakSources.push({ name: mod.name, weight: liquid });
+        notes.push(`${mod.name} 浸泡液 ${liquid}g 已单列为「浸泡水」行（提前泡籽，连水带籽下缸）`);
       }
     }
 
@@ -211,10 +215,9 @@ export function calculateRecipe(input) {
     const totalWater = round(water);
     if (reservedRatio > 0) {
       const reservedWater = round(flour * reservedRatio);
-      const autolyseWater = totalWater - reservedWater;
-      ingredients.splice(
-        waterIdx,
-        1,
+      // 浸泡水（如亚麻籽）从总水里单列出来，不再灌进 autolyse 水
+      const autolyseWater = totalWater - reservedWater - soakWater;
+      const waterRows = [
         {
           id: 'water-autolyse',
           name: '水',
@@ -236,8 +239,22 @@ export function calculateRecipe(input) {
           addStage: 'salt',
           note: null,
           source: 'base',
-        }
-      );
+        },
+      ];
+      if (soakWater > 0) {
+        waterRows.push({
+          id: 'water-soak',
+          name: soakSources.length === 1 ? `${soakSources[0].name}浸泡水` : '浸泡水（提前泡）',
+          role: 'liquid',
+          weight: soakWater,
+          bakersPct: soakWater / flour,
+          isHydration: true,
+          addStage: 'mix', // 跟着籽走：提前单独泡，搅拌阶段连水带籽下缸（不在第一步、不进鲁邦种）
+          note: '提前单独泡籽（约12h），泡好后连水带籽在搅拌阶段下缸；不直接倒入主面团水',
+          source: 'base',
+        });
+      }
+      ingredients.splice(waterIdx, 1, ...waterRows);
     } else {
       ingredients[waterIdx].weight = totalWater;
     }
@@ -269,11 +286,24 @@ export function calculateRecipe(input) {
 /**
  * 按阶段分组 modifier 食材，用于步骤卡片展示"此时投料 X"
  */
+const ADD_STAGE_TO_STEP_ID = {
+  mix: 'autolyse',
+  'fold-1': 'fold_1',
+  'fold-2': 'fold_2',
+  'fold-3': 'fold_3',
+  shape: 'shape',
+  surface: 'bake',
+};
+
+export function processStepIdForAddStage(addStage = 'mix') {
+  return ADD_STAGE_TO_STEP_ID[addStage] || addStage || 'autolyse';
+}
+
 export function groupModifiersByStage(ingredients) {
   const groups = {};
   for (const ing of ingredients) {
     if (ing.source !== 'modifier') continue;
-    const stage = ing.addStage || 'mix';
+    const stage = processStepIdForAddStage(ing.addStage || 'mix');
     (groups[stage] = groups[stage] || []).push(ing);
   }
   return groups;
@@ -285,6 +315,10 @@ export function groupModifiersByStage(ingredients) {
  * - autolyse 取 'water-autolyse'（拆分后）或 'water'（未拆分时的 fallback）；
  *   两个 id 不会同时存在，filter(Boolean) 自动只取实际存在的那个。
  * - salt 仅在 reservedRatio > 0 时才有 'water-reserved'；不存在则只显示盐。
+ *
+ * 注意：浸泡水（water-soak）不在这里——它是「提前单独泡籽」用的，
+ * 不能渲染成某一步「本阶段往面团里加 Xg 水」。它只在配方表里单列说明，
+ * 泡好的籽连水在搅拌阶段随 modifier 下缸（见 water-soak 的 addStage: 'mix'）。
  */
 const STEP_TO_BASE_INGREDIENT_IDS = {
   autolyse: ['flour', 'water-autolyse', 'water', 'starter'],
@@ -305,6 +339,10 @@ const STEP_TO_BASE_INGREDIENT_IDS = {
 export function enhanceSteps(steps, calculated) {
   const byStage = groupModifiersByStage(calculated.ingredients);
   const ingById = Object.fromEntries(calculated.ingredients.map((i) => [i.id, i]));
+  const soakedModifiers = calculated.ingredients.filter(
+    (i) => i.source === 'modifier' && typeof i.preTreatment === 'string' && i.preTreatment.includes('soak')
+  );
+  const soakWater = calculated.ingredients.find((i) => i.id === 'water-soak');
 
   return steps.map((step) => {
     const stageIngredients = byStage[step.id] || [];
@@ -318,6 +356,12 @@ export function enhanceSteps(steps, calculated) {
     }
     const environmentTips = calculated.environment?.stepTips?.[step.id] || [];
     const enhancedTips = [...baseTips, ...environmentTips];
+
+    if (step.id === 'feed' && soakedModifiers.length) {
+      const names = soakedModifiers.map((i) => `${i.name} ${i.weight}g`).join(' / ');
+      const waterText = soakWater ? ` + 浸泡水 ${soakWater.weight}g` : '';
+      enhancedTips.push(`【提前预处理】${names}${waterText}：提前约 12h 单独泡；混合时连水带籽下缸`);
+    }
 
     // 本阶段需要称量的 base 食材（autolyse / salt）—— 独立字段
     let stageBaseGrams = null;

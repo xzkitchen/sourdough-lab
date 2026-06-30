@@ -239,6 +239,7 @@ function App() {
                 seedStarter={seedStarter}
                 onSeedChange={setSeedStarter}
                 feed={feed}
+                roomTempC={calculated.environment?.roomTempC}
                 revivalMode={revivalMode}
                 onRevivalModeChange={setRevivalMode}
               />

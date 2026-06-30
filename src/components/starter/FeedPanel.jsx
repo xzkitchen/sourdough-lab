@@ -1,30 +1,144 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { SecHead } from '../ledger/index.js';
 import { DISCARD_RECIPES } from '../../domain/discard-recipes.js';
+import { planRevival, planTimedFeed } from '../../domain/feeding.js';
+import { STARTER_STATES } from '../../domain/starter-states.js';
+import { useStickyState } from '../../hooks/useStickyState.js';
 
 /**
- * Stepper — 大号 ± 步进器（编辑器风：1px 实线 + 大号 mono 数字）
+ * Stepper — 大号 ± 步进器（编辑器风：1px 实线 + 大号数字）
+ *
+ * 交互：
+ *   - 点 ± 走一步（step）
+ *   - 长按 ± 连续递增并加速（400ms 后开始，间隔 150→50ms 收紧）
+ *   - 中间数字可点击直接输入跳到任意值（聚焦即全选，回车/失焦提交，按 min/max clamp）
+ *   - 键盘：按钮聚焦后 Enter / Space 走一步
  */
-function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh, ariaLabel }) {
-  const dec = () => onChange(Math.max(min, value - step));
-  const inc = () => onChange(value + step);
+function Stepper({ value, onChange, step = 1, min = 1, max, suffix, labelEn, labelZh, ariaLabel }) {
+  const clamp = useCallback(
+    (v) => {
+      let n = v;
+      if (typeof min === 'number') n = Math.max(min, n);
+      if (typeof max === 'number') n = Math.min(max, n);
+      return n;
+    },
+    [min, max]
+  );
+
+  // ref 跟踪最新值：避免长按定时器闭包里的 stale value；乐观更新让连击稳定累加
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  const bump = useCallback(
+    (dir) => {
+      const next = clamp(valueRef.current + dir * step);
+      valueRef.current = next;
+      onChange(next);
+    },
+    [clamp, step, onChange]
+  );
+
+  // 长按连续递增（加速）
+  const holdRef = useRef(null);
+  const heldRef = useRef(false);
+  const ticksRef = useRef(0);
+  const stopHold = useCallback(() => {
+    heldRef.current = false;
+    if (holdRef.current) {
+      clearTimeout(holdRef.current);
+      holdRef.current = null;
+    }
+    ticksRef.current = 0;
+  }, []);
+  const startHold = useCallback(
+    (dir) => {
+      heldRef.current = true;
+      bump(dir); // 立即走一步（也覆盖单击 / 单触）
+      ticksRef.current = 0;
+      const tick = () => {
+        if (!heldRef.current) return; // 松开后即便有残留定时器也不再 bump
+        bump(dir);
+        ticksRef.current += 1;
+        const delay = Math.max(50, 150 - ticksRef.current * 12);
+        holdRef.current = setTimeout(tick, delay);
+      };
+      holdRef.current = setTimeout(tick, 400); // 先停顿 400ms 再连发
+    },
+    [bump]
+  );
+  useEffect(() => stopHold, [stopHold]); // 卸载时清定时器
+
+  // 中间数字直接编辑
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => {
+    if (!editing) setDraft(String(value));
+  }, [value, editing]);
+
+  const onInputChange = (e) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    setDraft(raw);
+    if (raw !== '') onChange(clamp(parseInt(raw, 10)));
+  };
+  const onInputBlur = () => {
+    const parsed = parseInt(draft, 10);
+    onChange(Number.isFinite(parsed) ? clamp(parsed) : min);
+    setEditing(false);
+  };
+
+  const btnBase =
+    'font-display text-2xl text-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer min-h-[48px] select-none touch-none';
+  const holdProps = (dir) => ({
+    type: 'button',
+    onPointerDown: () => startHold(dir),
+    onPointerUp: stopHold,
+    onPointerLeave: stopHold,
+    onPointerCancel: stopHold,
+    onKeyDown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        bump(dir);
+      }
+    },
+  });
+
+  const shown = editing ? draft : String(value);
+
   return (
     <div
       className="grid border border-ink bg-surface grid-cols-[48px_1fr_48px] sm:grid-cols-[56px_1fr_56px]"
       role="group"
       aria-label={ariaLabel}
     >
-      <button
-        type="button"
-        onClick={dec}
-        aria-label="decrease"
-        className="font-display text-2xl text-ink border-r border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer min-h-[48px]"
-      >
+      <button {...holdProps(-1)} aria-label="decrease" className={`${btnBase} border-r border-ink`}>
         −
       </button>
       <div className="px-3 sm:px-4 py-3 flex items-center justify-between gap-2 min-w-0">
-        <div className="font-display font-medium text-3xl sm:text-4xl text-ink leading-none tabular-nums" style={{ letterSpacing: '-0.04em' }}>
-          {value}
+        <div
+          className="font-display font-medium text-3xl sm:text-4xl text-ink leading-none tabular-nums flex items-baseline min-w-0"
+          style={{ letterSpacing: '-0.04em' }}
+        >
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            aria-label={ariaLabel}
+            value={shown}
+            onFocus={(e) => {
+              setEditing(true);
+              setDraft(String(value));
+              e.target.select();
+            }}
+            onChange={onInputChange}
+            onBlur={onInputBlur}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
+            className="bg-transparent outline-none border-0 p-0 m-0 font-display font-medium text-3xl sm:text-4xl text-ink tabular-nums caret-accent"
+            style={{ width: `${Math.max(1, shown.length)}ch`, letterSpacing: '-0.04em' }}
+          />
           {suffix && (
             <span className="font-mono text-sm sm:text-base text-faint ml-1 sm:ml-1.5">{suffix}</span>
           )}
@@ -40,40 +154,16 @@ function Stepper({ value, onChange, step = 1, min = 1, suffix, labelEn, labelZh,
           )}
         </div>
       </div>
-      <button
-        type="button"
-        onClick={inc}
-        aria-label="increase"
-        className="font-display text-2xl text-ink border-l border-ink hover:bg-sunken active:bg-sunken transition-colors duration-fast cursor-pointer min-h-[48px]"
-      >
+      <button {...holdProps(1)} aria-label="increase" className={`${btnBase} border-l border-ink`}>
         +
       </button>
     </div>
   );
 }
 
-/**
- * 复活喂养比例：1:5:5（种 : 粉 : 水），总质量 = 11x 种。
- * 用一次大稀释解决疲弱种的双重问题（食物耗尽 + pH 过低），
- * 8–12h 室温后单次达 3 倍峰。
- *
- * 用户操作就三件事：取 X g 旧种 → 加 5X g 粉 + 5X g 水 → 等。
- * 罐里实际有多少不重要（取完剩下的全丢），所以不计算/不显示 discard。
- */
-const REVIVAL_RATIO = 5;
-const REVIVAL_TOTAL_MULT = 1 + REVIVAL_RATIO * 2; // 11
-
-function calcRevival(targetTotal) {
-  const newSeed = Math.max(1, Math.round(targetTotal / REVIVAL_TOTAL_MULT));
-  const flour = newSeed * REVIVAL_RATIO;
-  const water = newSeed * REVIVAL_RATIO;
-  const total = newSeed + flour + water;
-  return { newSeed, flour, water, total };
-}
-
-/** 模式切换分段控件（Std / Revival） */
+/** 模式切换分段控件（喂养 / 复活） */
 function ModeToggle({ revivalMode, onChange }) {
-  const btn = (active, label) => [
+  const btn = (active) => [
     'font-mono text-2xs uppercase tracking-[0.18em] px-2 py-1 transition-colors duration-fast leading-none whitespace-nowrap',
     active ? 'bg-ink text-bg cursor-default' : 'bg-bg text-muted hover:bg-sunken active:bg-sunken cursor-pointer',
   ].join(' ');
@@ -85,7 +175,7 @@ function ModeToggle({ revivalMode, onChange }) {
         aria-pressed={!revivalMode}
         className={btn(!revivalMode)}
       >
-        Std
+        Feed
       </button>
       <button
         type="button"
@@ -93,8 +183,249 @@ function ModeToggle({ revivalMode, onChange }) {
         aria-pressed={revivalMode}
         className={`${btn(revivalMode)} border-l border-ink`}
       >
-        Revival
+        Revive
       </button>
+    </div>
+  );
+}
+
+const round1 = (n) => Math.round(n * 10) / 10;
+const SEED_BUFFER_G = 20; // 喂养后留作下次种
+const MAINTAIN_TARGET_G = 60; // 「只维持」时的目标小种总量
+
+function windowHoursFromTimes(feedTime, targetTime) {
+  const [fh, fm] = feedTime.split(':').map(Number);
+  const [th, tm] = targetTime.split(':').map(Number);
+  let mins = th * 60 + tm - (fh * 60 + fm);
+  if (mins <= 0) mins += 24 * 60; // 跨午夜
+  return mins / 60;
+}
+
+/** 结果三栏卡（取 / 加粉 / 加水）*/
+function FeedCards({ items }) {
+  return (
+    <div
+      className="grid border border-ink"
+      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+    >
+      {items.map((x, i) => (
+        <div key={x.label} className={`p-3 sm:p-4 bg-surface ${i > 0 ? 'border-l border-ink' : ''}`}>
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em]">{x.label}</div>
+          <div className="font-zh text-xs text-muted">{x.zh}</div>
+          <div
+            className="font-display font-medium text-3xl sm:text-4xl text-ink leading-none mt-2 tabular-nums"
+            style={{ letterSpacing: '-0.03em' }}
+          >
+            {x.v}
+            <span className="font-mono text-sm text-faint ml-1">g</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** 定时喂养 —— 按「几点喂 / 几点要 / 目标」算 取/加/弃 + 达峰 */
+function TimedFeed({ feed, seedStarter, roomTempC = 24 }) {
+  const [feedTime, setFeedTime] = useStickyState('22:00', 'sdlv2_feed_time');
+  const [targetTime, setTargetTime] = useStickyState('06:00', 'sdlv2_target_time');
+  const [maintainOnly, setMaintainOnly] = useStickyState(false, 'sdlv2_maintain_only');
+
+  const windowHours = windowHoursFromTimes(feedTime, targetTime);
+  const targetRipe = maintainOnly ? MAINTAIN_TARGET_G : feed.needed + SEED_BUFFER_G;
+  const plan = planTimedFeed({ targetRipe, windowHours, roomTempC, availableGrams: seedStarter });
+  const b = (v) => <strong className="font-mono text-ink font-semibold">{v}</strong>;
+
+  return (
+    <div className="space-y-4">
+      {/* 几点喂 / 几点要 */}
+      <div className="flex gap-3">
+        <label className="flex-1 block">
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">Feed at</div>
+          <div className="font-zh text-xs text-muted mb-1">几点喂</div>
+          <input
+            type="time"
+            value={feedTime}
+            onChange={(e) => setFeedTime(e.target.value)}
+            className="w-full bg-sunken border border-ink px-3 py-2 font-mono text-lg text-ink tabular-nums outline-none"
+          />
+        </label>
+        <label className="flex-1 block">
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">Ready by</div>
+          <div className="font-zh text-xs text-muted mb-1">几点要</div>
+          <input
+            type="time"
+            value={targetTime}
+            onChange={(e) => setTargetTime(e.target.value)}
+            className="w-full bg-sunken border border-ink px-3 py-2 font-mono text-lg text-ink tabular-nums outline-none"
+          />
+        </label>
+      </div>
+
+      {/* 只维持开关 */}
+      <button
+        type="button"
+        onClick={() => setMaintainOnly(!maintainOnly)}
+        aria-pressed={maintainOnly}
+        className={`w-full flex items-center justify-between px-3 py-2 border border-ink transition-colors duration-fast cursor-pointer ${
+          maintainOnly ? 'bg-ink text-bg' : 'bg-bg text-muted hover:bg-sunken active:bg-sunken'
+        }`}
+      >
+        <span className="font-zh text-sm">只维持（不烤，养小种）</span>
+        <span className="font-mono text-2xs uppercase tracking-[0.20em]">{maintainOnly ? 'ON' : 'OFF'}</span>
+      </button>
+
+      {/* 窗口 → 比例 + 达峰 */}
+      <div className="flex items-baseline justify-between border-y border-line-soft py-2">
+        <div className="font-zh text-sm text-muted">
+          窗口 {b(`${round1(windowHours)}h`)} → 比例 {b(`1:${plan.ratio}:${plan.ratio}`)}
+        </div>
+        <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em]">
+          ~{plan.expectedPeakHours}h peak
+        </div>
+      </div>
+
+      {/* 取 / 加粉 / 加水 */}
+      <FeedCards
+        items={[
+          { label: 'Keep', zh: '取旧种', v: plan.carryover },
+          { label: 'Add flour', zh: '加 T65', v: plan.flour },
+          { label: 'Add water', zh: '加 水', v: plan.water },
+        ]}
+      />
+
+      <div className="px-3 py-2 border border-line-soft bg-bg">
+        <p className="font-zh text-sm text-muted leading-relaxed">
+          罐里现有旧种 {b(`${seedStarter}g`)}，本次只取 {b(`${plan.carryover}g`)} 做新种。
+          {plan.discard > 0 ? <> 多出的 {b(`${plan.discard}g`)} 才是弃种。</> : ' 没有多余弃种。'}
+        </p>
+      </div>
+
+      {/* 旧种不够 */}
+      {plan.notEnough && (
+        <div className="px-3 py-2 bg-warn-bg border border-line-soft">
+          <p className="font-zh text-sm text-accent-ink leading-relaxed">
+            罐里只有 {b(`${seedStarter}g`)}，不够本方案要取的 {b(`${plan.carryover}g`)}。先做一轮小喂养把库存建够，
+            或打开「只维持」降低目标量。
+          </p>
+        </div>
+      )}
+
+      {/* Memo */}
+      <div className="px-4 py-3 bg-surface border border-line-soft border-l-[3px] border-l-accent">
+        <div className="font-mono text-2xs text-accent-ink uppercase tracking-[0.30em] mb-1">Memo · 操作</div>
+        <p className="font-zh text-sm text-muted leading-relaxed">
+          {feedTime} 取 {b(`${plan.carryover}g`)} 旧种 + 加 {b(`${plan.flour}g`)} 粉 + {b(`${plan.water}g`)} 水
+          （共 {plan.totalRipe}g，1:{plan.ratio}:{plan.ratio}），保温 ~{roomTempC}°C，约 {targetTime} 达峰。
+          {maintainOnly ? (
+            ' 留作维持小种即可。'
+          ) : (
+            <> 舀 {b(`${feed.needed}g`)} 入面团，留 {b(`${SEED_BUFFER_G}g`)} 当下次种。</>
+          )}
+          {plan.discard > 0 && <> 罐里多出的 {b(`${plan.discard}g`)} → 弃种食谱（下方）。</>}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** 复活喂养：按状态卡生成多轮高稀释时间线 */
+function RevivalFeed({ seedStarter }) {
+  const [stateId, setStateId] = useStickyState('wake', 'sdlv2_revival_state');
+  const plan = planRevival({ stateId, availableGrams: seedStarter });
+  const b = (v) => <strong className="font-mono text-ink font-semibold">{v}</strong>;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 border border-ink">
+        {STARTER_STATES.map((state, i) => {
+          const active = state.id === stateId;
+          return (
+            <button
+              key={state.id}
+              type="button"
+              onClick={() => setStateId(state.id)}
+              aria-pressed={active}
+              className={[
+                'text-left p-3 min-w-0 transition-colors duration-fast cursor-pointer',
+                i > 0 ? 'border-l border-ink' : '',
+                active ? 'bg-ink text-bg' : 'bg-bg text-ink hover:bg-surface active:bg-sunken',
+              ].join(' ')}
+            >
+              <div className={['font-mono text-2xs uppercase tracking-[0.18em]', active ? 'opacity-65' : 'text-faint'].join(' ')}>
+                {state.order} · {state.nameEn}
+              </div>
+              <div className="font-zh text-sm font-medium mt-1">{state.name}</div>
+              <div className={['font-zh text-xs mt-1 leading-snug', active ? 'opacity-80' : 'text-muted'].join(' ')}>
+                {state.symptom}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="px-4 py-3 bg-warn-bg border border-line-soft border-l-[3px] border-l-accent">
+        <div className="font-mono text-2xs text-warn uppercase tracking-[0.24em] mb-1">
+          Red line · 污染红线
+        </div>
+        <p className="font-zh text-sm text-accent-ink leading-relaxed">{plan.redline}</p>
+      </div>
+
+      {plan.notEnough && (
+        <div className="px-3 py-2 bg-warn-bg border border-line-soft">
+          <p className="font-zh text-sm text-accent-ink leading-relaxed">
+            罐里少于 5g，可用量太低。先从罐壁刮取可见活种；如果已经发霉或腐臭，直接重做。
+          </p>
+        </div>
+      )}
+
+      <div className="border border-ink">
+        <div className="p-4 bg-surface border-b border-ink">
+          <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
+            {plan.state.rounds} rounds · {plan.totalHours}h
+          </div>
+          <div className="font-zh text-sm text-muted mt-1 leading-relaxed">
+            {plan.state.note} 目标：{plan.state.goal}
+          </div>
+        </div>
+
+        {plan.rounds.map((round, i) => (
+          <div key={round.n} className={i > 0 ? 'border-t border-line-soft' : ''}>
+            <div className="p-3 flex items-baseline justify-between gap-3 bg-bg">
+              <div>
+                <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
+                  Round {String(round.n).padStart(2, '0')}
+                </div>
+                <div className="font-zh text-xs text-muted mt-0.5">
+                  1:{round.ratio}:{round.ratio} · {round.tempRange}
+                </div>
+              </div>
+              <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em]">
+                wait {round.waitHours}h
+              </div>
+            </div>
+            <FeedCards
+              items={[
+                { label: 'Keep', zh: round.n === 1 ? '取旧种' : '取峰值种', v: round.carryover },
+                { label: 'Add flour', zh: '加 T65', v: round.flour },
+                { label: 'Add water', zh: '加 水', v: round.water },
+              ]}
+            />
+            <div className="px-3 py-2 bg-surface">
+              <p className="font-zh text-sm text-muted leading-relaxed">
+                本轮共 {b(`${round.total}g`)}。{round.discard > 0 ? <>多出的 {b(`${round.discard}g`)} 丢弃或做弃种食谱。</> : '无多余弃种。'}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="px-4 py-3 bg-surface border border-line-soft border-l-[3px] border-l-accent">
+        <div className="font-mono text-2xs text-accent-ink uppercase tracking-[0.30em] mb-1.5">Memo · 复活判断</div>
+        <p className="font-zh text-sm text-muted leading-relaxed">
+          每轮都只在达峰后进入下一轮。闻起来回到酸甜、能在 {b('4–8h')} 明显翻倍，再切回 Feed 做定时喂养。
+        </p>
+      </div>
     </div>
   );
 }
@@ -104,8 +435,8 @@ function ModeToggle({ revivalMode, onChange }) {
  *
  * 三段：
  *   №01 Quantity      面包数量
- *   №02 Seed amount   旧种数量
- *   №03 Feed          喂养方案（Std 1:1:1 单次 / Revival 1:5:5 复活模式）
+ *   №02 Available     罐里现有旧种
+ *   №03 Feed          喂养方案（定时喂养 / 状态复活）
  *
  * Props:
  *   numUnits / onNumUnitsChange
@@ -120,22 +451,14 @@ export function FeedPanel({
   seedStarter,
   onSeedChange,
   feed,
+  roomTempC = 24,
   revivalMode = false,
   onRevivalModeChange,
 }) {
   if (!feed) return null;
 
-  // 复活模式的目标总量 = 配方需要 + 下次火种留量
-  const targetTotal = feed.needed + feed.buffer;
-  const revival = calcRevival(targetTotal);
-
   // 弃种食谱手风琴：当前展开的 id（同一时间只展开一个）
   const [expandedDiscardId, setExpandedDiscardId] = useState(null);
-
-  // 选择当前模式下要展示的数据
-  const displayFlour = revivalMode ? revival.flour : feed.flour;
-  const displayWater = revivalMode ? revival.water : feed.water;
-  const displayTotal = revivalMode ? revival.total : feed.total;
 
   return (
     <div className="space-y-7">
@@ -153,113 +476,36 @@ export function FeedPanel({
         />
       </section>
 
-      {/* №02 Seed amount */}
+      {/* №02 Available starter */}
       <section>
-        <SecHead n={2} label="Seed amount" zhLabel="旧种数量" />
+        <SecHead n={2} label="Available starter" zhLabel="罐里现有旧种" />
         <Stepper
           value={seedStarter}
           onChange={onSeedChange}
-          step={1}
+          step={5}
           min={5}
           suffix="g"
-          labelEn="Existing"
-          labelZh="现有量"
-          ariaLabel="旧种数量"
+          labelEn="In jar"
+          labelZh="库存"
+          ariaLabel="罐里现有旧种"
         />
+        <p className="font-zh text-xs text-muted mt-2 leading-relaxed italic">
+          — 这里填罐里现在有多少旧种；下面的规划器会决定取多少、弃多少、够不够。
+        </p>
       </section>
 
-      {/* №03 Feed —— 模式切换 */}
+      {/* №03 Feed —— 模式切换：喂养(定时) / 复活 */}
       <section>
         <SecHead
           n={3}
-          label={revivalMode ? 'Revival feed' : '1:1 Feed'}
-          zhLabel={revivalMode ? '复活喂养 · 1:5:5' : '喂养方案 · 1:1:1'}
+          label={revivalMode ? 'Revival feed' : 'Feed · timed'}
+          zhLabel={revivalMode ? '复活喂养 · 1:5:5' : '喂养 · 按时达峰'}
           right={<ModeToggle revivalMode={revivalMode} onChange={onRevivalModeChange} />}
         />
-
-        {/* 加粉 / 加水 +（Revival 模式额外的"取种"行）*/}
-        <div className="border border-ink">
-          {revivalMode && (
-            <div className="p-4 sm:p-5 bg-surface flex items-baseline justify-between gap-3 border-b border-ink">
-              <div>
-                <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
-                  Take from jar
-                </div>
-                <div className="font-zh text-xs text-muted mt-0.5">从罐里取（其余丢弃）</div>
-              </div>
-              <div
-                className="font-display font-medium text-4xl text-ink leading-none tabular-nums"
-                style={{ letterSpacing: '-0.03em' }}
-              >
-                {revival.newSeed}
-                <span className="font-mono text-sm text-faint ml-1.5">g</span>
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-2">
-            {[
-              { label: 'Add flour', zh: '加 T65', v: displayFlour },
-              { label: 'Add water', zh: '加 水',  v: displayWater },
-            ].map((x, i) => (
-              <div
-                key={x.label}
-                className={`p-4 sm:p-5 bg-surface ${i > 0 ? 'border-l border-ink' : ''}`}
-              >
-                <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em]">
-                  {x.label}
-                </div>
-                <div className="font-zh text-xs text-muted mt-0.5">{x.zh}</div>
-                <div className="font-display font-medium text-4xl text-ink leading-none mt-3 tabular-nums" style={{ letterSpacing: '-0.03em' }}>
-                  {x.v}
-                </div>
-                <div className="font-mono text-2xs text-faint uppercase tracking-[0.24em] mt-1">
-                  grams
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 总量 */}
-        <div className="flex justify-between items-baseline border-t-2 border-b-2 border-ink py-3 mt-4">
-          <div>
-            <div className="font-mono text-2xs text-faint uppercase tracking-[0.30em]">
-              Total after feed
-            </div>
-            <div className="font-zh text-xs text-muted mt-0.5">喂养后总量</div>
-          </div>
-          <div className="font-display font-medium text-3xl text-ink tabular-nums" style={{ letterSpacing: '-0.03em' }}>
-            {displayTotal}
-            <span className="font-mono text-sm text-faint ml-1.5">g</span>
-          </div>
-        </div>
-
-        {/* Memo —— 不同模式不同提示 */}
         {revivalMode ? (
-          <div className="mt-4 px-4 py-3 bg-surface border border-line-soft border-l-[3px] border-l-accent">
-            <div className="font-mono text-2xs text-accent-ink uppercase tracking-[0.30em] mb-1.5">
-              Memo · 复活操作
-            </div>
-            <p className="font-zh text-sm text-muted leading-relaxed">
-              从罐里取 <strong className="font-mono text-ink font-semibold">{revival.newSeed}g</strong> 旧种
-              （罐里其余全部丢弃），加
-              <strong className="font-mono text-ink font-semibold"> {revival.flour}g</strong> 粉
-              + <strong className="font-mono text-ink font-semibold">{revival.water}g</strong> 水（1:5:5 强稀释）。
-              室温 25°C 静置 <strong className="font-mono text-ink font-semibold">8–12h</strong> 达 3 倍峰即可揉面；
-              夏天高温缩短到 6–8h，冬天延长到 12–16h。
-            </p>
-          </div>
+          <RevivalFeed seedStarter={seedStarter} />
         ) : (
-          <div className="mt-4 px-4 py-3 bg-surface border border-line-soft border-l-[3px] border-l-accent">
-            <div className="font-mono text-2xs text-accent-ink uppercase tracking-[0.30em] mb-1.5">
-              Memo · 操作提示
-            </div>
-            <p className="font-zh text-sm text-muted leading-relaxed">
-              取 <strong className="font-mono text-ink font-semibold">{seedStarter}g</strong> 旧种，加粉和水。
-              静置至峰值（4–6h），取 <strong className="font-mono text-ink font-semibold">{feed.needed}g</strong> 用于配方，
-              剩 <strong className="font-mono text-ink font-semibold">{feed.buffer}g</strong> 作下次火种。
-            </p>
-          </div>
+          <TimedFeed feed={feed} seedStarter={seedStarter} roomTempC={roomTempC} />
         )}
       </section>
 

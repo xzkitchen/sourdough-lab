@@ -65,6 +65,7 @@ function shortSrc(ing) {
   if (ing.source === 'modifier') return 'mod';
   if (ing.id === 'water-autolyse') return 'auto';
   if (ing.id === 'water-reserved') return 'rsv';
+  if (ing.id === 'water-soak') return 'soak';
   return '·';
 }
 
@@ -77,6 +78,7 @@ function prettyEn(ing) {
     flour: 'Strong wheat T65',
     'water-autolyse': 'Water · autolyse',
     'water-reserved': 'Water · bassinage 10%',
+    'water-soak': 'Water · seed soak · 提前泡',
     water: 'Water · total',
     starter: 'Active levain',
     salt: 'Sea salt · fine',
