@@ -17,6 +17,8 @@ import { getStarterState } from './starter-states.js';
 const ANCHOR_TEMP_C = 26;
 const ANCHOR_BASE_HOURS = 4; // 1:1:1 @26°C 的达峰时间
 const TEMP_PCT_PER_DEG = 0.05;
+const TIMING_TOLERANCE_HOURS = 1;
+const FALLBACK_WINDOW_HOURS = 8;
 
 const round = (n) => Math.round(n);
 const round1 = (n) => Math.round(n * 10) / 10;
@@ -39,14 +41,51 @@ export function peakHours(r, roomTempC = ANCHOR_TEMP_C) {
  * @returns {{ r:number, expectedPeakHours:number, clamped:boolean }}
  */
 export function pickFeedRatio(windowHours, roomTempC = ANCHOR_TEMP_C, { minR = 0.5, maxR = 6 } = {}) {
-  const equiv26 = windowHours / tempFactor(roomTempC); // 折回 26°C 等效窗口
+  const safeWindowHours = Number.isFinite(windowHours) && windowHours > 0
+    ? windowHours
+    : FALLBACK_WINDOW_HOURS;
+  const equiv26 = safeWindowHours / tempFactor(roomTempC); // 折回 26°C 等效窗口
   const raw = Math.pow(2, equiv26 / ANCHOR_BASE_HOURS - 1);
   const rounded = roundHalf(raw);
   const r = Math.min(maxR, Math.max(minR, rounded));
+  const clampReason = rounded < minR ? 'min' : rounded > maxR ? 'max' : null;
   return {
     r,
     expectedPeakHours: round1(peakHours(r, roomTempC)),
     clamped: r !== rounded,
+    clampReason,
+    rawR: round1(raw),
+    minR,
+    maxR,
+  };
+}
+
+function buildTiming({ windowHours, pick, inputValid = true }) {
+  const deltaHours = round1(pick.expectedPeakHours - windowHours);
+  const absDelta = round1(Math.abs(deltaHours));
+  const tooEarly = deltaHours <= -TIMING_TOLERANCE_HOURS;
+  const tooLate = deltaHours >= TIMING_TOLERANCE_HOURS;
+
+  let status = 'on-time';
+  let warning = null;
+
+  if (tooEarly) {
+    status = 'early';
+    warning = `最长 1:${pick.r}:${pick.r} 预计 ${pick.expectedPeakHours}h 达峰，比目标窗口早约 ${absDelta}h；晚点喂、降低室温，或达峰后短暂冷藏。`;
+  } else if (tooLate) {
+    status = 'late';
+    warning = `当前 1:${pick.r}:${pick.r} 预计 ${pick.expectedPeakHours}h 达峰，比目标窗口晚约 ${absDelta}h；提高到 25-27°C，或早点喂。`;
+  }
+
+  return {
+    status,
+    warning,
+    deltaHours,
+    targetWindowHours: round1(windowHours),
+    toleranceHours: TIMING_TOLERANCE_HOURS,
+    inputValid,
+    clamped: pick.clamped,
+    clampReason: pick.clampReason,
   };
 }
 
@@ -61,7 +100,10 @@ export function pickFeedRatio(windowHours, roomTempC = ANCHOR_TEMP_C, { minR = 0
  * @returns {{ ratio, carryover, flour, water, totalRipe, expectedPeakHours, discard, notEnough }}
  */
 export function planTimedFeed({ targetRipe, windowHours, roomTempC = ANCHOR_TEMP_C, availableGrams = null }) {
-  const pick = pickFeedRatio(windowHours, roomTempC);
+  const inputWindowHours = Number(windowHours);
+  const hasValidWindow = Number.isFinite(inputWindowHours) && inputWindowHours > 0;
+  const effectiveWindowHours = hasValidWindow ? inputWindowHours : FALLBACK_WINDOW_HOURS;
+  const pick = pickFeedRatio(effectiveWindowHours, roomTempC);
   const r = pick.r;
   const carryover = round(targetRipe / (1 + 2 * r));
   const flour = round(carryover * r);
@@ -69,6 +111,17 @@ export function planTimedFeed({ targetRipe, windowHours, roomTempC = ANCHOR_TEMP
   const totalRipe = carryover + flour + water;
   const notEnough = availableGrams != null && availableGrams < carryover;
   const discard = availableGrams != null ? Math.max(0, availableGrams - carryover) : null;
+  const timing = buildTiming({ windowHours: effectiveWindowHours, pick, inputValid: hasValidWindow });
+  const warnings = [];
+  if (!hasValidWindow) {
+    warnings.push('时间输入不完整，先按 8h 窗口临时估算；填好几点喂 / 几点要后会自动更新。');
+  }
+  if (timing.warning) warnings.push(timing.warning);
+  if (notEnough) {
+    warnings.push(
+      `罐里只有 ${availableGrams}g，不够本方案要取的 ${carryover}g；先做一轮小喂养把库存建够，或降低目标量。`
+    );
+  }
 
   return {
     ratio: r,
@@ -78,6 +131,8 @@ export function planTimedFeed({ targetRipe, windowHours, roomTempC = ANCHOR_TEMP
     water,
     totalRipe,
     expectedPeakHours: pick.expectedPeakHours,
+    timing,
+    warnings,
     discard,
     notEnough,
   };

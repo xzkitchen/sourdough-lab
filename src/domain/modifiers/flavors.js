@@ -53,7 +53,7 @@ export const FLAVORS = [
       author: 'Chad Robertson',
       url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',
     },
-    note: '橄榄带盐，基础盐减 0.2%。橄榄油单元不饱和脂肪 + 迷迭香萜类抗氧化。',
+    note: '橄榄带盐，基础盐自动从 2.0% 降至 1.8%。橄榄油单元不饱和脂肪 + 迷迭香萜类抗氧化。',
   },
   {
     id: 'seeded',
@@ -117,7 +117,7 @@ export const FLAVORS = [
       author: 'Maurizio Leo',
       url: 'https://www.theperfectloaf.com/super-seeded-sourdough/',
     },
-    note: '亚麻籽须前一晚等重量水浸泡 12h 成凝胶；α-亚麻酸 ω-3 + 芝麻木酚素，心血管友好。',
+    note: '亚麻籽须前一晚等重量水浸泡 12h 成凝胶；第一次折叠时连水带籽分次折入。α-亚麻酸 ω-3 + 芝麻木酚素，心血管友好。',
   },
   {
     id: 'pecan-country',

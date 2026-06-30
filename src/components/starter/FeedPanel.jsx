@@ -189,14 +189,24 @@ function ModeToggle({ revivalMode, onChange }) {
   );
 }
 
-const round1 = (n) => Math.round(n * 10) / 10;
 const SEED_BUFFER_G = 20; // 喂养后留作下次种
 const MAINTAIN_TARGET_G = 60; // 「只维持」时的目标小种总量
 
 function windowHoursFromTimes(feedTime, targetTime) {
-  const [fh, fm] = feedTime.split(':').map(Number);
-  const [th, tm] = targetTime.split(':').map(Number);
-  let mins = th * 60 + tm - (fh * 60 + fm);
+  const parseClock = (value) => {
+    if (typeof value !== 'string') return null;
+    const parts = value.split(':');
+    if (parts.length !== 2) return null;
+    const [h, m] = parts.map(Number);
+    if (!Number.isInteger(h) || !Number.isInteger(m)) return null;
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return { h, m };
+  };
+  const feedClock = parseClock(feedTime);
+  const targetClock = parseClock(targetTime);
+  if (!feedClock || !targetClock) return null;
+
+  let mins = targetClock.h * 60 + targetClock.m - (feedClock.h * 60 + feedClock.m);
   if (mins <= 0) mins += 24 * 60; // 跨午夜
   return mins / 60;
 }
@@ -234,6 +244,8 @@ function TimedFeed({ feed, seedStarter, roomTempC = 24 }) {
   const windowHours = windowHoursFromTimes(feedTime, targetTime);
   const targetRipe = maintainOnly ? MAINTAIN_TARGET_G : feed.needed + SEED_BUFFER_G;
   const plan = planTimedFeed({ targetRipe, windowHours, roomTempC, availableGrams: seedStarter });
+  const windowLabel = plan.timing.inputValid ? `${plan.timing.targetWindowHours}h` : '—';
+  const targetLabel = targetTime || '—';
   const b = (v) => <strong className="font-mono text-ink font-semibold">{v}</strong>;
 
   return (
@@ -278,7 +290,7 @@ function TimedFeed({ feed, seedStarter, roomTempC = 24 }) {
       {/* 窗口 → 比例 + 达峰 */}
       <div className="flex items-baseline justify-between border-y border-line-soft py-2">
         <div className="font-zh text-sm text-muted">
-          窗口 {b(`${round1(windowHours)}h`)} → 比例 {b(`1:${plan.ratio}:${plan.ratio}`)}
+          窗口 {b(windowLabel)} → 比例 {b(`1:${plan.ratio}:${plan.ratio}`)}
         </div>
         <div className="font-mono text-2xs text-faint uppercase tracking-[0.18em]">
           ~{plan.expectedPeakHours}h peak
@@ -301,13 +313,14 @@ function TimedFeed({ feed, seedStarter, roomTempC = 24 }) {
         </p>
       </div>
 
-      {/* 旧种不够 */}
-      {plan.notEnough && (
-        <div className="px-3 py-2 bg-warn-bg border border-line-soft">
-          <p className="font-zh text-sm text-accent-ink leading-relaxed">
-            罐里只有 {b(`${seedStarter}g`)}，不够本方案要取的 {b(`${plan.carryover}g`)}。先做一轮小喂养把库存建够，
-            或打开「只维持」降低目标量。
-          </p>
+      {/* domain 防呆：提前塌陷 / 达峰偏晚 / 旧种不足 */}
+      {plan.warnings.length > 0 && (
+        <div className="space-y-2">
+          {plan.warnings.map((warning) => (
+            <div key={warning} className="px-3 py-2 bg-warn-bg border border-line-soft">
+              <p className="font-zh text-sm text-accent-ink leading-relaxed">{warning}</p>
+            </div>
+          ))}
         </div>
       )}
 
@@ -316,7 +329,8 @@ function TimedFeed({ feed, seedStarter, roomTempC = 24 }) {
         <div className="font-mono text-2xs text-accent-ink uppercase tracking-[0.30em] mb-1">Memo · 操作</div>
         <p className="font-zh text-sm text-muted leading-relaxed">
           {feedTime} 取 {b(`${plan.carryover}g`)} 旧种 + 加 {b(`${plan.flour}g`)} 粉 + {b(`${plan.water}g`)} 水
-          （共 {plan.totalRipe}g，1:{plan.ratio}:{plan.ratio}），保温 ~{roomTempC}°C，约 {targetTime} 达峰。
+          （共 {plan.totalRipe}g，1:{plan.ratio}:{plan.ratio}），保温 ~{roomTempC}°C。目标 {targetLabel}，
+          预计约 {plan.expectedPeakHours}h 达峰。
           {maintainOnly ? (
             ' 留作维持小种即可。'
           ) : (

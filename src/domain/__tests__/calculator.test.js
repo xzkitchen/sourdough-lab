@@ -73,6 +73,18 @@ describe('calculateRecipe — 单 modifier', () => {
     expect(r.water).toBe(280 + 29);
     expect(r.processAdjust.bulkMinutesDelta).toBe(-20);
   });
+
+  it('橄榄带盐时真实下调基础盐到 1.8%，不只停留在提示文案', () => {
+    const r = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'olive' }],
+    });
+    const salt = r.ingredients.find((i) => i.id === 'salt');
+    expect(salt.bakersPct).toBeCloseTo(0.018, 4);
+    expect(salt.weight).toBeCloseTo(7.2, 1);
+    expect(r.notes.join(' ')).toContain('2% → 1.8%');
+  });
 });
 
 describe('calculateRecipe — environment', () => {
@@ -197,6 +209,27 @@ describe('enhanceSteps — 浸泡水不进喂种(feed)步骤', () => {
     const soakRow = (feedStep.stageBaseGrams || []).find((g) => /浸泡/.test(g.name));
     expect(soakRow).toBeFalsy();
   });
+
+  it('亚麻籽 soaker 在第一次折叠连水带籽加入，不进入 autolyse', () => {
+    const calculated = calculateRecipe({
+      base: 'sourdough-classic',
+      numUnits: 1,
+      selectedModifiers: [{ id: 'flax-seed', dose: 0.06 }],
+    });
+    const steps = enhanceSteps(
+      [
+        { id: 'autolyse', phase: 'mix', baseTips: [] },
+        { id: 'fold_1', phase: 'bulk', baseTips: [] },
+      ],
+      calculated
+    );
+
+    expect(steps[0].stageIngredients).toHaveLength(0);
+    expect(steps[0].tips.join(' ')).not.toContain('亚麻籽');
+    expect(steps[1].stageIngredients.some((i) => i.id === 'flax-seed')).toBe(true);
+    expect(steps[1].tips.join(' ')).toContain('亚麻籽 24g + 亚麻籽浸泡水 24g');
+    expect(steps[1].tips.join(' ')).toContain('分次折入');
+  });
 });
 
 describe('calculateRecipe — dose 边界', () => {
@@ -254,6 +287,7 @@ describe('enhanceSteps — modifier 投料显示', () => {
 
     expect(feedStep.tips.join(' ')).toContain('提前约 12h');
     expect(feedStep.tips.join(' ')).toContain('亚麻籽');
+    expect(feedStep.tips.join(' ')).toContain('第一次折叠');
     expect(feedStep.stageBaseGrams).toBeNull();
   });
 });

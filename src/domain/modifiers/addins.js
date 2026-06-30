@@ -125,8 +125,8 @@ export const ADDINS = [
     dotColor: { h: 30, s: 40, l: 30 },
     flavor: ['nutty', 'mild'],
     worksWith: ['sesame', 'sunflower-seed'],
-    addStage: 'mix',
-    warnings: ['亚麻籽需等重量水浸泡 12h 形成凝胶；浸泡液并入总水'],
+    addStage: 'fold-1',
+    warnings: ['亚麻籽需等重量水浸泡 12h 形成凝胶；第一次折叠时连水带籽分次折入'],
     source: {
       name: 'The Perfect Loaf — Seeded Sourdough',
       url: 'https://www.theperfectloaf.com/seeded-sourdough/',
@@ -271,12 +271,16 @@ export const ADDINS = [
     preTreatment: 'pit-drain',
     hydrationAdjust: { method: 'none' },
     fermentationAdjust: null,
+    saltAdjust: {
+      bpDelta: -0.002,
+      reason: '橄榄本身含盐',
+    },
     glutenAdjust: null,
     dotColor: { h: 330, s: 25, l: 22 },
     flavor: ['briny', 'umami'],
     worksWith: ['rosemary', 'walnut'],
     addStage: 'fold-2',
-    warnings: ['橄榄本身含盐，基础盐可减至 1.8%'],
+    warnings: ['橄榄本身含盐，基础盐自动降至 1.8%'],
     source: {
       name: 'Tartine Bread — Olive Country Bread',
       url: 'https://www.amazon.com/Tartine-Bread-Chad-Robertson/dp/0811870413',

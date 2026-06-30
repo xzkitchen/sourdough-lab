@@ -93,6 +93,8 @@ export function calculateRecipe(input) {
   let sugarBoost = 0;     // 单条基准，最后乘 numUnits
   let soakWater = 0;      // 浸泡类 modifier（如亚麻籽）的浸泡水，单列展示
   const soakSources = []; // [{ name, weight }] 贡献浸泡水的 modifier
+  let saltBpDelta = 0;    // 咸味混入料带来的基础盐 baker's % 调整
+  const saltAdjustReasons = [];
   const environmentAdjust = buildEnvironmentAdjustment(environment, base);
 
   for (const sel of selectedModifiers) {
@@ -137,7 +139,7 @@ export function calculateRecipe(input) {
         water += liquid;
         soakWater += liquid;
         soakSources.push({ name: mod.name, weight: liquid });
-        notes.push(`${mod.name} 浸泡液 ${liquid}g 已单列为「浸泡水」行（提前泡籽，连水带籽下缸）`);
+        notes.push(`${mod.name} 浸泡液 ${liquid}g 已单列为「浸泡水」行（提前泡籽，第一次折叠时连水带籽加入）`);
       }
     }
 
@@ -170,17 +172,39 @@ export function calculateRecipe(input) {
       temperatureDelta += mod.temperatureAdjust;
     }
 
-    // 3e. modifier 自带 warnings
+    // 3e. 盐度调整（如橄榄等带盐混入料）
+    if (mod.saltAdjust?.bpDelta) {
+      saltBpDelta += mod.saltAdjust.bpDelta;
+      if (mod.saltAdjust.reason) saltAdjustReasons.push(mod.saltAdjust.reason);
+    }
+
+    // 3f. modifier 自带 warnings
     (mod.warnings || []).forEach((w) => warnings.push(`${mod.name}：${w}`));
   }
 
-  // 3f. 环境温度调整：只影响流程建议，不改变基础克数
+  // 3g. 环境温度调整：只影响流程建议，不改变基础克数
   if (environmentAdjust.isWarm) {
     bulkDelta += environmentAdjust.bulkMinutesDelta;
     proofDelta += environmentAdjust.proofMinutesDelta;
     temperatureDelta += environmentAdjust.temperatureDelta;
     notes.push(...environmentAdjust.notes);
     warnings.push(...environmentAdjust.warnings);
+  }
+
+  // 3h. 咸味混入料若声明 saltAdjust，真实调整基础盐行，避免只在文案里提示。
+  if (saltBpDelta !== 0) {
+    const salt = baseIngredients.find((i) => i.id === 'salt');
+    if (salt) {
+      const originalBp = salt.bakersPct;
+      const adjustedBp = Math.max(0.016, Math.min(0.022, originalBp + saltBpDelta));
+      if (adjustedBp !== originalBp) {
+        salt.bakersPct = adjustedBp;
+        salt.weight = round1(flour * adjustedBp);
+        notes.push(
+          `盐 ${pct(originalBp)} → ${pct(adjustedBp)}（${saltAdjustReasons.join(' + ') || '咸味混入料'}）`
+        );
+      }
+    }
   }
 
   // 4. sugar boost 作为隐形食材（仅当总量 > 0）
@@ -249,8 +273,8 @@ export function calculateRecipe(input) {
           weight: soakWater,
           bakersPct: soakWater / flour,
           isHydration: true,
-          addStage: 'mix', // 跟着籽走：提前单独泡，搅拌阶段连水带籽下缸（不在第一步、不进鲁邦种）
-          note: '提前单独泡籽（约12h），泡好后连水带籽在搅拌阶段下缸；不直接倒入主面团水',
+          addStage: 'fold-1', // 跟着籽走：提前单独泡，第一次折叠时连水带籽加入
+          note: '提前单独泡籽（约12h），泡好后第一次折叠时连水带籽加入；不倒入 autolyse 水，也不进鲁邦种',
           source: 'base',
         });
       }
@@ -317,8 +341,8 @@ export function groupModifiersByStage(ingredients) {
  * - salt 仅在 reservedRatio > 0 时才有 'water-reserved'；不存在则只显示盐。
  *
  * 注意：浸泡水（water-soak）不在这里——它是「提前单独泡籽」用的，
- * 不能渲染成某一步「本阶段往面团里加 Xg 水」。它只在配方表里单列说明，
- * 泡好的籽连水在搅拌阶段随 modifier 下缸（见 water-soak 的 addStage: 'mix'）。
+ * 不能渲染成 autolyse 或 salt 阶段的主面团水。它只在配方表里单列说明，
+ * 泡好的籽连水在第一次折叠时随 modifier 加入（见 water-soak 的 addStage: 'fold-1'）。
  */
 const STEP_TO_BASE_INGREDIENT_IDS = {
   autolyse: ['flour', 'water-autolyse', 'water', 'starter'],
@@ -360,7 +384,7 @@ export function enhanceSteps(steps, calculated) {
     if (step.id === 'feed' && soakedModifiers.length) {
       const names = soakedModifiers.map((i) => `${i.name} ${i.weight}g`).join(' / ');
       const waterText = soakWater ? ` + 浸泡水 ${soakWater.weight}g` : '';
-      enhancedTips.push(`【提前预处理】${names}${waterText}：提前约 12h 单独泡；混合时连水带籽下缸`);
+      enhancedTips.push(`【提前预处理】${names}${waterText}：提前约 12h 单独泡；第一次折叠时连水带籽分次折入`);
     }
 
     // 本阶段需要称量的 base 食材（autolyse / salt）—— 独立字段
@@ -387,10 +411,20 @@ export function enhanceSteps(steps, calculated) {
 
     // modifier 投料保留原有 tips 注入（操作中追加，append 在 tips 末尾）
     if (stageIngredients.length) {
-      const names = stageIngredients
-        .map((i) => `${i.name} ${i.weight}g`)
-        .join(' / ');
-      enhancedTips.push(`【本阶段投料】${names}`);
+      const soakedAtStage = stageIngredients.filter(
+        (i) => typeof i.preTreatment === 'string' && i.preTreatment.includes('soak')
+      );
+      const dryAtStage = stageIngredients.filter((i) => !soakedAtStage.includes(i));
+      const parts = [];
+      if (dryAtStage.length) {
+        parts.push(dryAtStage.map((i) => `${i.name} ${i.weight}g`).join(' / '));
+      }
+      if (soakedAtStage.length) {
+        const soakedNames = soakedAtStage.map((i) => `${i.name} ${i.weight}g`).join(' / ');
+        const waterText = soakWater ? ` + ${soakWater.name} ${soakWater.weight}g` : '';
+        parts.push(`${soakedNames}${waterText}（连水带籽，分次折入）`);
+      }
+      enhancedTips.push(`【本阶段投料】${parts.join(' / ')}`);
     }
 
     return {

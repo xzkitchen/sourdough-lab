@@ -28,6 +28,13 @@ describe('pickFeedRatio — 窗口+室温 → 比例', () => {
   it('同样 8h 窗口，冷房需要更浓的比例（r 更小）才能卡住', () => {
     expect(pickFeedRatio(8, 22).r).toBeLessThan(2);
   });
+
+  it('超长窗口 clamp 到 1:6:6，并保留 clamp 原因', () => {
+    const p = pickFeedRatio(18, 26);
+    expect(p.r).toBe(6);
+    expect(p.clamped).toBe(true);
+    expect(p.clampReason).toBe('max');
+  });
 });
 
 describe('planTimedFeed — 吴老师场景：22:00 喂 → 06:00 达峰', () => {
@@ -56,6 +63,34 @@ describe('planTimedFeed — 吴老师场景：22:00 喂 → 06:00 达峰', () =>
     });
     expect(plan.notEnough).toBe(true);
     expect(plan.discard).toBe(0);
+    expect(plan.warnings[0]).toMatch(/不够本方案要取/);
+  });
+
+  it('窗口太长时提示会提前达峰，避免目标前塌陷', () => {
+    const plan = planTimedFeed({
+      targetRipe: 260,
+      windowHours: 18,
+      roomTempC: 26,
+      availableGrams: 100,
+    });
+    expect(plan.ratio).toBe(6);
+    expect(plan.timing.status).toBe('early');
+    expect(plan.timing.clampReason).toBe('max');
+    expect(plan.warnings[0]).toMatch(/早约/);
+  });
+
+  it('时间输入无效时使用 8h 临时窗口，不向 UI 泄露 NaN', () => {
+    const plan = planTimedFeed({
+      targetRipe: 260,
+      windowHours: null,
+      roomTempC: 26,
+      availableGrams: 85,
+    });
+    expect(plan.timing.inputValid).toBe(false);
+    expect(plan.timing.targetWindowHours).toBe(8);
+    expect(plan.ratio).toBe(2);
+    expect(plan.carryover).toBe(52);
+    expect(plan.warnings[0]).toMatch(/时间输入不完整/);
   });
 });
 
