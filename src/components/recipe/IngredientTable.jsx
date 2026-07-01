@@ -74,10 +74,11 @@ function shortSrc(ing) {
  * 对于 modifier 和未知 id，返回 null（行不显示副标）
  */
 function prettyEn(ing) {
+  if (ing.id === 'water-reserved') return `Water · bassinage ${fmtPct(ing.bakersPct)}`;
+
   const map = {
     flour: 'Strong wheat T65',
     'water-autolyse': 'Water · autolyse',
-    'water-reserved': 'Water · bassinage 10%',
     'water-soak': 'Water · seed soak · 提前泡',
     water: 'Water · total',
     starter: 'Active levain',

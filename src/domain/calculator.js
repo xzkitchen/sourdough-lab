@@ -97,6 +97,18 @@ export function calculateRecipe(input) {
   const saltAdjustReasons = [];
   const environmentAdjust = buildEnvironmentAdjustment(environment, base);
 
+  // 2a. 环境模式可改变基础水量；modifier 的吸水补偿后续再叠加。
+  if (environmentAdjust.waterBakersPctDelta) {
+    const waterDelta = round(flour * environmentAdjust.waterBakersPctDelta);
+    if (waterDelta !== 0) {
+      water += waterDelta;
+      const target = environmentAdjust.targetHydration ?? water / flour;
+      notes.push(
+        `${environmentAdjust.label}稳面团：基础总水 ${waterDelta > 0 ? '+' : ''}${waterDelta}g，目标水合度 ${pct(target)}`
+      );
+    }
+  }
+
   for (const sel of selectedModifiers) {
     const mod = getModifier(sel.id);
     if (!mod) {
@@ -232,7 +244,7 @@ export function calculateRecipe(input) {
   }
 
   // 6. 水的显示 —— 如果 base 声明了 waterReservedRatio，把水拆成 autolyse + reserved 两行
-  const reservedRatio = base.defaults?.waterReservedRatio || 0;
+  const reservedRatio = environmentAdjust.waterReservedRatio ?? base.defaults?.waterReservedRatio ?? 0;
   const ingredients = [...baseIngredients, ...modifierIngredients];
   const waterIdx = ingredients.findIndex((i) => i.id === 'water');
   if (waterIdx >= 0) {

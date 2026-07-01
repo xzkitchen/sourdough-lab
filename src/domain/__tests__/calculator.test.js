@@ -88,7 +88,7 @@ describe('calculateRecipe — 单 modifier', () => {
 });
 
 describe('calculateRecipe — environment', () => {
-  it('夏季模式不改原味配方克数，但给出控温和一发建议', () => {
+  it('夏季模式下调原味总水和后加水，避免面团软榻', () => {
     const r = calculateRecipe({
       base: 'sourdough-classic',
       numUnits: 1,
@@ -96,16 +96,21 @@ describe('calculateRecipe — environment', () => {
     });
 
     const byId = Object.fromEntries(r.ingredients.map((i) => [i.id, i]));
-    expect(r.water).toBe(280);
-    expect(byId['water-autolyse'].weight).toBe(240);
-    expect(byId['water-reserved'].weight).toBe(40);
+    expect(r.water).toBe(260);
+    expect(r.actualHydration).toBeCloseTo(0.65, 2);
+    expect(byId['water-autolyse'].weight).toBe(230);
+    expect(byId['water-reserved'].weight).toBe(30);
+    expect(byId['water-reserved'].bakersPct).toBeCloseTo(0.075, 4);
     expect(r.environment.mode).toBe('summer');
     expect(r.environment.isWarm).toBe(true);
     expect(r.environment.targetWaterTempC).toBe(2);
-    expect(r.environment.bulkRiseTarget).toBe('30-50%');
-    expect(r.environment.actions.map((a) => a.value)).toEqual(['2-4°C', '24-25°C', '30-50%']);
+    expect(r.environment.bulkRiseTarget).toBe('30-40%');
+    expect(r.environment.formulaNote).toContain('总水 65%');
+    expect(r.environment.actions.map((a) => a.value)).toEqual(['2-4°C', '24-25°C', '30-40%']);
     expect(r.processAdjust.bulkMinutesDelta).toBeLessThan(0);
-    expect(r.notes.join(' ')).toContain('配方克数不变');
+    expect(r.notes.join(' ')).toContain('基础总水 -20g');
+    expect(r.notes.join(' ')).toContain('总水下调到 65%');
+    expect(r.warnings.join(' ')).toContain('后加水不要机械加完');
     expect(r.warnings.join(' ')).toContain('面温超过 26°C');
   });
 
@@ -325,7 +330,7 @@ describe('enhanceSteps — environment tips', () => {
       },
     ], calculated);
 
-    expect(step.tips.join(' ')).toContain('30-50%');
+    expect(step.tips.join(' ')).toContain('30-40%');
     expect(step.tips.join(' ')).not.toContain('50%-75%');
   });
 });

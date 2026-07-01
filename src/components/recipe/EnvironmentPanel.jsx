@@ -11,6 +11,7 @@ export function EnvironmentPanel({ mode, onModeChange, environment }) {
   const actions = environment?.actions || [];
   const factor = environment?.fermentationFactor ?? 1;
   const timePct = Math.round(factor * 100);
+  const formulaNote = environment?.formulaNote || (activeMode === 'summer' ? '夏季稳面团' : '配方克数不变');
 
   return (
     <div className="border border-ink bg-surface">
@@ -54,7 +55,7 @@ export function EnvironmentPanel({ mode, onModeChange, environment }) {
           Formula
         </div>
         <div className="font-zh text-xs text-muted text-center flex-1">
-          配方克数不变
+          {formulaNote}
         </div>
         <div className="font-mono text-2xs text-faint uppercase tracking-[0.20em]">
           {activeMode === 'summer' ? `${timePct}% time` : 'std time'}

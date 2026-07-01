@@ -24,6 +24,8 @@ const BASE_ROOM_TEMP_C = ENVIRONMENT_MODES.standard.roomTempC;
 const SUMMER_ROOM_TEMP_C = ENVIRONMENT_MODES.summer.roomTempC;
 const MIN_ROOM_TEMP_C = 16;
 const MAX_ROOM_TEMP_C = 34;
+const SUMMER_WATER_BAKERS_PCT_DELTA = -0.05;
+const SUMMER_RESERVED_WATER_RATIO = 0.075;
 
 const round = (n) => Math.round(n);
 const round1 = (n) => Math.round(n * 10) / 10;
@@ -55,8 +57,18 @@ export function buildEnvironmentAdjustment(environment = {}, base = null) {
 
   const targetDoughTempC = isSummer ? 24 : 26;
   const targetWaterTempC = isSummer ? 2 : 18;
-  const bulkRiseTarget = isSummer ? '30-50%' : '50-75%';
+  const bulkRiseTarget = isSummer ? '30-40%' : '50-75%';
   const label = ENVIRONMENT_MODES[mode].label;
+  const waterBakersPctDelta = isSummer ? SUMMER_WATER_BAKERS_PCT_DELTA : 0;
+  const waterReservedRatio = isSummer
+    ? SUMMER_RESERVED_WATER_RATIO
+    : base?.defaults?.waterReservedRatio;
+  const targetHydration = isSummer && typeof base?.hydration === 'number'
+    ? base.hydration + waterBakersPctDelta
+    : base?.hydration;
+  const formulaNote = isSummer
+    ? `总水 ${Math.round(targetHydration * 100)}%，后加水看状态`
+    : '配方克数不变';
 
   const defaultBulkMinutes = base?.defaultBulkMinutes || 240;
   const bulkMinutesDelta = isSummer
@@ -81,10 +93,13 @@ export function buildEnvironmentAdjustment(environment = {}, base = null) {
 
   if (isSummer) {
     notes.push(
-      `夏季模式：配方克数不变；用 ${targetWaterTempC}-${targetWaterTempC + 2}°C 冰水，揉面结束面温控制在 ${targetDoughTempC}-${targetDoughTempC + 1}°C。`
+      `夏季模式：原味总水下调到 ${Math.round(targetHydration * 100)}%，后加水降到 ${Math.round(waterReservedRatio * 1000) / 10}%；用 ${targetWaterTempC}-${targetWaterTempC + 2}°C 冰水，揉面结束面温控制在 ${targetDoughTempC}-${targetDoughTempC + 1}°C。`
     );
     notes.push(
       `发酵速度约为标准室温的 ${round(100 / fermentationFactor)}%，一发目标改看体积增长 ${bulkRiseTarget}，不要按固定时长等到原配方上限。`
+    );
+    warnings.push(
+      `夏季高温：后加水不要机械加完；面团已软、摊或粘缸时直接停水，保留未加水。`
     );
     warnings.push(
       `夏季高温：若面温超过 26°C，停机把面团摊薄冷藏 10-15 分钟；继续高速打面会让面筋更松、更粘。`
@@ -96,6 +111,9 @@ export function buildEnvironmentAdjustment(environment = {}, base = null) {
     stepTips.knead = [
       `夏季控制：揉面结束量一次面温，目标 ${targetDoughTempC}-${targetDoughTempC + 1}°C，超过 26°C 先冷藏降温再继续。`,
       '冰袋只能降缸壁温度，面粉、鲁邦种和机器摩擦仍会升温；优先用冰水控制最终面温。',
+    ];
+    stepTips.salt = [
+      '夏季后加水先加一半；若面团已经软、摊或粘缸，剩余水不加。',
     ];
     stepTips.bulk_final = [
       `夏季一发：体积增长 ${bulkRiseTarget} 即可准备预整，边缘开始变圆、有轻微晃动就收。`,
@@ -111,6 +129,10 @@ export function buildEnvironmentAdjustment(environment = {}, base = null) {
     isWarm: isSummer,
     isSummer,
     fermentationFactor,
+    formulaNote,
+    targetHydration,
+    waterBakersPctDelta,
+    waterReservedRatio,
     targetDoughTempC,
     targetWaterTempC,
     bulkRiseTarget,
